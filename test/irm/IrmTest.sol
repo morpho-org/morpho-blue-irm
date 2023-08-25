@@ -16,7 +16,7 @@ contract IrmTest is Test {
         vm.assume(market.totalSupplyAssets >= market.totalBorrowAssets);
         vm.assume(market.lastUpdate >= block.timestamp);
         vm.assume(market.lastUpdate < type(uint32).max);
-        uint borrowRate = irm.borrowRate(marketParams, market);
+        uint256 borrowRate = irm.borrowRate(marketParams, market);
         assertEq(borrowRate, WAD);
     }
 
@@ -25,7 +25,7 @@ contract IrmTest is Test {
         vm.assume(market.totalSupplyAssets >= market.totalBorrowAssets);
         vm.assume(market.lastUpdate >= block.timestamp);
         vm.assume(market.lastUpdate < type(uint32).max);
-        uint borrowRate = irm.borrowRateView(marketParams, market);
+        uint256 borrowRate = irm.borrowRateView(marketParams, market);
         assertEq(borrowRate, 0);
     }
 }
