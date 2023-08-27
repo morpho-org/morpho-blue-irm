@@ -144,7 +144,7 @@ contract Irm is IIrm {
         // newBorrowRate = prevBorrowRate * jumpMultiplier * exp(speedMultiplier * t1-t0)
         uint256 newBorrowRate = uint256(prevBorrowRateCached.wMulDown(jumpMultiplier).wMulDown(wExp(elapsed * speed)));
         // avgBorrowRate = 1 / elapsed * ∫ prevBorrowRate * exp(speed * t) dt between 0 and elapsed.
-        uint256 avgBorrowRate = uint256(prevBorrowRateCached.wMulDown(int256(wExp(elapsed * speed))) - int256(WAD).wDivDown(elapsed * speed));
+        uint256 avgBorrowRate = uint((int(prevBorrowRateCached.wMulDown(wExp(elapsed * speed))) - int256(WAD)).wDivDown(elapsed * speed));
 
         return (utilization, newBorrowRate, avgBorrowRate);
     }

@@ -53,16 +53,44 @@ contract IrmTest is Test {
         vm.assume(market1.lastUpdate < type(uint32).max);
         uint256 elapsed = market1.lastUpdate - market0.lastUpdate;
         vm.assume(elapsed * WAD / 365 days < 1 ether);
-        irm.borrowRate(marketParams, market1);
+        uint256 avgBorrowRate = irm.borrowRate(marketParams, market1);
 
         uint256 utilization0 = market0.totalBorrowAssets.wDivDown(market0.totalSupplyAssets);
         uint256 utilization1 = market1.totalBorrowAssets.wDivDown(market1.totalSupplyAssets);
         assertEq(uint256(irm.prevUtilization(marketParams.id())), utilization1);
 
         if (utilization0 <= utilization1 && utilization1 >= 0.8 ether) {
+            assertGe(avgBorrowRate, WAD);
             assertGe(irm.prevBorrowRate(marketParams.id()), WAD);
         } else if (utilization0 > utilization1 && utilization1 < 0.8 ether) {
+            assertLt(avgBorrowRate, WAD);
             assertLt(irm.prevBorrowRate(marketParams.id()), WAD);
+        }
+    }
+
+    function testBorrowRateView(MarketParams memory marketParams, Market memory market0, Market memory market1) public {
+        vm.assume(market0.totalBorrowAssets > 0);
+        vm.assume(market0.totalSupplyAssets >= market0.totalBorrowAssets);
+        vm.assume(market0.lastUpdate >= block.timestamp);
+        vm.assume(market0.lastUpdate < type(uint32).max);
+        irm.borrowRate(marketParams, market0);
+
+        vm.assume(market1.totalBorrowAssets > 0);
+        vm.assume(market1.totalSupplyAssets >= market1.totalBorrowAssets);
+        vm.assume(market1.lastUpdate > market0.lastUpdate);
+        vm.assume(market1.lastUpdate < type(uint32).max);
+        uint256 elapsed = market1.lastUpdate - market0.lastUpdate;
+        vm.assume(elapsed * WAD / 365 days < 1 ether);
+        uint256 avgBorrowRate = irm.borrowRateView(marketParams, market1);
+
+        uint256 utilization0 = market0.totalBorrowAssets.wDivDown(market0.totalSupplyAssets);
+        uint256 utilization1 = market1.totalBorrowAssets.wDivDown(market1.totalSupplyAssets);
+        assertEq(uint256(irm.prevUtilization(marketParams.id())), utilization0);
+
+        if (utilization0 <= utilization1 && utilization1 >= 0.8 ether) {
+            assertGe(avgBorrowRate, WAD);
+        } else if (utilization0 > utilization1 && utilization1 < 0.8 ether) {
+            assertLt(avgBorrowRate, WAD);
         }
     }
 
