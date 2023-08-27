@@ -106,16 +106,17 @@ contract IrmTest is Test {
     }
 
     function testWExp(int256 x) public {
-        assertApproxEqRel(wExp(-1 ether), 0.36787944117 ether, 0.1 ether);
-        assertApproxEqRel(wExp(-0.1 ether), 0.90483741803 ether, 0.01 ether);
-        assertEq(wExp(0 ether), 1 ether);
-        assertApproxEqRel(wExp(0.1 ether), 1.10517091808 ether, 0.01 ether);
-        assertApproxEqRel(wExp(1 ether), 2.71828182846 ether, 0.1 ether);
+        assertApproxEqRel(wExp(-4 ether), 0.01831563888 ether, 0.01 ether);
+        assertApproxEqRel(wExp(-3 ether), 0.04978706836 ether, 0.00001 ether);
+        assertApproxEqRel(wExp(-2 ether), 0.13533528323 ether, 0.000001 ether);
+        assertApproxEqRel(wExp(-1 ether), 0.36787944117 ether, 0.00000001 ether);
+        assertApproxEqRel(wExp(0 ether), 1.00000000000 ether, 0.0 ether);
+        assertApproxEqRel(wExp(1 ether), 2.71828182846 ether, 0.00000001 ether);
+        assertApproxEqRel(wExp(2 ether), 7.38905609893 ether, 0.000001 ether);
+        assertApproxEqRel(wExp(3 ether), 20.0855369232 ether, 0.00001 ether);
+        assertApproxEqRel(wExp(4 ether), 54.5981500331 ether, 0.01 ether);
 
-        x = bound(x, -1 ether, 1 ether);
-        assertGe(wExp(x), uint256(int256(WAD) + x));
-
-        if (x < 0) assertLt(wExp(x), WAD);
-        else assertGe(wExp(x), WAD);
+        x = bound(x, -4 ether, 4 ether);
+        assertGe(int(wExp(x)), int(WAD) + x);
     }
 }

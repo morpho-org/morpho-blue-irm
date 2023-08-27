@@ -23,27 +23,18 @@ function wFloatPow(uint256 lnA, int256 x) pure returns (uint256) {
     return uint256(res);
 }
 
-/// @dev Returns an approx of x^n with n an integer.
-/// @dev Exponentiation by squaring (https://en.wikipedia.org/wiki/Exponentiation_by_squaring).
-function wUIntPow(int256 x, int256 n) pure returns (int256) {
-    if (n < 0) return wUIntPow(int(WAD * WAD) / x, -n);
-    else if (n == 0) return int(WAD);
-    else if (n == 1) return x;
-    else if (n % 2 == 0) return wUIntPow(wSquare(x), n / 2);
-    else return x * wUIntPow(wSquare(x), n / 2) / int(WAD);
-}
-
 function wExp(int256 x) pure returns (uint256) {
     // N should be even otherwise the result can get negative.
     int256 N = 16;
     int256 res = int(WAD);
     int256 factorial = 1;
+    int256 pow = int(WAD);
     // We start at k = 1.
     for (int256 k = 1; k <= N; k++) {
         factorial *= k;
-        res += wUIntPow(x, k) / factorial;
+        pow = pow * x / int(WAD);
+        res += pow / factorial;
     }
-    require(res >= 0, "wExp: res < 0");
     return uint256(res);
 }
 
