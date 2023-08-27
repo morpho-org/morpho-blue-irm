@@ -9,12 +9,13 @@ import {WAD, MathLib} from "../../lib/morpho-blue/src/libraries/MathLib.sol";
 
 using MathLib for uint128;
 using MathLib for uint256;
+using {wDivDown} for int256;
 using {wMulDown} for uint256;
 using MarketParamsLib for MarketParams;
 
 /// @dev Returns an approximation of a^x.
 /// @dev Warning ln(a) must be passed as argument and not a directly.
-function wPow(uint256 lnA, int256 x) pure returns (uint256) {
+function wFloatPow(uint256 lnA, int256 x) pure returns (uint256) {
     // Always positive.
     int256 res =
         int256(WAD) + lnA.wMulDown(x) + wSquare(lnA).wMulDown(wSquare(x)) / 2 + wCube(lnA).wMulDown(wCube(x)) / 6;
@@ -22,15 +23,37 @@ function wPow(uint256 lnA, int256 x) pure returns (uint256) {
     return uint256(res);
 }
 
+/// @dev Returns an approx of x^n with n an integer.
+/// @dev Exponentiation by squaring (https://en.wikipedia.org/wiki/Exponentiation_by_squaring).
+function wUIntPow(int256 x, int256 n) pure returns (int256) {
+    if (n < 0) return wUIntPow(int(WAD * WAD) / x, -n);
+    else if (n == 0) return int(WAD);
+    else if (n == 1) return x;
+    else if (n % 2 == 0) return wUIntPow(wSquare(x), n / 2);
+    else return x * wUIntPow(wSquare(x), n / 2) / int(WAD);
+}
+
 function wExp(int256 x) pure returns (uint256) {
-    // Always positive.
-    int256 res = int256(WAD) + x + wSquare(x) / 2 + wCube(x) / 6 + wSquare(wSquare(x)) / 24;
+    // N should be even otherwise the result can get negative.
+    int256 N = 16;
+    int256 res = int(WAD);
+    int256 factorial = 1;
+    // We start at k = 1.
+    for (int256 k = 1; k <= N; k++) {
+        factorial *= k;
+        res += wUIntPow(x, k) / factorial;
+    }
     require(res >= 0, "wExp: res < 0");
     return uint256(res);
 }
 
 function wMulDown(uint256 a, int256 b) pure returns (int256) {
+    require(int256(a) > 0, "wMulDown: a too big");
     return int256(a) * b / int256(WAD);
+}
+
+function wDivDown(int256 a, int256 b) pure returns (int256) {
+    return a * int256(WAD) / b;
 }
 
 function wSquare(uint256 x) pure returns (uint256) {
@@ -112,20 +135,16 @@ contract Irm is IIrm {
         int256 errDelta = err - prevErr;
 
         // Instantaneous jump.
-        uint256 jumpMultiplier = wPow(LN_JUMP_FACTOR, errDelta);
+        uint256 jumpMultiplier = wFloatPow(LN_JUMP_FACTOR, errDelta);
         // Per second, to compound continuously.
-        int256 speed = int256(SPEED_FACTOR.wMulDown(err));
-        // Time since last update.
-        uint256 elapsed = market.lastUpdate - block.timestamp;
+        int256 speed = SPEED_FACTOR.wMulDown(err);
+        // Time since last update (positive).
+        int256 elapsed = int256(market.lastUpdate - block.timestamp);
 
         // newBorrowRate = prevBorrowRate * jumpMultiplier * exp(speedMultiplier * t1-t0)
-        uint256 newBorrowRate =
-            uint256(prevBorrowRateCached.wMulDown(jumpMultiplier).wMulDown(wExp(speed * int256(elapsed))));
+        uint256 newBorrowRate = uint256(prevBorrowRateCached.wMulDown(jumpMultiplier).wMulDown(wExp(elapsed * speed)));
         // avgBorrowRate = 1 / elapsed * ∫ prevBorrowRate * exp(speed * t) dt between 0 and elapsed.
-        uint256 avgBorrowRate = uint256(
-            int256(prevBorrowRateCached) * (int256(wExp(speed * int256(elapsed))) - int256(WAD)) / speed
-                * int256(elapsed)
-        );
+        uint256 avgBorrowRate = uint256(prevBorrowRateCached.wMulDown(int256(wExp(elapsed * speed))) - int256(WAD).wDivDown(elapsed * speed));
 
         return (utilization, newBorrowRate, avgBorrowRate);
     }
