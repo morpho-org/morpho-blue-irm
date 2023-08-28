@@ -10,15 +10,18 @@ import {WAD, MathLib} from "../../lib/morpho-blue/src/libraries/MathLib.sol";
 using MathLib for uint128;
 using MathLib for uint256;
 using {wDivDown} for int256;
-using {wMulDown} for uint256;
+using {wMulDown} for int256;
 using MarketParamsLib for MarketParams;
 
 /// @dev Returns an approximation of a^x.
 /// @dev Warning ln(a) must be passed as argument and not a directly.
-function wFloatPow(uint256 lnA, int256 x) pure returns (uint256) {
+function wFloatPow(int256 lnA, int256 x) pure returns (uint256) {
     // Always positive.
-    int256 res =
-        int256(WAD) + lnA.wMulDown(x) + wSquare(lnA).wMulDown(wSquare(x)) / 2 + wCube(lnA).wMulDown(wCube(x)) / 6;
+    int256 firstTerm = int(WAD);
+    int256 secondTerm = lnA.wMulDown(x);
+    int256 thirdTerm = secondTerm.wMulDown(lnA).wMulDown(x) / 2;
+    int256 fourthTerm = thirdTerm.wMulDown(lnA).wMulDown(x) / 3;
+    int256 res = firstTerm + secondTerm + thirdTerm + fourthTerm;
     require(res >= 0, "wPow: res < 0");
     return uint256(res);
 }
@@ -38,29 +41,12 @@ function wExp(int256 x) pure returns (uint256) {
     return uint256(res);
 }
 
-function wMulDown(uint256 a, int256 b) pure returns (int256) {
-    require(int256(a) > 0, "wMulDown: a too big");
-    return int256(a) * b / int256(WAD);
+function wMulDown(int256 a, int256 b) pure returns (int256) {
+    return a * b / int256(WAD);
 }
 
 function wDivDown(int256 a, int256 b) pure returns (int256) {
     return a * int256(WAD) / b;
-}
-
-function wSquare(uint256 x) pure returns (uint256) {
-    return x * x / WAD;
-}
-
-function wSquare(int256 x) pure returns (int256) {
-    return x * x / int256(WAD);
-}
-
-function wCube(uint256 x) pure returns (uint256) {
-    return wSquare(x) * x / WAD;
-}
-
-function wCube(int256 x) pure returns (int256) {
-    return wSquare(x) * x / int256(WAD);
 }
 
 contract Irm is IIrm {
@@ -69,9 +55,9 @@ contract Irm is IIrm {
     string private constant NOT_MORPHO = "not Morpho";
     address private immutable MORPHO;
     // Scaled by WAD.
-    uint256 private immutable LN_JUMP_FACTOR;
+    int256 private immutable LN_JUMP_FACTOR;
     // Scaled by WAD.
-    uint256 private immutable SPEED_FACTOR;
+    int256 private immutable SPEED_FACTOR;
     // Scaled by WAD. Typed signed int but the value is positive.
     int256 private immutable TARGET_UTILIZATION;
 
@@ -84,7 +70,7 @@ contract Irm is IIrm {
 
     // Constructor.
 
-    constructor(address newMorpho, uint256 newLnJumpFactor, uint256 newSpeedFactor, uint256 newTargetUtilization) {
+    constructor(address newMorpho, int256 newLnJumpFactor, int256 newSpeedFactor, uint256 newTargetUtilization) {
         MORPHO = newMorpho;
         LN_JUMP_FACTOR = newLnJumpFactor;
         SPEED_FACTOR = newSpeedFactor;

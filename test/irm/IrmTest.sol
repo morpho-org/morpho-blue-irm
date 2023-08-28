@@ -11,10 +11,10 @@ contract IrmTest is Test {
 
     Irm irm;
 
-    uint256 constant ln2 = 0.69314718056 ether;
+    int256 constant ln2 = 0.69314718056 ether;
 
     constructor() {
-        irm = new Irm(address(this), ln2, WAD / 365 days, 0.8 ether);
+        irm = new Irm(address(this), ln2, int(WAD / 365 days), 0.8 ether);
     }
 
     function testFirstBorrowRate(MarketParams memory marketParams, Market memory market) public {
