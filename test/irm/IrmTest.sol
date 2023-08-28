@@ -68,7 +68,9 @@ contract IrmTest is Test {
         }
     }
 
-    function testBorrowRateView(MarketParams memory marketParams, Market memory market0, Market memory market1) public {
+    function testBorrowRateView(MarketParams memory marketParams, Market memory market0, Market memory market1)
+        public
+    {
         vm.assume(market0.totalBorrowAssets > 0);
         vm.assume(market0.totalSupplyAssets >= market0.totalBorrowAssets);
         vm.assume(market0.lastUpdate >= block.timestamp);
@@ -110,13 +112,14 @@ contract IrmTest is Test {
         assertApproxEqRel(wExp(-3 ether), 0.04978706836 ether, 0.00001 ether);
         assertApproxEqRel(wExp(-2 ether), 0.13533528323 ether, 0.000001 ether);
         assertApproxEqRel(wExp(-1 ether), 0.36787944117 ether, 0.00000001 ether);
-        assertApproxEqRel(wExp(0 ether), 1.00000000000 ether, 0.0 ether);
+        assertApproxEqRel(wExp(0 ether), 1.0 ether, 0.0 ether);
         assertApproxEqRel(wExp(1 ether), 2.71828182846 ether, 0.00000001 ether);
         assertApproxEqRel(wExp(2 ether), 7.38905609893 ether, 0.000001 ether);
         assertApproxEqRel(wExp(3 ether), 20.0855369232 ether, 0.00001 ether);
-        assertApproxEqRel(wExp(4 ether), 54.5981500331 ether, 0.01 ether);
+        assertApproxEqRel(wExp(4 ether), 54.5981500331 ether, 0.001 ether);
+        assertApproxEqRel(wExp(5 ether), 148.413159103 ether, 0.01 ether);
 
         x = bound(x, -4 ether, 4 ether);
-        assertGe(int(wExp(x)), int(WAD) + x);
+        assertGe(int256(wExp(x)), int256(WAD) + x);
     }
 }

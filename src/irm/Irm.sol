@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: UNLICENSED
-pragma solidity ^0.8.0;
+pragma solidity 0.8.19;
 
 import {IIrm} from "../../lib/morpho-blue/src/interfaces/IIrm.sol";
 import {Id, MarketParams, Market} from "../../lib/morpho-blue/src/interfaces/IMorpho.sol";
@@ -26,13 +26,13 @@ function wFloatPow(uint256 lnA, int256 x) pure returns (uint256) {
 function wExp(int256 x) pure returns (uint256) {
     // N should be even otherwise the result can get negative.
     int256 N = 16;
-    int256 res = int(WAD);
+    int256 res = int256(WAD);
     int256 factorial = 1;
-    int256 pow = int(WAD);
+    int256 pow = int256(WAD);
     // We start at k = 1.
     for (int256 k = 1; k <= N; k++) {
         factorial *= k;
-        pow = pow * x / int(WAD);
+        pow = pow * x / int256(WAD);
         res += pow / factorial;
     }
     return uint256(res);
@@ -133,9 +133,11 @@ contract Irm is IIrm {
         int256 elapsed = int256(market.lastUpdate - block.timestamp);
 
         // newBorrowRate = prevBorrowRate * jumpMultiplier * exp(speedMultiplier * t1-t0)
-        uint256 newBorrowRate = uint256(prevBorrowRateCached.wMulDown(jumpMultiplier).wMulDown(wExp(elapsed * speed)));
+        uint256 newBorrowRate = uint256(prevBorrowRateCached.wMulDown(jumpMultiplier).wMulDown(wExp(speed * elapsed)));
         // avgBorrowRate = 1 / elapsed * ∫ prevBorrowRate * exp(speed * t) dt between 0 and elapsed.
-        uint256 avgBorrowRate = uint((int(prevBorrowRateCached.wMulDown(wExp(elapsed * speed))) - int256(WAD)).wDivDown(elapsed * speed));
+        uint256 avgBorrowRate = uint256(
+            (int256(prevBorrowRateCached.wMulDown(wExp(speed * elapsed))) - int256(WAD)).wDivDown(speed * elapsed)
+        );
 
         return (utilization, newBorrowRate, avgBorrowRate);
     }
