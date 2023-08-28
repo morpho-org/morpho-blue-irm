@@ -13,71 +13,72 @@ using {wDivDown} for int256;
 using {wMulDown} for int256;
 using MarketParamsLib for MarketParams;
 
+int256 constant WAD_INT = int256(WAD);
+
 /// @dev Returns an approximation of a^x.
 /// @dev Warning ln(a) must be passed as argument and not a directly.
 function wFloatPow(int256 lnA, int256 x) pure returns (uint256) {
-    // Always positive.
-    int256 firstTerm = int(WAD);
+    int256 firstTerm = WAD_INT;
     int256 secondTerm = lnA.wMulDown(x);
     int256 thirdTerm = secondTerm.wMulDown(lnA).wMulDown(x) / 2;
     int256 fourthTerm = thirdTerm.wMulDown(lnA).wMulDown(x) / 3;
     int256 res = firstTerm + secondTerm + thirdTerm + fourthTerm;
-    require(res >= 0, "wPow: res < 0");
+    // Safe "unchecked" cast.
     return uint256(res);
 }
 
 function wExp(int256 x) pure returns (uint256) {
-    // N should be even otherwise the result can get negative.
+    // N should be even otherwise the result can be negative.
     int256 N = 16;
-    int256 res = int256(WAD);
+    int256 res = WAD_INT;
     int256 factorial = 1;
-    int256 pow = int256(WAD);
-    // We start at k = 1.
+    int256 pow = WAD_INT;
     for (int256 k = 1; k <= N; k++) {
         factorial *= k;
-        pow = pow * x / int256(WAD);
+        pow = pow * x / WAD_INT;
         res += pow / factorial;
     }
+    // Safe "unchecked" cast.
     return uint256(res);
 }
 
 function wMulDown(int256 a, int256 b) pure returns (int256) {
-    return a * b / int256(WAD);
+    return a * b / WAD_INT;
 }
 
 function wDivDown(int256 a, int256 b) pure returns (int256) {
-    return a * int256(WAD) / b;
+    return a * WAD_INT / b;
 }
 
 contract Irm is IIrm {
-    // Immutables.
+    /* CONSTANTS */
 
-    string private constant NOT_MORPHO = "not Morpho";
+    // Address of Morpho.
     address private immutable MORPHO;
     // Scaled by WAD.
-    int256 private immutable LN_JUMP_FACTOR;
+    uint256 private immutable LN_JUMP_FACTOR;
     // Scaled by WAD.
-    int256 private immutable SPEED_FACTOR;
-    // Scaled by WAD. Typed signed int but the value is positive.
-    int256 private immutable TARGET_UTILIZATION;
+    uint256 private immutable SPEED_FACTOR;
+    // Scaled by WAD.
+    uint256 private immutable TARGET_UTILIZATION;
 
-    // Storage.
+    /* STORAGE */
 
     // Scaled by WAD.
     mapping(Id => uint256) public prevBorrowRate;
-    // Scaled by WAD. Typed signed int but the value is positive.
-    mapping(Id => int256) public prevUtilization;
+    // Scaled by WAD.
+    mapping(Id => uint256) public prevUtilization;
 
-    // Constructor.
+    /* CONSTRUCTOR */
 
-    constructor(address newMorpho, int256 newLnJumpFactor, int256 newSpeedFactor, uint256 newTargetUtilization) {
+    constructor(address newMorpho, uint256 newLnJumpFactor, uint256 newSpeedFactor, uint256 newTargetUtilization) {
         MORPHO = newMorpho;
         LN_JUMP_FACTOR = newLnJumpFactor;
         SPEED_FACTOR = newSpeedFactor;
-        TARGET_UTILIZATION = int256(newTargetUtilization);
+        TARGET_UTILIZATION = newTargetUtilization;
     }
 
-    // Borrow rates.
+    /* BORROW RATES */
 
     function borrowRateView(MarketParams memory marketParams, Market memory market) public view returns (uint256) {
         (,, uint256 avgBorrowRate) = _borrowRate(marketParams.id(), market);
@@ -85,11 +86,11 @@ contract Irm is IIrm {
     }
 
     function borrowRate(MarketParams memory marketParams, Market memory market) external returns (uint256) {
-        require(msg.sender == MORPHO, NOT_MORPHO);
+        require(msg.sender == MORPHO, "not Morpho");
 
         Id id = marketParams.id();
 
-        (int256 utilization, uint256 newBorrowRate, uint256 avgBorrowRate) = _borrowRate(id, market);
+        (uint256 utilization, uint256 newBorrowRate, uint256 avgBorrowRate) = _borrowRate(id, market);
 
         prevUtilization[id] = utilization;
         prevBorrowRate[id] = newBorrowRate;
@@ -97,32 +98,34 @@ contract Irm is IIrm {
     }
 
     /// @dev Returns `utilization`, `newBorrowRate` and `avgBorrowRate`.
-    function _borrowRate(Id id, Market memory market) private view returns (int256, uint256, uint256) {
-        // `utilization` is scaled by WAD. Typed signed int but the value is positive.
-        int256 utilization = int256(market.totalBorrowAssets.wDivDown(market.totalSupplyAssets));
+    function _borrowRate(Id id, Market memory market) private view returns (uint256, uint256, uint256) {
+        uint256 utilization = market.totalBorrowAssets.wDivDown(market.totalSupplyAssets);
 
         uint256 prevBorrowRateCached = prevBorrowRate[id];
         if (prevBorrowRateCached == 0) return (utilization, WAD, WAD);
 
         // `err` is between -TARGET_UTILIZATION and 1-TARGET_UTILIZATION, scaled by WAD.
-        int256 err = utilization - TARGET_UTILIZATION;
-        // `prevErr` is between -TARGET_UTILIZATION and 1-TARGET_UTILIZATION, scaled by WAD.
-        int256 prevErr = prevUtilization[id] - TARGET_UTILIZATION;
+        // Safe "unchecked" casts.
+        int256 err = int256(utilization) - int256(TARGET_UTILIZATION);
+        // errDelta = err - prevErr = utilization - target - (prevUtilization - target) = utilization - prevUtilization.
         // `errDelta` is between -1 and 1, scaled by WAD.
-        int256 errDelta = err - prevErr;
+        // Safe "unchecked" casts.
+        int256 errDelta = int256(utilization) - int256(prevUtilization[id]);
 
-        // Instantaneous jump.
-        uint256 jumpMultiplier = wFloatPow(LN_JUMP_FACTOR, errDelta);
-        // Per second, to compound continuously.
-        int256 speed = SPEED_FACTOR.wMulDown(err);
-        // Time since last update (positive).
-        int256 elapsed = int256(market.lastUpdate - block.timestamp);
+        // Safe "unchecked" cast.
+        uint256 jumpMultiplier = wFloatPow(int256(LN_JUMP_FACTOR), errDelta);
+        // Safe "unchecked" cast.
+        int256 speed = int256(SPEED_FACTOR).wMulDown(err);
+        uint256 elapsed = market.lastUpdate - block.timestamp;
+        uint256 compoundedRelativeVariation = wExp(speed * int256(elapsed));
 
         // newBorrowRate = prevBorrowRate * jumpMultiplier * exp(speedMultiplier * t1-t0)
-        uint256 newBorrowRate = uint256(prevBorrowRateCached.wMulDown(jumpMultiplier).wMulDown(wExp(speed * elapsed)));
+        uint256 newBorrowRate = prevBorrowRateCached.wMulDown(jumpMultiplier).wMulDown(compoundedRelativeVariation);
         // avgBorrowRate = 1 / elapsed * ∫ prevBorrowRate * exp(speed * t) dt between 0 and elapsed.
         uint256 avgBorrowRate = uint256(
-            (int256(prevBorrowRateCached.wMulDown(wExp(speed * elapsed))) - int256(WAD)).wDivDown(speed * elapsed)
+            (int256(prevBorrowRateCached.wMulDown(compoundedRelativeVariation)) - WAD_INT).wDivDown(
+                speed * int256(elapsed)
+            )
         );
 
         return (utilization, newBorrowRate, avgBorrowRate);

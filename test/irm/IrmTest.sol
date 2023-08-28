@@ -11,10 +11,10 @@ contract IrmTest is Test {
 
     Irm irm;
 
-    int256 constant ln2 = 0.69314718056 ether;
+    uint256 constant ln2 = 0.69314718056 ether;
 
     constructor() {
-        irm = new Irm(address(this), ln2, int(WAD / 365 days), 0.8 ether);
+        irm = new Irm(address(this), ln2, WAD / 365 days, 0.8 ether);
     }
 
     function testFirstBorrowRate(MarketParams memory marketParams, Market memory market) public {
@@ -97,14 +97,14 @@ contract IrmTest is Test {
     }
 
     function testWPow(int256 x) public {
-        assertApproxEqRel(wFloatPow(ln2, -1 ether), 0.5 ether, 0.02 ether);
-        assertApproxEqRel(wFloatPow(ln2, -0.5 ether), 0.70710678118 ether, 0.01 ether);
-        assertEq(wFloatPow(ln2, 0), 1 ether);
-        assertApproxEqRel(wFloatPow(ln2, 0.5 ether), 1.41421356237 ether, 0.01 ether);
-        assertApproxEqRel(wFloatPow(ln2, 1 ether), 2 ether, 0.02 ether);
+        assertApproxEqRel(wFloatPow(int256(ln2), -1 ether), 0.5 ether, 0.02 ether);
+        assertApproxEqRel(wFloatPow(int256(ln2), -0.5 ether), 0.70710678118 ether, 0.01 ether);
+        assertEq(wFloatPow(int256(ln2), 0), 1 ether);
+        assertApproxEqRel(wFloatPow(int256(ln2), 0.5 ether), 1.41421356237 ether, 0.01 ether);
+        assertApproxEqRel(wFloatPow(int256(ln2), 1 ether), 2 ether, 0.02 ether);
 
         x = bound(x, -1 ether, 1 ether);
-        wFloatPow(ln2, x);
+        wFloatPow(int256(ln2), x);
     }
 
     function testWExp(int256 x) public {
