@@ -15,9 +15,9 @@ using MarketParamsLib for MarketParams;
 
 int256 constant WAD_INT = int256(WAD);
 
-/// @dev Returns an approximation of a^x.
-/// @dev Warning ln(a) must be passed as argument and not a directly.
-function wFloatPow(int256 lnA, int256 x) pure returns (uint256) {
+/// @dev Third-order Taylor polynomial of A^x (exponential function with base A), for x around 0.
+/// @dev Warning: `ln(A)` must be passed as an argument and not `A` directly.
+function wExp(int256 lnA, int256 x) pure returns (uint256) {
     int256 firstTerm = WAD_INT;
     int256 secondTerm = lnA.wMulDown(x);
     int256 thirdTerm = secondTerm.wMulDown(lnA).wMulDown(x) / 2;
@@ -27,8 +27,9 @@ function wFloatPow(int256 lnA, int256 x) pure returns (uint256) {
     return uint256(res);
 }
 
+/// @dev Third-order Taylor polynomial of e^x, for x around 0.
 function wExp(int256 x) pure returns (uint256) {
-    // N should be even otherwise the result can be negative.
+    // `N` should be even otherwise the result can be negative.
     int256 N = 16;
     int256 res = WAD_INT;
     int256 factorial = 1;
@@ -54,13 +55,13 @@ contract Irm is IIrm {
     /* CONSTANTS */
 
     // Address of Morpho.
-    address private immutable MORPHO;
+    address public immutable MORPHO;
     // Scaled by WAD.
-    uint256 private immutable LN_JUMP_FACTOR;
+    uint256 public immutable LN_JUMP_FACTOR;
     // Scaled by WAD.
-    uint256 private immutable SPEED_FACTOR;
+    uint256 public immutable SPEED_FACTOR;
     // Scaled by WAD.
-    uint256 private immutable TARGET_UTILIZATION;
+    uint256 public immutable TARGET_UTILIZATION;
 
     /* STORAGE */
 
@@ -113,7 +114,7 @@ contract Irm is IIrm {
         int256 errDelta = int256(utilization) - int256(prevUtilization[id]);
 
         // Safe "unchecked" cast.
-        uint256 jumpMultiplier = wFloatPow(int256(LN_JUMP_FACTOR), errDelta);
+        uint256 jumpMultiplier = wExp(int256(LN_JUMP_FACTOR), errDelta);
         // Safe "unchecked" cast.
         int256 speed = int256(SPEED_FACTOR).wMulDown(err);
         uint256 elapsed = market.lastUpdate - block.timestamp;

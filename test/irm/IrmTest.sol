@@ -96,18 +96,20 @@ contract IrmTest is Test {
         }
     }
 
-    function testWPow(int256 x) public {
-        assertApproxEqRel(wFloatPow(int256(ln2), -1 ether), 0.5 ether, 0.02 ether);
-        assertApproxEqRel(wFloatPow(int256(ln2), -0.5 ether), 0.70710678118 ether, 0.01 ether);
-        assertEq(wFloatPow(int256(ln2), 0), 1 ether);
-        assertApproxEqRel(wFloatPow(int256(ln2), 0.5 ether), 1.41421356237 ether, 0.01 ether);
-        assertApproxEqRel(wFloatPow(int256(ln2), 1 ether), 2 ether, 0.02 ether);
-
-        x = bound(x, -1 ether, 1 ether);
-        wFloatPow(int256(ln2), x);
+    function testWExpWithBaseA() public {
+        assertApproxEqRel(wExp(int256(ln2), -1 ether), 0.5 ether, 0.02 ether);
+        assertApproxEqRel(wExp(int256(ln2), -0.5 ether), 0.70710678118 ether, 0.01 ether);
+        assertEq(wExp(int256(ln2), 0), 1 ether);
+        assertApproxEqRel(wExp(int256(ln2), 0.5 ether), 1.41421356237 ether, 0.01 ether);
+        assertApproxEqRel(wExp(int256(ln2), 1 ether), 2 ether, 0.02 ether);
     }
 
-    function testWExp(int256 x) public {
+    function testWExpWithBaseA(int256 x) public view {
+        x = bound(x, -1 ether, 1 ether);
+        wExp(int256(ln2), x);
+    }
+
+    function testWExp() public {
         assertApproxEqRel(wExp(-4 ether), 0.01831563888 ether, 0.01 ether);
         assertApproxEqRel(wExp(-3 ether), 0.04978706836 ether, 0.00001 ether);
         assertApproxEqRel(wExp(-2 ether), 0.13533528323 ether, 0.000001 ether);
@@ -118,7 +120,9 @@ contract IrmTest is Test {
         assertApproxEqRel(wExp(3 ether), 20.0855369232 ether, 0.00001 ether);
         assertApproxEqRel(wExp(4 ether), 54.5981500331 ether, 0.001 ether);
         assertApproxEqRel(wExp(5 ether), 148.413159103 ether, 0.01 ether);
+    }
 
+    function testWExp(int256 x) public {
         x = bound(x, -4 ether, 4 ether);
         assertGe(int256(wExp(x)), int256(WAD) + x);
     }
