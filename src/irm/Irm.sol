@@ -3,6 +3,7 @@ pragma solidity 0.8.19;
 
 import {IIrm} from "../../lib/morpho-blue/src/interfaces/IIrm.sol";
 import {Id, MarketParams, Market} from "../../lib/morpho-blue/src/interfaces/IMorpho.sol";
+import {UtilsLib} from "../../lib/morpho-blue/src/libraries/UtilsLib.sol";
 
 import {MarketParamsLib} from "../../lib/morpho-blue/src/libraries/MarketParamsLib.sol";
 import {WAD, MathLib} from "../../lib/morpho-blue/src/libraries/MathLib.sol";
@@ -51,7 +52,16 @@ function wDivDown(int256 a, int256 b) pure returns (int256) {
     return a * WAD_INT / b;
 }
 
+struct MarketIrm {
+    // Scaled by WAD.
+    uint128 prevBorrowRate;
+    // Scaled by WAD.
+    uint128 prevUtilization;
+}
+
 contract Irm is IIrm {
+    using UtilsLib for uint256;
+
     /* CONSTANTS */
 
     // Address of Morpho.
@@ -65,14 +75,15 @@ contract Irm is IIrm {
 
     /* STORAGE */
 
-    // Scaled by WAD.
-    mapping(Id => uint256) public prevBorrowRate;
-    // Scaled by WAD.
-    mapping(Id => uint256) public prevUtilization;
+    mapping(Id => MarketIrm) public marketIrm;
 
     /* CONSTRUCTOR */
 
     constructor(address newMorpho, uint256 newLnJumpFactor, uint256 newSpeedFactor, uint256 newTargetUtilization) {
+        require(newLnJumpFactor <= uint256(type(int256).max), "too big");
+        require(newSpeedFactor <= uint256(type(int256).max), "too big");
+        require(newTargetUtilization <= uint256(type(int256).max), "too big");
+
         MORPHO = newMorpho;
         LN_JUMP_FACTOR = newLnJumpFactor;
         SPEED_FACTOR = newSpeedFactor;
@@ -93,8 +104,8 @@ contract Irm is IIrm {
 
         (uint256 utilization, uint256 newBorrowRate, uint256 avgBorrowRate) = _borrowRate(id, market);
 
-        prevUtilization[id] = utilization;
-        prevBorrowRate[id] = newBorrowRate;
+        marketIrm[id].prevUtilization = utilization.toUint128();
+        marketIrm[id].prevBorrowRate = newBorrowRate.toUint128();
         return avgBorrowRate;
     }
 
@@ -102,7 +113,7 @@ contract Irm is IIrm {
     function _borrowRate(Id id, Market memory market) private view returns (uint256, uint256, uint256) {
         uint256 utilization = market.totalBorrowAssets.wDivDown(market.totalSupplyAssets);
 
-        uint256 prevBorrowRateCached = prevBorrowRate[id];
+        uint256 prevBorrowRateCached = marketIrm[id].prevBorrowRate;
         if (prevBorrowRateCached == 0) return (utilization, WAD, WAD);
 
         // `err` is between -TARGET_UTILIZATION and 1-TARGET_UTILIZATION, scaled by WAD.
@@ -111,12 +122,13 @@ contract Irm is IIrm {
         // errDelta = err - prevErr = utilization - target - (prevUtilization - target) = utilization - prevUtilization.
         // `errDelta` is between -1 and 1, scaled by WAD.
         // Safe "unchecked" casts.
-        int256 errDelta = int256(utilization) - int256(prevUtilization[id]);
+        int256 errDelta = int256(utilization) - int128(marketIrm[id].prevUtilization);
 
         // Safe "unchecked" cast.
         uint256 jumpMultiplier = wExp(int256(LN_JUMP_FACTOR), errDelta);
         // Safe "unchecked" cast.
         int256 speed = int256(SPEED_FACTOR).wMulDown(err);
+        // `elapsed` is never zero, because Morpho skips the interest accrual in this case.
         uint256 elapsed = market.lastUpdate - block.timestamp;
         uint256 compoundedRelativeVariation = wExp(speed * int256(elapsed));
 

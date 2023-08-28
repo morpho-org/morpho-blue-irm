@@ -25,8 +25,9 @@ contract IrmTest is Test {
         uint256 borrowRate = irm.borrowRate(marketParams, market);
         uint256 expectedUtilization = market.totalBorrowAssets.wDivDown(market.totalSupplyAssets);
         assertEq(borrowRate, WAD);
-        assertEq(irm.prevBorrowRate(marketParams.id()), WAD);
-        assertEq(uint256(irm.prevUtilization(marketParams.id())), expectedUtilization);
+        (uint256 prevBorrowRate, uint256 prevUtilization) = irm.marketIrm(marketParams.id());
+        assertEq(prevBorrowRate, WAD);
+        assertEq(prevUtilization, expectedUtilization);
     }
 
     function testFirstBorrowRateView(MarketParams memory marketParams, Market memory market) public {
@@ -36,8 +37,9 @@ contract IrmTest is Test {
         vm.assume(market.lastUpdate < type(uint32).max);
         uint256 borrowRate = irm.borrowRateView(marketParams, market);
         assertEq(borrowRate, WAD);
-        assertEq(irm.prevBorrowRate(marketParams.id()), 0);
-        assertEq(irm.prevUtilization(marketParams.id()), 0);
+        (uint256 prevBorrowRate, uint256 prevUtilization) = irm.marketIrm(marketParams.id());
+        assertEq(prevBorrowRate, 0);
+        assertEq(prevUtilization, 0);
     }
 
     function testBorrowRate(MarketParams memory marketParams, Market memory market0, Market memory market1) public {
@@ -57,14 +59,15 @@ contract IrmTest is Test {
 
         uint256 utilization0 = market0.totalBorrowAssets.wDivDown(market0.totalSupplyAssets);
         uint256 utilization1 = market1.totalBorrowAssets.wDivDown(market1.totalSupplyAssets);
-        assertEq(uint256(irm.prevUtilization(marketParams.id())), utilization1);
+        (uint256 prevBorrowRate, uint256 prevUtilization) = irm.marketIrm(marketParams.id());
+        assertEq(prevUtilization, utilization1);
 
         if (utilization0 <= utilization1 && utilization1 >= 0.8 ether) {
             assertGe(avgBorrowRate, WAD);
-            assertGe(irm.prevBorrowRate(marketParams.id()), WAD);
+            assertGe(prevBorrowRate, WAD);
         } else if (utilization0 > utilization1 && utilization1 < 0.8 ether) {
             assertLt(avgBorrowRate, WAD);
-            assertLt(irm.prevBorrowRate(marketParams.id()), WAD);
+            assertLt(prevBorrowRate, WAD);
         }
     }
 
@@ -87,7 +90,9 @@ contract IrmTest is Test {
 
         uint256 utilization0 = market0.totalBorrowAssets.wDivDown(market0.totalSupplyAssets);
         uint256 utilization1 = market1.totalBorrowAssets.wDivDown(market1.totalSupplyAssets);
-        assertEq(uint256(irm.prevUtilization(marketParams.id())), utilization0);
+        (uint256 prevBorrowRate, uint256 prevUtilization) = irm.marketIrm(marketParams.id());
+        assertEq(prevUtilization, utilization0);
+        assertEq(prevBorrowRate, WAD);
 
         if (utilization0 <= utilization1 && utilization1 >= 0.8 ether) {
             assertGe(avgBorrowRate, WAD);
