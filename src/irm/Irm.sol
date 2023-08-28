@@ -1,56 +1,12 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity 0.8.19;
 
+import {IrmMath} from "./libraries/IrmMath.sol";
 import {IIrm} from "../../lib/morpho-blue/src/interfaces/IIrm.sol";
-import {Id, MarketParams, Market} from "../../lib/morpho-blue/src/interfaces/IMorpho.sol";
 import {UtilsLib} from "../../lib/morpho-blue/src/libraries/UtilsLib.sol";
-
-import {MarketParamsLib} from "../../lib/morpho-blue/src/libraries/MarketParamsLib.sol";
 import {WAD, MathLib} from "../../lib/morpho-blue/src/libraries/MathLib.sol";
-
-using MathLib for uint128;
-using MathLib for uint256;
-using {wDivDown} for int256;
-using {wMulDown} for int256;
-using MarketParamsLib for MarketParams;
-
-int256 constant WAD_INT = int256(WAD);
-
-/// @dev Third-order Taylor polynomial of A^x (exponential function with base A), for x around 0.
-/// @dev Warning: `ln(A)` must be passed as an argument and not `A` directly.
-function wExp(int256 lnA, int256 x) pure returns (uint256) {
-    int256 firstTerm = WAD_INT;
-    int256 secondTerm = lnA.wMulDown(x);
-    int256 thirdTerm = secondTerm.wMulDown(lnA).wMulDown(x) / 2;
-    int256 fourthTerm = thirdTerm.wMulDown(lnA).wMulDown(x) / 3;
-    int256 res = firstTerm + secondTerm + thirdTerm + fourthTerm;
-    // Safe "unchecked" cast.
-    return uint256(res);
-}
-
-/// @dev Third-order Taylor polynomial of e^x, for x around 0.
-function wExp(int256 x) pure returns (uint256) {
-    // `N` should be even otherwise the result can be negative.
-    int256 N = 16;
-    int256 res = WAD_INT;
-    int256 factorial = 1;
-    int256 pow = WAD_INT;
-    for (int256 k = 1; k <= N; k++) {
-        factorial *= k;
-        pow = pow * x / WAD_INT;
-        res += pow / factorial;
-    }
-    // Safe "unchecked" cast.
-    return uint256(res);
-}
-
-function wMulDown(int256 a, int256 b) pure returns (int256) {
-    return a * b / WAD_INT;
-}
-
-function wDivDown(int256 a, int256 b) pure returns (int256) {
-    return a * WAD_INT / b;
-}
+import {MarketParamsLib} from "../../lib/morpho-blue/src/libraries/MarketParamsLib.sol";
+import {Id, MarketParams, Market} from "../../lib/morpho-blue/src/interfaces/IMorpho.sol";
 
 struct MarketIrm {
     // Scaled by WAD.
@@ -60,7 +16,12 @@ struct MarketIrm {
 }
 
 contract Irm is IIrm {
+    using IrmMath for int256;
+    using MathLib for uint128;
+    using MathLib for uint256;
+    using IrmMath for uint256;
     using UtilsLib for uint256;
+    using MarketParamsLib for MarketParams;
 
     /* CONSTANTS */
 
@@ -72,6 +33,8 @@ contract Irm is IIrm {
     uint256 public immutable SPEED_FACTOR;
     // Scaled by WAD.
     uint256 public immutable TARGET_UTILIZATION;
+    // Per second, scaled by WAD.
+    uint256 public immutable INITIAL_RATE;
 
     /* STORAGE */
 
@@ -79,7 +42,13 @@ contract Irm is IIrm {
 
     /* CONSTRUCTOR */
 
-    constructor(address newMorpho, uint256 newLnJumpFactor, uint256 newSpeedFactor, uint256 newTargetUtilization) {
+    constructor(
+        address newMorpho,
+        uint256 newLnJumpFactor,
+        uint256 newSpeedFactor,
+        uint256 newTargetUtilization,
+        uint256 newInitialRate
+    ) {
         require(newLnJumpFactor <= uint256(type(int256).max), "too big");
         require(newSpeedFactor <= uint256(type(int256).max), "too big");
         require(newTargetUtilization <= uint256(type(int256).max), "too big");
@@ -88,6 +57,7 @@ contract Irm is IIrm {
         LN_JUMP_FACTOR = newLnJumpFactor;
         SPEED_FACTOR = newSpeedFactor;
         TARGET_UTILIZATION = newTargetUtilization;
+        INITIAL_RATE = newInitialRate;
     }
 
     /* BORROW RATES */
@@ -114,7 +84,7 @@ contract Irm is IIrm {
         uint256 utilization = market.totalBorrowAssets.wDivDown(market.totalSupplyAssets);
 
         uint256 prevBorrowRateCached = marketIrm[id].prevBorrowRate;
-        if (prevBorrowRateCached == 0) return (utilization, WAD, WAD);
+        if (prevBorrowRateCached == 0) return (utilization, INITIAL_RATE, INITIAL_RATE);
 
         // `err` is between -TARGET_UTILIZATION and 1-TARGET_UTILIZATION, scaled by WAD.
         // Safe "unchecked" casts.
@@ -125,22 +95,22 @@ contract Irm is IIrm {
         int256 errDelta = int256(utilization) - int128(marketIrm[id].prevUtilization);
 
         // Safe "unchecked" cast.
-        uint256 jumpMultiplier = wExp(int256(LN_JUMP_FACTOR), errDelta);
+        uint256 jumpMultiplier = IrmMath.wExp(int256(LN_JUMP_FACTOR), errDelta);
         // Safe "unchecked" cast.
         int256 speed = int256(SPEED_FACTOR).wMulDown(err);
         // `elapsed` is never zero, because Morpho skips the interest accrual in this case.
         uint256 elapsed = market.lastUpdate - block.timestamp;
-        uint256 compoundedRelativeVariation = wExp(speed * int256(elapsed));
+        uint256 compoundedRelativeVariation = IrmMath.wExp(speed * int256(elapsed));
 
         // newBorrowRate = prevBorrowRate * jumpMultiplier * exp(speedMultiplier * t1-t0)
         uint256 newBorrowRate = prevBorrowRateCached.wMulDown(jumpMultiplier).wMulDown(compoundedRelativeVariation);
         // avgBorrowRate = 1 / elapsed * ∫ prevBorrowRate * exp(speed * t) dt between 0 and elapsed.
         uint256 avgBorrowRate = uint256(
-            (int256(prevBorrowRateCached.wMulDown(compoundedRelativeVariation)) - WAD_INT).wDivDown(
+            (int256(prevBorrowRateCached.wMulDown(compoundedRelativeVariation)) - IrmMath.WAD_INT).wDivDown(
                 speed * int256(elapsed)
             )
         );
 
-        return (utilization, newBorrowRate, avgBorrowRate);
+        return (utilization, newBorrowRate, newBorrowRate);
     }
 }

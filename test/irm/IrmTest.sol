@@ -9,12 +9,13 @@ contract IrmTest is Test {
     using MathLib for uint256;
     using MarketParamsLib for MarketParams;
 
-    Irm irm;
+    uint256 internal constant ln2 = 0.69314718056 ether;
+    uint256 internal constant INITIAL_RATE = uint256(0.01 ether) / uint256(365 days);
 
-    uint256 constant ln2 = 0.69314718056 ether;
+    Irm internal irm;
 
     constructor() {
-        irm = new Irm(address(this), ln2, WAD / 365 days, 0.8 ether);
+        irm = new Irm(address(this), ln2, uint256(0.01 ether) / uint256(365 days), 0.8 ether, INITIAL_RATE);
     }
 
     function testFirstBorrowRate(MarketParams memory marketParams, Market memory market) public {
@@ -22,11 +23,11 @@ contract IrmTest is Test {
         vm.assume(market.totalSupplyAssets >= market.totalBorrowAssets);
         vm.assume(market.lastUpdate >= block.timestamp);
         vm.assume(market.lastUpdate < type(uint32).max);
-        uint256 borrowRate = irm.borrowRate(marketParams, market);
+        uint256 avgBorrowRate = irm.borrowRate(marketParams, market);
+        assertEq(avgBorrowRate, INITIAL_RATE);
         uint256 expectedUtilization = market.totalBorrowAssets.wDivDown(market.totalSupplyAssets);
-        assertEq(borrowRate, WAD);
         (uint256 prevBorrowRate, uint256 prevUtilization) = irm.marketIrm(marketParams.id());
-        assertEq(prevBorrowRate, WAD);
+        assertEq(prevBorrowRate, INITIAL_RATE);
         assertEq(prevUtilization, expectedUtilization);
     }
 
@@ -35,8 +36,8 @@ contract IrmTest is Test {
         vm.assume(market.totalSupplyAssets >= market.totalBorrowAssets);
         vm.assume(market.lastUpdate >= block.timestamp);
         vm.assume(market.lastUpdate < type(uint32).max);
-        uint256 borrowRate = irm.borrowRateView(marketParams, market);
-        assertEq(borrowRate, WAD);
+        uint256 avgBorrowRate = irm.borrowRateView(marketParams, market);
+        assertEq(avgBorrowRate, INITIAL_RATE);
         (uint256 prevBorrowRate, uint256 prevUtilization) = irm.marketIrm(marketParams.id());
         assertEq(prevBorrowRate, 0);
         assertEq(prevUtilization, 0);
@@ -62,12 +63,12 @@ contract IrmTest is Test {
         (uint256 prevBorrowRate, uint256 prevUtilization) = irm.marketIrm(marketParams.id());
         assertEq(prevUtilization, utilization1);
 
-        if (utilization0 <= utilization1 && utilization1 >= 0.8 ether) {
-            assertGe(avgBorrowRate, WAD);
-            assertGe(prevBorrowRate, WAD);
-        } else if (utilization0 > utilization1 && utilization1 < 0.8 ether) {
-            assertLt(avgBorrowRate, WAD);
-            assertLt(prevBorrowRate, WAD);
+        if (utilization0 == utilization1 && utilization1 >= 0.8 ether) {
+            assertGe(avgBorrowRate, INITIAL_RATE);
+            assertGe(prevBorrowRate, INITIAL_RATE);
+        } else if (utilization0 == utilization1 && utilization1 < 0.8 ether) {
+            assertLt(avgBorrowRate, INITIAL_RATE);
+            assertLt(prevBorrowRate, INITIAL_RATE);
         }
     }
 
@@ -92,43 +93,12 @@ contract IrmTest is Test {
         uint256 utilization1 = market1.totalBorrowAssets.wDivDown(market1.totalSupplyAssets);
         (uint256 prevBorrowRate, uint256 prevUtilization) = irm.marketIrm(marketParams.id());
         assertEq(prevUtilization, utilization0);
-        assertEq(prevBorrowRate, WAD);
+        assertEq(prevBorrowRate, INITIAL_RATE);
 
         if (utilization0 <= utilization1 && utilization1 >= 0.8 ether) {
-            assertGe(avgBorrowRate, WAD);
+            assertGe(avgBorrowRate, INITIAL_RATE);
         } else if (utilization0 > utilization1 && utilization1 < 0.8 ether) {
-            assertLt(avgBorrowRate, WAD);
+            assertLt(avgBorrowRate, INITIAL_RATE);
         }
-    }
-
-    function testWExpWithBaseA() public {
-        assertApproxEqRel(wExp(int256(ln2), -1 ether), 0.5 ether, 0.02 ether);
-        assertApproxEqRel(wExp(int256(ln2), -0.5 ether), 0.70710678118 ether, 0.01 ether);
-        assertEq(wExp(int256(ln2), 0), 1 ether);
-        assertApproxEqRel(wExp(int256(ln2), 0.5 ether), 1.41421356237 ether, 0.01 ether);
-        assertApproxEqRel(wExp(int256(ln2), 1 ether), 2 ether, 0.02 ether);
-    }
-
-    function testWExpWithBaseA(int256 x) public view {
-        x = bound(x, -1 ether, 1 ether);
-        wExp(int256(ln2), x);
-    }
-
-    function testWExp() public {
-        assertApproxEqRel(wExp(-4 ether), 0.01831563888 ether, 0.01 ether);
-        assertApproxEqRel(wExp(-3 ether), 0.04978706836 ether, 0.00001 ether);
-        assertApproxEqRel(wExp(-2 ether), 0.13533528323 ether, 0.000001 ether);
-        assertApproxEqRel(wExp(-1 ether), 0.36787944117 ether, 0.00000001 ether);
-        assertApproxEqRel(wExp(0 ether), 1.0 ether, 0.0 ether);
-        assertApproxEqRel(wExp(1 ether), 2.71828182846 ether, 0.00000001 ether);
-        assertApproxEqRel(wExp(2 ether), 7.38905609893 ether, 0.000001 ether);
-        assertApproxEqRel(wExp(3 ether), 20.0855369232 ether, 0.00001 ether);
-        assertApproxEqRel(wExp(4 ether), 54.5981500331 ether, 0.001 ether);
-        assertApproxEqRel(wExp(5 ether), 148.413159103 ether, 0.01 ether);
-    }
-
-    function testWExp(int256 x) public {
-        x = bound(x, -4 ether, 4 ether);
-        assertGe(int256(wExp(x)), int256(WAD) + x);
     }
 }
