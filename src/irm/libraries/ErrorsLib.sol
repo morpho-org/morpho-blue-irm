@@ -2,6 +2,6 @@
 pragma solidity ^0.8.0;
 
 library ErrorsLib {
-    string constant internal TOO_BIG = "too big";
-    string constant internal NOT_MORPHO = "not Morpho";
+    string internal constant TOO_BIG = "too big";
+    string internal constant NOT_MORPHO = "not Morpho";
 }

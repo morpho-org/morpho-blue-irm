@@ -52,7 +52,7 @@ contract Irm is IIrm {
     ) {
         require(newLnJumpFactor <= uint256(type(int256).max), ErrorsLib.TOO_BIG);
         require(newSpeedFactor <= uint256(type(int256).max), ErrorsLib.TOO_BIG);
-        require(newTargetUtilization <= uint256(type(int256).max), ErrorsLib.TOO_BIG);
+        require(newTargetUtilization <= WAD, ErrorsLib.TOO_BIG);
 
         MORPHO = newMorpho;
         LN_JUMP_FACTOR = newLnJumpFactor;
@@ -104,15 +104,21 @@ contract Irm is IIrm {
         // TODO: manage bad approxs.
         uint256 variationMultiplier = IrmMathLib.wExp(speed * int256(elapsed));
 
-        // newBorrowRate = prevBorrowRate * jumpMultiplier * exp(speedMultiplier * t1-t0)
+        // newBorrowRate = prevBorrowRate * jumpMultiplier * variationMultiplier.
         uint256 borrowRateAfterJump = prevBorrowRateCached.wMulDown(jumpMultiplier);
-        uint256 borrowRateAfterVariation = prevBorrowRateCached.wMulDown(variationMultiplier);
+        uint256 newBorrowRate = prevBorrowRateCached.wMulDown(variationMultiplier);
         // avgBorrowRate = 1 / elapsed * ∫ borrowRateAfterJump * exp(speed * t) dt between 0 and elapsed.
-        // TODO: manage division by zero.
-        int256 avgBorrowRate = (int256(borrowRateAfterJump).wMulDown(int256(variationMultiplier) - WAD_INT)).wDivDown(speed * int256(elapsed));
+        // And avgBorrowRate ~ borrowRateAfterJump for elapsed around zero.
+        int256 avgBorrowRate;
+        if (speed * int256(elapsed) == 0) {
+            avgBorrowRate = int256(borrowRateAfterJump);
+        } else {
+            avgBorrowRate = (int256(borrowRateAfterJump).wMulDown(int256(variationMultiplier) - WAD_INT)).wDivDown(
+                speed * int256(elapsed)
+            );
+        }
         require(avgBorrowRate > 0, "avgBorrowRate <= 0");
 
-        return (utilization, borrowRateAfterVariation, uint256(avgBorrowRate));
+        return (utilization, newBorrowRate, uint256(avgBorrowRate));
     }
 }
-
