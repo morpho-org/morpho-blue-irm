@@ -100,14 +100,19 @@ contract Irm is IIrm {
         // Safe "unchecked" cast.
         int256 speed = int256(SPEED_FACTOR).wMulDown(err);
         // `elapsed` is never zero, because Morpho skips the interest accrual in this case.
-        uint256 elapsed = market.lastUpdate - block.timestamp;
+        uint256 elapsed = block.timestamp - market.lastUpdate;
+        // TODO: manage bad approxs.
         uint256 variationMultiplier = IrmMathLib.wExp(speed * int256(elapsed));
 
         // newBorrowRate = prevBorrowRate * jumpMultiplier * exp(speedMultiplier * t1-t0)
-        uint256 newBorrowRate = prevBorrowRateCached.wMulDown(jumpMultiplier).wMulDown(variationMultiplier);
-        // avgBorrowRate = 1 / elapsed * ∫ prevBorrowRate * exp(speed * t) dt between 0 and elapsed.
-        uint256 avgBorrowRate = uint256((int256(prevBorrowRateCached).wMulDown(int256(variationMultiplier) - WAD_INT)).wDivDown(speed * int256(elapsed)));
+        uint256 borrowRateAfterJump = prevBorrowRateCached.wMulDown(jumpMultiplier);
+        uint256 borrowRateAfterVariation = prevBorrowRateCached.wMulDown(variationMultiplier);
+        // avgBorrowRate = 1 / elapsed * ∫ borrowRateAfterJump * exp(speed * t) dt between 0 and elapsed.
+        // TODO: manage division by zero.
+        int256 avgBorrowRate = (int256(borrowRateAfterJump).wMulDown(int256(variationMultiplier) - WAD_INT)).wDivDown(speed * int256(elapsed));
+        require(avgBorrowRate > 0, "avgBorrowRate <= 0");
 
-        return (utilization, newBorrowRate, avgBorrowRate);
+        return (utilization, borrowRateAfterVariation, uint256(avgBorrowRate));
     }
 }
+

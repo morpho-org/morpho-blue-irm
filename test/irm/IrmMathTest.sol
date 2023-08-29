@@ -40,5 +40,6 @@ contract IrmTest is Test {
     function testWExp(int256 x) public {
         x = bound(x, -4 ether, 4 ether);
         assertGe(int256(IrmMathLib.wExp(x)), int256(WAD) + x);
+        if (x < 0) assertLe(IrmMathLib.wExp(x), WAD);
     }
 }
