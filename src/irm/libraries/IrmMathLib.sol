@@ -27,7 +27,7 @@ library IrmMathLib {
     function wExp(int256 x) internal pure returns (uint256) {
         // The approximation error increases quickly below x = -3, so we hardcode the result.
         if (x < -3 ether) return 0.05 ether;
-        
+
         // `N` should be even otherwise the result can be negative.
         int256 N = 12;
         int256 res = WAD_INT;
