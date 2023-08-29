@@ -3,13 +3,13 @@ pragma solidity ^0.8.0;
 
 import {WAD, MathLib} from "../../../lib/morpho-blue/src/libraries/MathLib.sol";
 
+int256 constant WAD_INT = int256(WAD);
+
 library IrmMathLib {
     using MathLib for uint128;
     using MathLib for uint256;
     using {wDivDown} for int256;
     using {wMulDown} for int256;
-
-    int256 constant WAD_INT = int256(WAD);
 
     /// @dev Third-order Taylor polynomial of A^x (exponential function with base A), for x around 0.
     /// @dev Warning: `ln(A)` must be passed as an argument and not `A` directly.

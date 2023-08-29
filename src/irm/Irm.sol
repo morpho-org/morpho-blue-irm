@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity 0.8.19;
 
-import {IrmMath} from "./libraries/IrmMath.sol";
+import {WAD_INT, IrmMathLib} from "./libraries/IrmMathLib.sol";
 import {IIrm} from "../../lib/morpho-blue/src/interfaces/IIrm.sol";
 import {UtilsLib} from "../../lib/morpho-blue/src/libraries/UtilsLib.sol";
 import {WAD, MathLib} from "../../lib/morpho-blue/src/libraries/MathLib.sol";
@@ -16,11 +16,11 @@ struct MarketIrm {
 }
 
 contract Irm is IIrm {
-    using IrmMath for int256;
     using MathLib for uint128;
     using MathLib for uint256;
-    using IrmMath for uint256;
     using UtilsLib for uint256;
+    using IrmMathLib for int256;
+    using IrmMathLib for uint256;
     using MarketParamsLib for MarketParams;
 
     /* CONSTANTS */
@@ -95,18 +95,18 @@ contract Irm is IIrm {
         int256 errDelta = int256(utilization) - int128(marketIrm[id].prevUtilization);
 
         // Safe "unchecked" cast.
-        uint256 jumpMultiplier = IrmMath.wExp(int256(LN_JUMP_FACTOR), errDelta);
+        uint256 jumpMultiplier = IrmMathLib.wExp(int256(LN_JUMP_FACTOR), errDelta);
         // Safe "unchecked" cast.
         int256 speed = int256(SPEED_FACTOR).wMulDown(err);
         // `elapsed` is never zero, because Morpho skips the interest accrual in this case.
         uint256 elapsed = market.lastUpdate - block.timestamp;
-        uint256 compoundedRelativeVariation = IrmMath.wExp(speed * int256(elapsed));
+        uint256 compoundedRelativeVariation = IrmMathLib.wExp(speed * int256(elapsed));
 
         // newBorrowRate = prevBorrowRate * jumpMultiplier * exp(speedMultiplier * t1-t0)
         uint256 newBorrowRate = prevBorrowRateCached.wMulDown(jumpMultiplier).wMulDown(compoundedRelativeVariation);
         // avgBorrowRate = 1 / elapsed * ∫ prevBorrowRate * exp(speed * t) dt between 0 and elapsed.
         uint256 avgBorrowRate = uint256(
-            (int256(prevBorrowRateCached.wMulDown(compoundedRelativeVariation)) - IrmMath.WAD_INT).wDivDown(
+            (int256(prevBorrowRateCached.wMulDown(compoundedRelativeVariation)) - WAD_INT).wDivDown(
                 speed * int256(elapsed)
             )
         );
