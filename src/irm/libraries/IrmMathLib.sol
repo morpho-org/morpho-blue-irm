@@ -23,10 +23,10 @@ library IrmMathLib {
         return uint256(res);
     }
 
-    /// @dev 16th-order Taylor polynomial of e^x, for x around 0.
+    /// @dev 12th-order Taylor polynomial of e^x, for x around 0.
     function wExp(int256 x) internal pure returns (uint256) {
         // `N` should be even otherwise the result can be negative.
-        int256 N = 16;
+        int256 N = 12;
         int256 res = WAD_INT;
         int256 factorial = 1;
         int256 pow = WAD_INT;

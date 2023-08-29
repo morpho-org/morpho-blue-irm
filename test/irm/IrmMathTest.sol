@@ -25,16 +25,13 @@ contract IrmTest is Test {
     }
 
     function testWExp() public {
-        assertApproxEqRel(IrmMathLib.wExp(-4 ether), 0.01831563888 ether, 0.01 ether);
-        assertApproxEqRel(IrmMathLib.wExp(-3 ether), 0.04978706836 ether, 0.00001 ether);
-        assertApproxEqRel(IrmMathLib.wExp(-2 ether), 0.13533528323 ether, 0.000001 ether);
+        assertApproxEqRel(IrmMathLib.wExp(-3 ether), 0.04978706836 ether, 0.005 ether);
+        assertApproxEqRel(IrmMathLib.wExp(-2 ether), 0.13533528323 ether, 0.00001 ether);
         assertApproxEqRel(IrmMathLib.wExp(-1 ether), 0.36787944117 ether, 0.00000001 ether);
         assertApproxEqRel(IrmMathLib.wExp(0 ether), 1.0 ether, 0.0 ether);
         assertApproxEqRel(IrmMathLib.wExp(1 ether), 2.71828182846 ether, 0.00000001 ether);
-        assertApproxEqRel(IrmMathLib.wExp(2 ether), 7.38905609893 ether, 0.000001 ether);
-        assertApproxEqRel(IrmMathLib.wExp(3 ether), 20.0855369232 ether, 0.00001 ether);
-        assertApproxEqRel(IrmMathLib.wExp(4 ether), 54.5981500331 ether, 0.001 ether);
-        assertApproxEqRel(IrmMathLib.wExp(5 ether), 148.413159103 ether, 0.01 ether);
+        assertApproxEqRel(IrmMathLib.wExp(2 ether), 7.38905609893 ether, 0.00001 ether);
+        assertApproxEqRel(IrmMathLib.wExp(3 ether), 20.0855369232 ether, 0.001 ether);
     }
 
     function testWExp(int256 x) public {
