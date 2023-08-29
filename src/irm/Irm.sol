@@ -2,12 +2,12 @@
 pragma solidity 0.8.19;
 
 import {ErrorsLib} from "./libraries/ErrorsLib.sol";
+import {IIrm} from "morpho-blue/interfaces/IIrm.sol";
+import {UtilsLib} from "morpho-blue/libraries/UtilsLib.sol";
 import {WAD_INT, IrmMathLib} from "./libraries/IrmMathLib.sol";
-import {IIrm} from "../../lib/morpho-blue/src/interfaces/IIrm.sol";
-import {UtilsLib} from "../../lib/morpho-blue/src/libraries/UtilsLib.sol";
-import {WAD, MathLib} from "../../lib/morpho-blue/src/libraries/MathLib.sol";
-import {MarketParamsLib} from "../../lib/morpho-blue/src/libraries/MarketParamsLib.sol";
-import {Id, MarketParams, Market} from "../../lib/morpho-blue/src/interfaces/IMorpho.sol";
+import {WAD, MathLib} from "morpho-blue/libraries/MathLib.sol";
+import {MarketParamsLib} from "morpho-blue/libraries/MarketParamsLib.sol";
+import {Id, MarketParams, Market} from "morpho-blue/interfaces/IMorpho.sol";
 
 struct MarketIrm {
     // Scaled by WAD.
@@ -101,17 +101,13 @@ contract Irm is IIrm {
         int256 speed = int256(SPEED_FACTOR).wMulDown(err);
         // `elapsed` is never zero, because Morpho skips the interest accrual in this case.
         uint256 elapsed = market.lastUpdate - block.timestamp;
-        uint256 compoundedRelativeVariation = IrmMathLib.wExp(speed * int256(elapsed));
+        uint256 variationMultiplier = IrmMathLib.wExp(speed * int256(elapsed));
 
         // newBorrowRate = prevBorrowRate * jumpMultiplier * exp(speedMultiplier * t1-t0)
-        uint256 newBorrowRate = prevBorrowRateCached.wMulDown(jumpMultiplier).wMulDown(compoundedRelativeVariation);
+        uint256 newBorrowRate = prevBorrowRateCached.wMulDown(jumpMultiplier).wMulDown(variationMultiplier);
         // avgBorrowRate = 1 / elapsed * ∫ prevBorrowRate * exp(speed * t) dt between 0 and elapsed.
-        uint256 avgBorrowRate = uint256(
-            (int256(prevBorrowRateCached.wMulDown(compoundedRelativeVariation)) - WAD_INT).wDivDown(
-                speed * int256(elapsed)
-            )
-        );
+        uint256 avgBorrowRate = uint256((int256(prevBorrowRateCached).wMulDown(int256(variationMultiplier) - WAD_INT)).wDivDown(speed * int256(elapsed)));
 
-        return (utilization, newBorrowRate, newBorrowRate);
+        return (utilization, newBorrowRate, avgBorrowRate);
     }
 }

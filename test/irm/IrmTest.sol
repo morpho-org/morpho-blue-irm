@@ -9,13 +9,15 @@ contract IrmTest is Test {
     using MathLib for uint256;
     using MarketParamsLib for MarketParams;
 
-    uint256 internal constant ln2 = 0.69314718056 ether;
+    uint256 internal constant SPEED = 0.01 ether;
+    uint256 internal constant LN2 = 0.69314718056 ether;
+    uint256 internal constant TARGET_UTILIZATION = 0.8 ether;
     uint256 internal constant INITIAL_RATE = uint256(0.01 ether) / uint256(365 days);
 
     Irm internal irm;
 
     constructor() {
-        irm = new Irm(address(this), ln2, uint256(0.01 ether) / uint256(365 days), 0.8 ether, INITIAL_RATE);
+        irm = new Irm(address(this), LN2, SPEED, TARGET_UTILIZATION, INITIAL_RATE);
     }
 
     function testFirstBorrowRate(MarketParams memory marketParams, Market memory market) public {
@@ -63,10 +65,10 @@ contract IrmTest is Test {
         (uint256 prevBorrowRate, uint256 prevUtilization) = irm.marketIrm(marketParams.id());
         assertEq(prevUtilization, utilization1);
 
-        if (utilization0 == utilization1 && utilization1 >= 0.8 ether) {
+        if (utilization0 <= utilization1 && utilization1 >= TARGET_UTILIZATION) {
             assertGe(avgBorrowRate, INITIAL_RATE);
             assertGe(prevBorrowRate, INITIAL_RATE);
-        } else if (utilization0 == utilization1 && utilization1 < 0.8 ether) {
+        } else if (utilization0 >= utilization1 && utilization1 < TARGET_UTILIZATION) {
             assertLt(avgBorrowRate, INITIAL_RATE);
             assertLt(prevBorrowRate, INITIAL_RATE);
         }
@@ -95,9 +97,9 @@ contract IrmTest is Test {
         assertEq(prevUtilization, utilization0);
         assertEq(prevBorrowRate, INITIAL_RATE);
 
-        if (utilization0 <= utilization1 && utilization1 >= 0.8 ether) {
+        if (utilization0 <= utilization1 && utilization1 >= TARGET_UTILIZATION) {
             assertGe(avgBorrowRate, INITIAL_RATE);
-        } else if (utilization0 > utilization1 && utilization1 < 0.8 ether) {
+        } else if (utilization0 >= utilization1 && utilization1 < TARGET_UTILIZATION) {
             assertLt(avgBorrowRate, INITIAL_RATE);
         }
     }
