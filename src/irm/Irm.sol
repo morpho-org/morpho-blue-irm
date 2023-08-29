@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity 0.8.19;
 
+import {ErrorsLib} from "./libraries/ErrorsLib.sol";
 import {WAD_INT, IrmMathLib} from "./libraries/IrmMathLib.sol";
 import {IIrm} from "../../lib/morpho-blue/src/interfaces/IIrm.sol";
 import {UtilsLib} from "../../lib/morpho-blue/src/libraries/UtilsLib.sol";
@@ -49,9 +50,9 @@ contract Irm is IIrm {
         uint256 newTargetUtilization,
         uint256 newInitialRate
     ) {
-        require(newLnJumpFactor <= uint256(type(int256).max), "too big");
-        require(newSpeedFactor <= uint256(type(int256).max), "too big");
-        require(newTargetUtilization <= uint256(type(int256).max), "too big");
+        require(newLnJumpFactor <= uint256(type(int256).max), ErrorsLib.TOO_BIG);
+        require(newSpeedFactor <= uint256(type(int256).max), ErrorsLib.TOO_BIG);
+        require(newTargetUtilization <= uint256(type(int256).max), ErrorsLib.TOO_BIG);
 
         MORPHO = newMorpho;
         LN_JUMP_FACTOR = newLnJumpFactor;
@@ -68,7 +69,7 @@ contract Irm is IIrm {
     }
 
     function borrowRate(MarketParams memory marketParams, Market memory market) external returns (uint256) {
-        require(msg.sender == MORPHO, "not Morpho");
+        require(msg.sender == MORPHO, ErrorsLib.NOT_MORPHO);
 
         Id id = marketParams.id();
 
