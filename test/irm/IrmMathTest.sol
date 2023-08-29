@@ -25,6 +25,7 @@ contract IrmTest is Test {
     }
 
     function testWExp() public {
+        assertApproxEqRel(IrmMathLib.wExp(-5 ether), 0.05 ether, 0.0 ether);
         assertApproxEqRel(IrmMathLib.wExp(-3 ether), 0.04978706836 ether, 0.005 ether);
         assertApproxEqRel(IrmMathLib.wExp(-2 ether), 0.13533528323 ether, 0.00001 ether);
         assertApproxEqRel(IrmMathLib.wExp(-1 ether), 0.36787944117 ether, 0.00000001 ether);

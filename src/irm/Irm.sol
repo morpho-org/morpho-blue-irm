@@ -101,7 +101,7 @@ contract Irm is IIrm {
         int256 speed = int256(SPEED_FACTOR).wMulDown(err);
         // `elapsed` is never zero, because Morpho skips the interest accrual in this case.
         uint256 elapsed = block.timestamp - market.lastUpdate;
-        // TODO: manage bad approxs.
+        // Safe "unchecked" cast.
         uint256 variationMultiplier = IrmMathLib.wExp(speed * int256(elapsed));
 
         // newBorrowRate = prevBorrowRate * jumpMultiplier * variationMultiplier.
