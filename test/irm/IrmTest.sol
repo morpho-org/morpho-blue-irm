@@ -17,11 +17,10 @@ contract IrmTest is Test {
     uint256 internal constant SPEED_FACTOR = uint256(0.01 ether) / uint256(10 hours);
     uint256 internal constant INITIAL_RATE = uint256(0.01 ether) / uint256(365 days);
 
+    Irm internal irm;
     MarketParams internal marketParams = MarketParams(address(0), address(0), address(0), address(0), 0);
 
-    Irm internal irm;
-
-    constructor() {
+    function setUp() public {
         irm = new Irm(address(this), LN2, SPEED_FACTOR, TARGET_UTILIZATION, INITIAL_RATE);
         vm.warp(90 days);
     }
@@ -157,7 +156,7 @@ contract IrmTest is Test {
         uint256 expectedBorrowRate = INITIAL_RATE.wMulDown(variationMultiplier);
         (uint256 prevBorrowRate,) = irm.marketIrm(marketParams.id());
         assertEq(prevBorrowRate, expectedBorrowRate, "prevBorrowRate");
-        
+
         uint256 expectedAvgBorrowRate = uint256(
             int256(INITIAL_RATE).wMulDown(int256(variationMultiplier) - WAD_INT).wDivDown(speed * int256(elapsed))
         );
