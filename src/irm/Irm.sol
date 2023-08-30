@@ -89,42 +89,43 @@ contract Irm is IIrm {
         return avgBorrowRate;
     }
 
-    /// @dev Returns `utilization`, `newBorrowRate` and `avgBorrowRate`.
+    /// @dev Returns utilization, newBorrowRate and avgBorrowRate.
     function _borrowRate(Id id, Market memory market) private view returns (uint256, uint256, uint256) {
         uint256 utilization = market.totalBorrowAssets.wDivDown(market.totalSupplyAssets);
 
         uint256 prevBorrowRateCached = marketIrm[id].prevBorrowRate;
         if (prevBorrowRateCached == 0) return (utilization, INITIAL_RATE, INITIAL_RATE);
 
-        // `err` is between -TARGET_UTILIZATION and 1-TARGET_UTILIZATION, scaled by WAD.
-        // Safe "unchecked" casts.
+        // err is between -TARGET_UTILIZATION and 1-TARGET_UTILIZATION, scaled by WAD.
+        // Safe "unchecked" casts because utilization <= WAD and TARGET_UTILIZATION <= WAD.
         int256 err = int256(utilization) - int256(TARGET_UTILIZATION);
-        // errDelta = err - prevErr = utilization - target - (prevUtilization - target) = utilization - prevUtilization.
-        // `errDelta` is between -1 and 1, scaled by WAD.
-        // Safe "unchecked" casts.
+        // errDelta = err - prevErr = utilization - prevUtilization.
+        // errDelta is between -1 and 1, scaled by WAD.
+        // Safe "unchecked" casts because utilization <= WAD and prevUtilization <= WAD.
         int256 errDelta = int256(utilization) - int128(marketIrm[id].prevUtilization);
 
-        // Safe "unchecked" cast.
+        // Safe "unchecked" cast because LN_JUMP_FACTOR <= type(int256).max.
         uint256 jumpMultiplier = IrmMathLib.wExp(int256(LN_JUMP_FACTOR), errDelta);
-        // Safe "unchecked" cast.
+        // Safe "unchecked" cast because SPEED_FACTOR <= type(int256).max.
         int256 speed = int256(SPEED_FACTOR).wMulDown(err);
-        // `elapsed` is never zero, because Morpho skips the interest accrual in this case.
+        // elapsed is never zero, because Morpho skips the interest accrual in this case.
         uint256 elapsed = block.timestamp - market.lastUpdate;
-        // Safe "unchecked" cast.
-        uint256 variationMultiplier = IrmMathLib.wExp(speed * int256(elapsed));
+        // Safe "unchecked" cast because elapsed <= block.timestamp.
+        int256 linearVariation = speed * int256(elapsed);
+        uint256 variationMultiplier = IrmMathLib.wExp(linearVariation);
 
         // newBorrowRate = prevBorrowRate * jumpMultiplier * variationMultiplier.
         uint256 borrowRateAfterJump = prevBorrowRateCached.wMulDown(jumpMultiplier);
         uint256 newBorrowRate = borrowRateAfterJump.wMulDown(variationMultiplier);
+
         // avgBorrowRate = 1 / elapsed * ∫ borrowRateAfterJump * exp(speed * t) dt between 0 and elapsed.
         // And avgBorrowRate ~ borrowRateAfterJump for elapsed around zero.
         int256 avgBorrowRate;
-        if (speed * int256(elapsed) == 0) {
+        if (linearVariation == 0) {
             avgBorrowRate = int256(borrowRateAfterJump);
         } else {
-            avgBorrowRate = (int256(borrowRateAfterJump).wMulDown(int256(variationMultiplier) - WAD_INT)).wDivDown(
-                speed * int256(elapsed)
-            );
+            avgBorrowRate =
+                (int256(borrowRateAfterJump).wMulDown(int256(variationMultiplier) - WAD_INT)).wDivDown(linearVariation);
         }
         require(avgBorrowRate > 0, "avgBorrowRate <= 0");
 
