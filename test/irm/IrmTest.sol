@@ -28,22 +28,27 @@ contract IrmTest is Test {
     function testFirstBorrowRate(Market memory market) public {
         vm.assume(market.totalBorrowAssets > 0);
         vm.assume(market.totalSupplyAssets >= market.totalBorrowAssets);
+        
         uint256 avgBorrowRate = irm.borrowRate(marketParams, market);
-        assertEq(avgBorrowRate, INITIAL_RATE);
-        uint256 expectedUtilization = market.totalBorrowAssets.wDivDown(market.totalSupplyAssets);
         (uint256 prevBorrowRate, uint256 prevUtilization) = irm.marketIrm(marketParams.id());
-        assertEq(prevBorrowRate, INITIAL_RATE);
-        assertEq(prevUtilization, expectedUtilization);
+        
+        uint256 expectedUtilization = market.totalBorrowAssets.wDivDown(market.totalSupplyAssets);
+        
+        assertEq(avgBorrowRate, INITIAL_RATE, "avgBorrowRate");
+        assertEq(prevBorrowRate, INITIAL_RATE, "prevBorrowRate");
+        assertEq(prevUtilization, expectedUtilization, "prevUtilization");
     }
 
     function testFirstBorrowRateView(Market memory market) public {
         vm.assume(market.totalBorrowAssets > 0);
         vm.assume(market.totalSupplyAssets >= market.totalBorrowAssets);
+        
         uint256 avgBorrowRate = irm.borrowRateView(marketParams, market);
-        assertEq(avgBorrowRate, INITIAL_RATE);
         (uint256 prevBorrowRate, uint256 prevUtilization) = irm.marketIrm(marketParams.id());
-        assertEq(prevBorrowRate, 0);
-        assertEq(prevUtilization, 0);
+        
+        assertEq(avgBorrowRate, INITIAL_RATE, "avgBorrowRate");
+        assertEq(prevBorrowRate, 0, "prevBorrowRate");
+        assertEq(prevUtilization, 0, "prevUtilization");
     }
 
     function testBorrowRate(Market memory market0, Market memory market1) public {
@@ -54,20 +59,14 @@ contract IrmTest is Test {
         vm.assume(market1.totalBorrowAssets > 0);
         vm.assume(market1.totalSupplyAssets >= market1.totalBorrowAssets);
         market1.lastUpdate = uint128(bound(market1.lastUpdate, 0, block.timestamp - 1));
+        
         uint256 avgBorrowRate = irm.borrowRate(marketParams, market1);
+        (uint256 prevBorrowRate,) = irm.marketIrm(marketParams.id());
 
-        uint256 utilization0 = market0.totalBorrowAssets.wDivDown(market0.totalSupplyAssets);
-        uint256 utilization1 = market1.totalBorrowAssets.wDivDown(market1.totalSupplyAssets);
-        (uint256 prevBorrowRate, uint256 prevUtilization) = irm.marketIrm(marketParams.id());
-        assertEq(prevUtilization, utilization1);
+        (uint256 expectedAvgBorrowRate, uint256 expectedBorrowRate) = _expectedBorrowRates(market0, market1);
 
-        if (utilization0 <= utilization1 && utilization1 >= TARGET_UTILIZATION) {
-            assertGe(avgBorrowRate, INITIAL_RATE, "avgBorrowRate");
-            assertGe(prevBorrowRate, INITIAL_RATE, "prevBorrowRate");
-        } else if (utilization0 >= utilization1 && utilization1 <= TARGET_UTILIZATION) {
-            assertLt(avgBorrowRate, INITIAL_RATE, "avgBorrowRate");
-            assertLt(prevBorrowRate, INITIAL_RATE, "prevBorrowRate");
-        }
+        assertEq(prevBorrowRate, expectedBorrowRate, "prevBorrowRate");
+        assertEq(avgBorrowRate, expectedAvgBorrowRate, "avgBorrowRate");
     }
 
     function testBorrowRateView(Market memory market0, Market memory market1) public {
@@ -78,19 +77,14 @@ contract IrmTest is Test {
         vm.assume(market1.totalBorrowAssets > 0);
         vm.assume(market1.totalSupplyAssets >= market1.totalBorrowAssets);
         market1.lastUpdate = uint128(bound(market1.lastUpdate, 0, block.timestamp - 1));
+        
         uint256 avgBorrowRate = irm.borrowRateView(marketParams, market1);
+        (uint256 prevBorrowRate,) = irm.marketIrm(marketParams.id());
 
-        uint256 utilization0 = market0.totalBorrowAssets.wDivDown(market0.totalSupplyAssets);
-        uint256 utilization1 = market1.totalBorrowAssets.wDivDown(market1.totalSupplyAssets);
-        (uint256 prevBorrowRate, uint256 prevUtilization) = irm.marketIrm(marketParams.id());
-        assertEq(prevUtilization, utilization0);
-        assertEq(prevBorrowRate, INITIAL_RATE);
+        (uint256 expectedAvgBorrowRate, ) = _expectedBorrowRates(market0, market1);
 
-        if (utilization0 <= utilization1 && utilization1 >= TARGET_UTILIZATION) {
-            assertGe(avgBorrowRate, INITIAL_RATE, "avgBorrowRate");
-        } else if (utilization0 >= utilization1 && utilization1 <= TARGET_UTILIZATION) {
-            assertLt(avgBorrowRate, INITIAL_RATE, "avgBorrowRate");
-        }
+        assertEq(prevBorrowRate, INITIAL_RATE, "prevBorrowRate");
+        assertEq(avgBorrowRate, expectedAvgBorrowRate, "avgBorrowRate");
     }
 
     function testBorrowRateJumpOnly(Market memory market0, Market memory market1) public {
@@ -101,20 +95,15 @@ contract IrmTest is Test {
         vm.assume(market1.totalBorrowAssets > 0);
         vm.assume(market1.totalSupplyAssets >= market1.totalBorrowAssets);
         market1.lastUpdate = uint128(block.timestamp);
+        
         uint256 avgBorrowRate = irm.borrowRate(marketParams, market1);
-
-        uint256 utilization0 = market0.totalBorrowAssets.wDivDown(market0.totalSupplyAssets);
-        uint256 utilization1 = market1.totalBorrowAssets.wDivDown(market1.totalSupplyAssets);
         (uint256 prevBorrowRate,) = irm.marketIrm(marketParams.id());
-        assertEq(prevBorrowRate, avgBorrowRate, "prev/avgBorrowRate");
 
-        int256 errDelta = int256(utilization1) - int256(utilization0);
-        uint256 jumpMultiplier = IrmMathLib.wExp(int256(LN2), errDelta);
-        uint256 expectedBorrowRate = INITIAL_RATE.wMulDown(jumpMultiplier);
-        assertEq(avgBorrowRate, expectedBorrowRate, "avgBorrowRate");
-
-        if (utilization0 <= utilization1) assertGe(avgBorrowRate, INITIAL_RATE, "avgBorrowRate");
-        else assertLe(avgBorrowRate, INITIAL_RATE, "avgBorrowRate");
+        (uint256 expectedAvgBorrowRate, uint256 expectedBorrowRate) = _expectedBorrowRates(market0, market1);
+        
+        assertEq(expectedAvgBorrowRate, expectedBorrowRate, "expectedAvgBorrowRate");
+        assertEq(avgBorrowRate, expectedAvgBorrowRate, "avgBorrowRate");
+        assertEq(prevBorrowRate, expectedBorrowRate, "prevBorrowRate");
     }
 
     function testBorrowRateJumpOnlyView(Market memory market0, Market memory market1) public {
@@ -125,17 +114,14 @@ contract IrmTest is Test {
         vm.assume(market1.totalBorrowAssets > 0);
         vm.assume(market1.totalSupplyAssets >= market1.totalBorrowAssets);
         market1.lastUpdate = uint128(block.timestamp);
+        
         uint256 avgBorrowRate = irm.borrowRateView(marketParams, market1);
+        (uint256 prevBorrowRate,) = irm.marketIrm(marketParams.id());
 
-        uint256 utilization0 = market0.totalBorrowAssets.wDivDown(market0.totalSupplyAssets);
-        uint256 utilization1 = market1.totalBorrowAssets.wDivDown(market1.totalSupplyAssets);
-        int256 errDelta = int256(utilization1) - int256(utilization0);
-        uint256 jumpMultiplier = IrmMathLib.wExp(int256(LN2), errDelta);
-        uint256 expectedBorrowRate = INITIAL_RATE.wMulDown(jumpMultiplier);
-        assertEq(avgBorrowRate, expectedBorrowRate, "avgBorrowRate");
+        (uint256 expectedAvgBorrowRate, ) = _expectedBorrowRates(market0, market1);
 
-        if (utilization0 <= utilization1) assertGe(avgBorrowRate, INITIAL_RATE, "avgBorrowRate");
-        else assertLe(avgBorrowRate, INITIAL_RATE, "avgBorrowRate");
+        assertEq(prevBorrowRate, INITIAL_RATE, "prevBorrowRate");
+        assertEq(avgBorrowRate, expectedAvgBorrowRate, "avgBorrowRate");
     }
 
     function testBorrowRateSpeedOnly(Market memory market0, Market memory market1) public {
@@ -146,24 +132,14 @@ contract IrmTest is Test {
         market1.totalBorrowAssets = market0.totalBorrowAssets;
         market1.totalSupplyAssets = market0.totalSupplyAssets;
         market1.lastUpdate = uint128(bound(market1.lastUpdate, 0, block.timestamp - 1));
+        
         uint256 avgBorrowRate = irm.borrowRate(marketParams, market1);
-
-        uint256 utilization = market1.totalBorrowAssets.wDivDown(market1.totalSupplyAssets);
-        int256 err = int256(utilization) - int256(TARGET_UTILIZATION);
-        int256 speed = int256(SPEED_FACTOR).wMulDown(err);
-        uint256 elapsed = block.timestamp - market1.lastUpdate;
-        uint256 variationMultiplier = IrmMathLib.wExp(speed * int256(elapsed));
-        uint256 expectedBorrowRate = INITIAL_RATE.wMulDown(variationMultiplier);
         (uint256 prevBorrowRate,) = irm.marketIrm(marketParams.id());
+
+        (uint256 expectedAvgBorrowRate, uint256 expectedBorrowRate) = _expectedBorrowRates(market0, market1);
+
         assertEq(prevBorrowRate, expectedBorrowRate, "prevBorrowRate");
-
-        uint256 expectedAvgBorrowRate = uint256(
-            int256(INITIAL_RATE).wMulDown(int256(variationMultiplier) - WAD_INT).wDivDown(speed * int256(elapsed))
-        );
         assertEq(avgBorrowRate, expectedAvgBorrowRate, "avgBorrowRate");
-
-        if (utilization <= TARGET_UTILIZATION) assertLe(avgBorrowRate, INITIAL_RATE, "avgBorrowRate");
-        else assertGt(avgBorrowRate, INITIAL_RATE, "avgBorrowRate");
     }
 
     function testBorrowRateSpeedOnlyView(Market memory market0, Market memory market1) public {
@@ -174,19 +150,42 @@ contract IrmTest is Test {
         market1.totalBorrowAssets = market0.totalBorrowAssets;
         market1.totalSupplyAssets = market0.totalSupplyAssets;
         market1.lastUpdate = uint128(bound(market1.lastUpdate, 0, block.timestamp - 1));
+        
         uint256 avgBorrowRate = irm.borrowRateView(marketParams, market1);
+        (uint256 prevBorrowRate,) = irm.marketIrm(marketParams.id());
 
-        uint256 utilization = market0.totalBorrowAssets.wDivDown(market0.totalSupplyAssets);
-        int256 err = int256(utilization) - int256(TARGET_UTILIZATION);
-        int256 speed = int256(SPEED_FACTOR).wMulDown(err);
-        uint256 elapsed = block.timestamp - market1.lastUpdate;
-        uint256 variationMultiplier = IrmMathLib.wExp(speed * int256(elapsed));
-        uint256 expectedAvgBorrowRate = uint256(
-            int256(INITIAL_RATE).wMulDown(int256(variationMultiplier) - WAD_INT).wDivDown(speed * int256(elapsed))
-        );
+        (uint256 expectedAvgBorrowRate,) = _expectedBorrowRates(market0, market1);
+
+        assertEq(prevBorrowRate, INITIAL_RATE, "prevBorrowRate");
         assertEq(avgBorrowRate, expectedAvgBorrowRate, "avgBorrowRate");
+    }
 
-        if (utilization <= TARGET_UTILIZATION) assertLe(avgBorrowRate, INITIAL_RATE, "avgBorrowRate");
-        else assertGt(avgBorrowRate, INITIAL_RATE, "avgBorrowRate");
+    /// @dev Returns the expected `avgBorrowRate` and `newBorrowRate`.
+    function _expectedBorrowRates(Market memory market0, Market memory market1)
+        internal
+        view
+        returns (uint256, uint256)
+    {
+        uint256 utilization0 = market0.totalBorrowAssets.wDivDown(market0.totalSupplyAssets);
+        uint256 utilization1 = market1.totalBorrowAssets.wDivDown(market1.totalSupplyAssets);
+        int256 err = int256(utilization1) - int256(TARGET_UTILIZATION);
+        int256 errDelta = int256(utilization1) - int256(utilization0);
+        uint256 elapsed = block.timestamp - market1.lastUpdate;
+
+        uint256 jumpMultiplier = IrmMathLib.wExp(int256(LN2), errDelta);
+        int256 speed = int256(SPEED_FACTOR).wMulDown(err);
+        uint256 variationMultiplier = IrmMathLib.wExp(speed * int256(elapsed));
+        uint256 expectedBorrowRate = INITIAL_RATE.wMulDown(jumpMultiplier).wMulDown(variationMultiplier);
+
+        uint256 expectedAvgBorrowRate;
+        if (speed * int256(elapsed) == 0) {
+            expectedAvgBorrowRate = INITIAL_RATE.wMulDown(jumpMultiplier);
+        } else {
+            expectedAvgBorrowRate = uint256(
+                int256(INITIAL_RATE.wMulDown(jumpMultiplier)).wMulDown(int256(variationMultiplier) - WAD_INT).wDivDown(speed * int256(elapsed))
+            );
+        }
+
+        return (expectedAvgBorrowRate, expectedBorrowRate);
     }
 }

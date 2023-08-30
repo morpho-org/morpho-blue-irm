@@ -57,9 +57,9 @@ contract Irm is IIrm {
         uint256 newTargetUtilization,
         uint256 newInitialRate
     ) {
-        require(newLnJumpFactor <= uint256(type(int256).max), ErrorsLib.TOO_BIG);
-        require(newSpeedFactor <= uint256(type(int256).max), ErrorsLib.TOO_BIG);
-        require(newTargetUtilization <= WAD, ErrorsLib.TOO_BIG);
+        require(newLnJumpFactor <= uint256(type(int256).max), ErrorsLib.INPUT_TOO_LARGE);
+        require(newSpeedFactor <= uint256(type(int256).max), ErrorsLib.INPUT_TOO_LARGE);
+        require(newTargetUtilization <= WAD, ErrorsLib.INPUT_TOO_LARGE);
 
         MORPHO = newMorpho;
         LN_JUMP_FACTOR = newLnJumpFactor;

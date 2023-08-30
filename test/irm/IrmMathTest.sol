@@ -9,19 +9,21 @@ contract IrmTest is Test {
     using MathLib for uint256;
 
     uint256 constant INITIAL_RATE = uint256(0.01 ether) / uint256(365 days);
-    uint256 constant ln2 = 0.69314718056 ether;
+    uint256 constant LN2 = 0.69314718056 ether;
 
     function testWExpWithBaseA() public {
-        assertApproxEqRel(IrmMathLib.wExp(int256(ln2), -1 ether), 0.5 ether, 0.02 ether);
-        assertApproxEqRel(IrmMathLib.wExp(int256(ln2), -0.5 ether), 0.70710678118 ether, 0.01 ether);
-        assertEq(IrmMathLib.wExp(int256(ln2), 0), 1 ether);
-        assertApproxEqRel(IrmMathLib.wExp(int256(ln2), 0.5 ether), 1.41421356237 ether, 0.01 ether);
-        assertApproxEqRel(IrmMathLib.wExp(int256(ln2), 1 ether), 2 ether, 0.02 ether);
+        assertApproxEqRel(IrmMathLib.wExp(int256(LN2), -1 ether), 0.5 ether, 0.02 ether);
+        assertApproxEqRel(IrmMathLib.wExp(int256(LN2), -0.5 ether), 0.70710678118 ether, 0.01 ether);
+        assertEq(IrmMathLib.wExp(int256(LN2), 0), 1 ether);
+        assertApproxEqRel(IrmMathLib.wExp(int256(LN2), 0.5 ether), 1.41421356237 ether, 0.01 ether);
+        assertApproxEqRel(IrmMathLib.wExp(int256(LN2), 1 ether), 2 ether, 0.02 ether);
     }
 
-    function testWExpWithBaseA(int256 x) public view {
+    function testWExpWithBaseA(int256 x, int256 y) public {
         x = bound(x, -1 ether, 1 ether);
-        IrmMathLib.wExp(int256(ln2), x);
+        y = bound(y, x, 1 ether);
+        // Check that wExp is increasing.
+        assertLe(IrmMathLib.wExp(int256(LN2), x), IrmMathLib.wExp(int256(LN2), y));
     }
 
     function testWExp() public {
