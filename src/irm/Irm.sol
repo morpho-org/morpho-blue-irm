@@ -10,9 +10,9 @@ import {MarketParamsLib} from "morpho-blue/libraries/MarketParamsLib.sol";
 import {Id, MarketParams, Market} from "morpho-blue/interfaces/IMorpho.sol";
 
 struct MarketIrm {
-    // Scaled by WAD.
+    // Previous final borrow rate. Scaled by WAD.
     uint128 prevBorrowRate;
-    // Scaled by WAD.
+    // Previous utilization. Scaled by WAD.
     uint128 prevUtilization;
 }
 
@@ -26,23 +26,30 @@ contract Irm is IIrm {
 
     /* CONSTANTS */
 
-    // Address of Morpho.
+    /// @notice Address of Morpho.
     address public immutable MORPHO;
-    // Scaled by WAD.
+    /// @notice Ln of the jump factor. Scaled by WAD.
     uint256 public immutable LN_JUMP_FACTOR;
-    // Scaled by WAD.
+    /// @notice Speed factor. Scaled by WAD.
     uint256 public immutable SPEED_FACTOR;
-    // Scaled by WAD.
+    /// @notice Target utilization. Scaled by WAD.
     uint256 public immutable TARGET_UTILIZATION;
-    // Per second, scaled by WAD.
+    /// @notice Initial rate. Scaled by WAD.
     uint256 public immutable INITIAL_RATE;
 
     /* STORAGE */
 
+    /// @notice IRM storage for each market.
     mapping(Id => MarketIrm) public marketIrm;
 
     /* CONSTRUCTOR */
 
+    /// @notice Constructor.
+    /// @param newMorpho The address of Morpho.
+    /// @param newLnJumpFactor The log of the jump factor (scaled by WAD).
+    /// @param newSpeedFactor The speed factor (scaled by WAD).
+    /// @param newTargetUtilization The target utilization (scaled by WAD). Should be between 0 and 1.
+    /// @param newInitialRate The initial rate (scaled by WAD).
     constructor(
         address newMorpho,
         uint256 newLnJumpFactor,
@@ -63,11 +70,13 @@ contract Irm is IIrm {
 
     /* BORROW RATES */
 
+    /// @inheritdoc IIrm
     function borrowRateView(MarketParams memory marketParams, Market memory market) public view returns (uint256) {
         (,, uint256 avgBorrowRate) = _borrowRate(marketParams.id(), market);
         return avgBorrowRate;
     }
 
+    /// @inheritdoc IIrm
     function borrowRate(MarketParams memory marketParams, Market memory market) external returns (uint256) {
         require(msg.sender == MORPHO, ErrorsLib.NOT_MORPHO);
 
