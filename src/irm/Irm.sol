@@ -106,14 +106,14 @@ contract Irm is IIrm {
         int256 errDelta = int256(utilization) - int128(marketIrm[id].prevUtilization);
 
         // Safe "unchecked" cast because LN_JUMP_FACTOR <= type(int256).max.
-        uint256 jumpMultiplier = IrmMathLib.wExp(int256(LN_JUMP_FACTOR), errDelta);
+        uint256 jumpMultiplier = IrmMathLib.wExp3(errDelta.wMulDown(int256(LN_JUMP_FACTOR)));
         // Safe "unchecked" cast because SPEED_FACTOR <= type(int256).max.
         int256 speed = int256(SPEED_FACTOR).wMulDown(err);
         // elapsed is never zero, because Morpho skips the interest accrual in this case.
         uint256 elapsed = block.timestamp - market.lastUpdate;
         // Safe "unchecked" cast because elapsed <= block.timestamp.
         int256 linearVariation = speed * int256(elapsed);
-        uint256 variationMultiplier = IrmMathLib.wExp(linearVariation);
+        uint256 variationMultiplier = IrmMathLib.wExp12(linearVariation);
 
         // newBorrowRate = prevBorrowRate * jumpMultiplier * variationMultiplier.
         uint256 borrowRateAfterJump = prevBorrowRateCached.wMulDown(jumpMultiplier);
