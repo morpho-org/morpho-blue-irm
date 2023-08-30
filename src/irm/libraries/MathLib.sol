@@ -24,6 +24,8 @@ library MathLib {
     }
 
     /// @dev 12th-order Taylor polynomial of e^x, for x around 0.
+    /// @dev The approximation error is less than 11% between -3 and 3. Above 3, the function still returns the same
+    /// Taylor polynomial, and below -3 the function returns 0.05.
     function wExp(int256 x) internal pure returns (uint256) {
         // The approximation error increases quickly below x = -3, so we hardcode the result.
         if (x < -3 * WAD_INT) return 0.05 ether;
