@@ -4,8 +4,8 @@ pragma solidity 0.8.19;
 import {ErrorsLib} from "./libraries/ErrorsLib.sol";
 import {IIrm} from "morpho-blue/interfaces/IIrm.sol";
 import {UtilsLib} from "morpho-blue/libraries/UtilsLib.sol";
-import {WAD_INT, IrmMathLib} from "./libraries/IrmMathLib.sol";
 import {WAD, MathLib} from "morpho-blue/libraries/MathLib.sol";
+import {WAD_INT, MathLib as IrmMathLib} from "./libraries/MathLib.sol";
 import {MarketParamsLib} from "morpho-blue/libraries/MarketParamsLib.sol";
 import {Id, MarketParams, Market} from "morpho-blue/interfaces/IMorpho.sol";
 
@@ -28,13 +28,13 @@ contract Irm is IIrm {
 
     /// @notice Address of Morpho.
     address public immutable MORPHO;
-    /// @notice Ln of the jump factor. Scaled by WAD.
+    /// @notice Ln of the jump factor (scaled by WAD).
     uint256 public immutable LN_JUMP_FACTOR;
-    /// @notice Speed factor. Scaled by WAD.
+    /// @notice Speed factor (scaled by WAD).
     uint256 public immutable SPEED_FACTOR;
-    /// @notice Target utilization. Scaled by WAD.
+    /// @notice Target utilization (scaled by WAD).
     uint256 public immutable TARGET_UTILIZATION;
-    /// @notice Initial rate. Scaled by WAD.
+    /// @notice Initial rate (scaled by WAD).
     uint256 public immutable INITIAL_RATE;
 
     /* STORAGE */
@@ -118,6 +118,7 @@ contract Irm is IIrm {
         uint256 borrowRateAfterJump = prevBorrowRateCached.wMulDown(jumpMultiplier);
         uint256 newBorrowRate = borrowRateAfterJump.wMulDown(variationMultiplier);
 
+        // Then we compute the average rate over the period (this is what Morpho needs to accrue the interest).
         // avgBorrowRate = 1 / elapsed * ∫ borrowRateAfterJump * exp(speed * t) dt between 0 and elapsed.
         // And avgBorrowRate ~ borrowRateAfterJump for elapsed around zero.
         int256 avgBorrowRate;
