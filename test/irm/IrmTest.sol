@@ -175,19 +175,18 @@ contract IrmTest is Test {
         uint256 jumpMultiplier = IrmMathLib.wExp3(errDelta.wMulDown(int256(LN2)));
         int256 speed = int256(SPEED_FACTOR).wMulDown(err);
         uint256 variationMultiplier = IrmMathLib.wExp12(speed * int256(elapsed));
-        uint256 expectedPrevBorrowRate = INITIAL_RATE.wMulDown(jumpMultiplier).wMulDown(variationMultiplier);
+        uint256 expectedBorrowRateAfterJump = INITIAL_RATE.wMulDown(jumpMultiplier);
+        uint256 expectedNewBorrowRate = INITIAL_RATE.wMulDown(jumpMultiplier).wMulDown(variationMultiplier);
 
         uint256 expectedAvgBorrowRate;
         if (speed * int256(elapsed) == 0) {
             expectedAvgBorrowRate = INITIAL_RATE.wMulDown(jumpMultiplier);
         } else {
             expectedAvgBorrowRate = uint256(
-                int256(INITIAL_RATE.wMulDown(jumpMultiplier)).wMulDown(int256(variationMultiplier) - WAD_INT).wDivDown(
-                    speed * int256(elapsed)
-                )
+                (int256(expectedNewBorrowRate) - int256(expectedBorrowRateAfterJump)).wDivDown(speed * int256(elapsed))
             );
         }
 
-        return (expectedAvgBorrowRate, expectedPrevBorrowRate);
+        return (expectedAvgBorrowRate, expectedNewBorrowRate);
     }
 }

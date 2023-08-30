@@ -120,16 +120,13 @@ contract Irm is IIrm {
         uint256 newBorrowRate = borrowRateAfterJump.wMulDown(variationMultiplier);
 
         // Then we compute the average rate over the period (this is what Morpho needs to accrue the interest).
-        // avgBorrowRate = 1 / elapsed * ∫ borrowRateAfterJump * exp(speed * t) dt between 0 and elapsed.
+        // avgBorrowRate = 1 / elapsed * ∫ borrowRateAfterJump * exp(speed * t) dt between 0 and elapsed
+        //               = borrowRateAfterJump * (exp(speed * t) - 1) / (speed * elapsed)
+        //               = (newBorrowRate - borrowRateAfterJump) / (speed * elapsed)
         // And avgBorrowRate ~ borrowRateAfterJump for elapsed around zero.
         int256 avgBorrowRate;
-        if (linearVariation == 0) {
-            avgBorrowRate = int256(borrowRateAfterJump);
-        } else {
-            avgBorrowRate =
-                (int256(borrowRateAfterJump).wMulDown(int256(variationMultiplier) - WAD_INT)).wDivDown(linearVariation);
-        }
-        require(avgBorrowRate > 0, "avgBorrowRate <= 0");
+        if (linearVariation == 0) avgBorrowRate = int256(borrowRateAfterJump);
+        else avgBorrowRate = (int256(newBorrowRate) - int256(borrowRateAfterJump)).wDivDown(linearVariation);
 
         return (utilization, newBorrowRate, uint256(avgBorrowRate));
     }
