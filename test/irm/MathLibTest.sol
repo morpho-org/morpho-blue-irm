@@ -11,21 +11,6 @@ contract MathLibTest is Test {
     uint256 constant INITIAL_RATE = uint256(0.01 ether) / uint256(365 days);
     uint256 constant LN2 = 0.69314718056 ether;
 
-    function testWExpWithBaseA() public {
-        assertApproxEqRel(MathLib.wExp3(-1 ether * int256(LN2) / WAD_INT), 0.5 ether, 0.02 ether);
-        assertApproxEqRel(MathLib.wExp3(-0.5 ether * int256(LN2) / WAD_INT), 0.70710678118 ether, 0.01 ether);
-        assertEq(MathLib.wExp3(0 ether * int256(LN2) / WAD_INT), 1 ether);
-        assertApproxEqRel(MathLib.wExp3(0.5 ether * int256(LN2) / WAD_INT), 1.41421356237 ether, 0.01 ether);
-        assertApproxEqRel(MathLib.wExp3(1 ether * int256(LN2) / WAD_INT), 2 ether, 0.02 ether);
-    }
-
-    function testWExpWithBaseA(int256 x, int256 y) public {
-        x = bound(x, -1 ether, 1 ether);
-        y = bound(y, x, 1 ether);
-        // Check that wExp is increasing.
-        assertLe(MathLib.wExp3(x * int256(LN2) / WAD_INT), MathLib.wExp12(y * int256(LN2) / WAD_INT));
-    }
-
     function testWExp() public {
         assertApproxEqRel(MathLib.wExp12(-5 ether), 0.05 ether, 0.0 ether);
         assertApproxEqRel(MathLib.wExp12(-3 ether), 0.04978706836 ether, 0.005 ether);

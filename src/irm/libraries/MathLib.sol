@@ -11,23 +11,13 @@ library MathLib {
     using {wDivDown} for int256;
     using {wMulDown} for int256;
 
-    /// @dev 3rd-order Taylor polynomial of e^x, for x around 0.
-    function wExp3(int256 x) internal pure returns (uint256) {
-        int256 firstTerm = WAD_INT;
-        int256 secondTerm = x;
-        int256 thirdTerm = secondTerm.wMulDown(x) / 2;
-        int256 fourthTerm = thirdTerm.wMulDown(x) / 3;
-        int256 res = firstTerm + secondTerm + thirdTerm + fourthTerm;
-        // Safe "unchecked" cast.
-        return uint256(res);
-    }
-
     /// @dev 12th-order Taylor polynomial of e^x, for x around 0.
-    /// @dev The approximation error is less than 11% between -3 and 3. Above 3, the function still returns the same
-    /// Taylor polynomial, and below -3 the function returns 0.05.
+    /// @dev The approximation error is less than 1% between -3 and 3. Above 3, the function returns 20 and below -3 the
+    /// function returns 0.05.
     function wExp12(int256 x) internal pure returns (uint256) {
         // The approximation error increases quickly below x = -3, so we hardcode the result.
         if (x < -3 * WAD_INT) return 0.05 ether;
+        if (x > 3 * WAD_INT) return 20 ether;
 
         // `N` should be even otherwise the result can be negative.
         int256 N = 12;

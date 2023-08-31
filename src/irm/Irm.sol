@@ -116,7 +116,7 @@ contract Irm is IIrm {
         int256 errDelta = err - marketIrm[id].prevErr;
 
         // Safe "unchecked" cast because LN_JUMP_FACTOR <= type(int256).max.
-        uint256 jumpMultiplier = MathLib.wExp3(errDelta.wMulDown(int256(LN_JUMP_FACTOR)));
+        uint256 jumpMultiplier = MathLib.wExp12(errDelta.wMulDown(int256(LN_JUMP_FACTOR)));
         // Safe "unchecked" cast because SPEED_FACTOR <= type(int256).max.
         int256 speed = int256(SPEED_FACTOR).wMulDown(err);
         uint256 elapsed = block.timestamp - market.lastUpdate;
@@ -137,6 +137,6 @@ contract Irm is IIrm {
         if (linearVariation == 0) avgBorrowRate = int256(borrowRateAfterJump);
         else avgBorrowRate = (int256(newBorrowRate) - int256(borrowRateAfterJump)).wDivDown(linearVariation);
 
-        return (err, newBorrowRate, uint256(avgBorrowRate));
+        return (err, MorphoUtilsLib.min(newBorrowRate, type(uint128).max), uint256(avgBorrowRate));
     }
 }
