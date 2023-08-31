@@ -37,7 +37,7 @@ library MathLib {
             monomial = monomial.wMulDown(x) / k;
             res += monomial;
         }
-        // Safe "unchecked" cast.
+        // Safe "unchecked" cast because N is even.
         return uint256(res);
     }
 

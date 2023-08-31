@@ -30,13 +30,11 @@ contract IrmTest is Test {
         vm.assume(market.totalSupplyAssets >= market.totalBorrowAssets);
 
         uint256 avgBorrowRate = irm.borrowRate(marketParams, market);
-        (uint256 prevBorrowRate, uint256 prevUtilization) = irm.marketIrm(marketParams.id());
-
-        uint256 expectedUtilization = market.totalBorrowAssets.wDivDown(market.totalSupplyAssets);
+        (uint256 prevBorrowRate, int256 prevErr) = irm.marketIrm(marketParams.id());
 
         assertEq(avgBorrowRate, INITIAL_RATE, "avgBorrowRate");
         assertEq(prevBorrowRate, INITIAL_RATE, "prevBorrowRate");
-        assertEq(prevUtilization, expectedUtilization, "prevUtilization");
+        assertEq(prevErr, _err(market), "prevErr");
     }
 
     function testFirstBorrowRateView(Market memory market) public {
@@ -44,11 +42,11 @@ contract IrmTest is Test {
         vm.assume(market.totalSupplyAssets >= market.totalBorrowAssets);
 
         uint256 avgBorrowRate = irm.borrowRateView(marketParams, market);
-        (uint256 prevBorrowRate, uint256 prevUtilization) = irm.marketIrm(marketParams.id());
+        (uint256 prevBorrowRate, int256 prevErr) = irm.marketIrm(marketParams.id());
 
         assertEq(avgBorrowRate, INITIAL_RATE, "avgBorrowRate");
         assertEq(prevBorrowRate, 0, "prevBorrowRate");
-        assertEq(prevUtilization, 0, "prevUtilization");
+        assertEq(prevErr, 0, "prevErr");
     }
 
     function testBorrowRate(Market memory market0, Market memory market1) public {
@@ -166,10 +164,9 @@ contract IrmTest is Test {
         view
         returns (uint256, uint256)
     {
-        uint256 utilization0 = market0.totalBorrowAssets.wDivDown(market0.totalSupplyAssets);
-        uint256 utilization1 = market1.totalBorrowAssets.wDivDown(market1.totalSupplyAssets);
-        int256 err = int256(utilization1) - int256(TARGET_UTILIZATION);
-        int256 errDelta = int256(utilization1) - int256(utilization0);
+        int256 err = _err(market1);
+        int256 prevErr = _err(market0);
+        int256 errDelta = err - prevErr;
         uint256 elapsed = block.timestamp - market1.lastUpdate;
 
         uint256 jumpMultiplier = MathLib.wExp3(errDelta.wMulDown(int256(LN2)));
@@ -188,5 +185,19 @@ contract IrmTest is Test {
         }
 
         return (expectedAvgBorrowRate, expectedNewBorrowRate);
+    }
+
+    function _err(Market memory market) internal pure returns (int256) {
+        uint256 utilization = market.totalBorrowAssets.wDivDown(market.totalSupplyAssets);
+
+        int256 err;
+        if (utilization > TARGET_UTILIZATION) {
+            // Safe "unchecked" cast because |err| <= WAD.
+            err = int256((utilization - TARGET_UTILIZATION).wDivDown(WAD - TARGET_UTILIZATION));
+        } else {
+            // Safe "unchecked" casts because utilization <= WAD and TARGET_UTILIZATION <= WAD.
+            err = (int256(utilization) - int256(TARGET_UTILIZATION)).wDivDown(int256(TARGET_UTILIZATION));
+        }
+        return err;
     }
 }

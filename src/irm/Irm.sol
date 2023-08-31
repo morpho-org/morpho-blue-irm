@@ -1,9 +1,10 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity 0.8.19;
 
+import {UtilsLib} from "./libraries/UtilsLib.sol";
 import {ErrorsLib} from "./libraries/ErrorsLib.sol";
 import {IIrm} from "morpho-blue/interfaces/IIrm.sol";
-import {UtilsLib} from "morpho-blue/libraries/UtilsLib.sol";
+import {UtilsLib as MorphoUtilsLib} from "morpho-blue/libraries/UtilsLib.sol";
 import {WAD, MathLib as MorphoMathLib} from "morpho-blue/libraries/MathLib.sol";
 import {WAD_INT, MathLib} from "./libraries/MathLib.sol";
 import {MarketParamsLib} from "morpho-blue/libraries/MarketParamsLib.sol";
@@ -12,8 +13,8 @@ import {Id, MarketParams, Market} from "morpho-blue/interfaces/IMorpho.sol";
 struct MarketIrm {
     // Previous final borrow rate. Scaled by WAD.
     uint128 prevBorrowRate;
-    // Previous utilization. Scaled by WAD.
-    uint128 prevUtilization;
+    // Previous error. Scaled by WAD.
+    int128 prevErr;
 }
 
 /// @title Irm.
@@ -22,9 +23,10 @@ struct MarketIrm {
 contract Irm is IIrm {
     using MathLib for int256;
     using MathLib for uint256;
-    using UtilsLib for uint256;
+    using UtilsLib for int256;
     using MorphoMathLib for uint128;
     using MorphoMathLib for uint256;
+    using MorphoUtilsLib for uint256;
     using MarketParamsLib for MarketParams;
 
     /* CONSTANTS */
@@ -86,27 +88,32 @@ contract Irm is IIrm {
 
         Id id = marketParams.id();
 
-        (uint256 utilization, uint256 newBorrowRate, uint256 avgBorrowRate) = _borrowRate(id, market);
+        (int256 err, uint256 newBorrowRate, uint256 avgBorrowRate) = _borrowRate(id, market);
 
-        marketIrm[id].prevUtilization = utilization.toUint128();
+        marketIrm[id].prevErr = err.toInt128();
         marketIrm[id].prevBorrowRate = newBorrowRate.toUint128();
         return avgBorrowRate;
     }
 
-    /// @dev Returns utilization, newBorrowRate and avgBorrowRate.
-    function _borrowRate(Id id, Market memory market) private view returns (uint256, uint256, uint256) {
+    /// @dev Returns err, newBorrowRate and avgBorrowRate.
+    function _borrowRate(Id id, Market memory market) private view returns (int256, uint256, uint256) {
         uint256 utilization = market.totalBorrowAssets.wDivDown(market.totalSupplyAssets);
 
+        int256 err;
+        if (utilization > TARGET_UTILIZATION) {
+            // Safe "unchecked" cast because |err| <= WAD.
+            err = int256((utilization - TARGET_UTILIZATION).wDivDown(WAD - TARGET_UTILIZATION));
+        } else {
+            // Safe "unchecked" casts because utilization <= WAD and TARGET_UTILIZATION <= WAD.
+            err = (int256(utilization) - int256(TARGET_UTILIZATION)).wDivDown(int256(TARGET_UTILIZATION));
+        }
+        
         uint256 prevBorrowRateCached = marketIrm[id].prevBorrowRate;
-        if (prevBorrowRateCached == 0) return (utilization, INITIAL_RATE, INITIAL_RATE);
+        if (prevBorrowRateCached == 0) return (err, INITIAL_RATE, INITIAL_RATE);
 
-        // err is between -TARGET_UTILIZATION and 1-TARGET_UTILIZATION, scaled by WAD.
-        // Safe "unchecked" casts because utilization <= WAD and TARGET_UTILIZATION <= WAD.
-        int256 err = int256(utilization) - int256(TARGET_UTILIZATION);
-        // errDelta = err - prevErr = utilization - prevUtilization.
+        // errDelta = err - prevErr.
         // errDelta is between -1 and 1, scaled by WAD.
-        // Safe "unchecked" casts because utilization <= WAD and prevUtilization <= WAD.
-        int256 errDelta = int256(utilization) - int128(marketIrm[id].prevUtilization);
+        int256 errDelta = err - marketIrm[id].prevErr;
 
         // Safe "unchecked" cast because LN_JUMP_FACTOR <= type(int256).max.
         uint256 jumpMultiplier = MathLib.wExp3(errDelta.wMulDown(int256(LN_JUMP_FACTOR)));
@@ -130,6 +137,6 @@ contract Irm is IIrm {
         if (linearVariation == 0) avgBorrowRate = int256(borrowRateAfterJump);
         else avgBorrowRate = (int256(newBorrowRate) - int256(borrowRateAfterJump)).wDivDown(linearVariation);
 
-        return (utilization, newBorrowRate, uint256(avgBorrowRate));
+        return (err, newBorrowRate, uint256(avgBorrowRate));
     }
 }
