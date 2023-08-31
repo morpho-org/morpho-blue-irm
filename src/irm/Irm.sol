@@ -17,8 +17,8 @@ struct MarketIrm {
     int128 prevErr;
 }
 
-/// @title Irm.
-/// @author Morpho Labs.
+/// @title Irm
+/// @author Morpho Labs
 /// @notice Interest rate model.
 contract Irm is IIrm {
     using MathLib for int256;
@@ -97,7 +97,8 @@ contract Irm is IIrm {
 
     /// @dev Returns err, newBorrowRate and avgBorrowRate.
     function _borrowRate(Id id, Market memory market) private view returns (int256, uint256, uint256) {
-        uint256 utilization = market.totalBorrowAssets.wDivDown(market.totalSupplyAssets);
+        uint256 utilization =
+            market.totalSupplyAssets > 0 ? market.totalBorrowAssets.wDivDown(market.totalSupplyAssets) : 0;
 
         int256 err;
         if (utilization > TARGET_UTILIZATION) {
@@ -107,9 +108,8 @@ contract Irm is IIrm {
             // Safe "unchecked" casts because utilization <= WAD and TARGET_UTILIZATION <= WAD.
             err = (int256(utilization) - int256(TARGET_UTILIZATION)).wDivDown(int256(TARGET_UTILIZATION));
         }
-        
-        uint256 prevBorrowRateCached = marketIrm[id].prevBorrowRate;
-        if (prevBorrowRateCached == 0) return (err, INITIAL_RATE, INITIAL_RATE);
+
+        if (marketIrm[id].prevBorrowRate == 0) return (err, INITIAL_RATE, INITIAL_RATE);
 
         // errDelta = err - prevErr.
         // errDelta is between -1 and 1, scaled by WAD.
@@ -125,7 +125,7 @@ contract Irm is IIrm {
         uint256 variationMultiplier = MathLib.wExp12(linearVariation);
 
         // newBorrowRate = prevBorrowRate * jumpMultiplier * variationMultiplier.
-        uint256 borrowRateAfterJump = prevBorrowRateCached.wMulDown(jumpMultiplier);
+        uint256 borrowRateAfterJump = marketIrm[id].prevBorrowRate.wMulDown(jumpMultiplier);
         uint256 newBorrowRate = borrowRateAfterJump.wMulDown(variationMultiplier);
 
         // Then we compute the average rate over the period (this is what Morpho needs to accrue the interest).
