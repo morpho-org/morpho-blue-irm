@@ -6,10 +6,10 @@ import "../../src/irm/Irm.sol";
 
 contract IrmTest is Test {
     using MathLib for int256;
-    using MathLib for uint128;
+    using MathLib for int256;
     using MathLib for uint256;
-    using IrmMathLib for int256;
-    using IrmMathLib for uint256;
+    using MorphoMathLib for uint128;
+    using MorphoMathLib for uint256;
     using MarketParamsLib for MarketParams;
 
     uint256 internal constant LN2 = 0.69314718056 ether;
@@ -172,9 +172,9 @@ contract IrmTest is Test {
         int256 errDelta = int256(utilization1) - int256(utilization0);
         uint256 elapsed = block.timestamp - market1.lastUpdate;
 
-        uint256 jumpMultiplier = IrmMathLib.wExp3(errDelta.wMulDown(int256(LN2)));
+        uint256 jumpMultiplier = MathLib.wExp3(errDelta.wMulDown(int256(LN2)));
         int256 speed = int256(SPEED_FACTOR).wMulDown(err);
-        uint256 variationMultiplier = IrmMathLib.wExp12(speed * int256(elapsed));
+        uint256 variationMultiplier = MathLib.wExp12(speed * int256(elapsed));
         uint256 expectedBorrowRateAfterJump = INITIAL_RATE.wMulDown(jumpMultiplier);
         uint256 expectedNewBorrowRate = INITIAL_RATE.wMulDown(jumpMultiplier).wMulDown(variationMultiplier);
 

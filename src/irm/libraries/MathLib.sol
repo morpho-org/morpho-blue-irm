@@ -32,12 +32,10 @@ library MathLib {
         // `N` should be even otherwise the result can be negative.
         int256 N = 12;
         int256 res = WAD_INT;
-        int256 factorial = 1;
-        int256 pow = WAD_INT;
+        int256 monomial = WAD_INT;
         for (int256 k = 1; k <= N; k++) {
-            factorial *= k;
-            pow = pow.wMulDown(x);
-            res += pow / factorial;
+            monomial = monomial.wMulDown(x) / k;
+            res += monomial;
         }
         // Safe "unchecked" cast.
         return uint256(res);

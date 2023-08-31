@@ -4,8 +4,8 @@ pragma solidity 0.8.19;
 import {ErrorsLib} from "./libraries/ErrorsLib.sol";
 import {IIrm} from "morpho-blue/interfaces/IIrm.sol";
 import {UtilsLib} from "morpho-blue/libraries/UtilsLib.sol";
-import {WAD, MathLib} from "morpho-blue/libraries/MathLib.sol";
-import {WAD_INT, MathLib as IrmMathLib} from "./libraries/MathLib.sol";
+import {WAD, MathLib as MorphoMathLib} from "morpho-blue/libraries/MathLib.sol";
+import {WAD_INT, MathLib} from "./libraries/MathLib.sol";
 import {MarketParamsLib} from "morpho-blue/libraries/MarketParamsLib.sol";
 import {Id, MarketParams, Market} from "morpho-blue/interfaces/IMorpho.sol";
 
@@ -16,12 +16,15 @@ struct MarketIrm {
     uint128 prevUtilization;
 }
 
+/// @title Irm.
+/// @author Morpho Labs.
+/// @notice Interest rate model.
 contract Irm is IIrm {
-    using MathLib for uint128;
+    using MathLib for int256;
     using MathLib for uint256;
     using UtilsLib for uint256;
-    using IrmMathLib for int256;
-    using IrmMathLib for uint256;
+    using MorphoMathLib for uint128;
+    using MorphoMathLib for uint256;
     using MarketParamsLib for MarketParams;
 
     /* CONSTANTS */
@@ -45,28 +48,28 @@ contract Irm is IIrm {
     /* CONSTRUCTOR */
 
     /// @notice Constructor.
-    /// @param newMorpho The address of Morpho.
-    /// @param newLnJumpFactor The log of the jump factor (scaled by WAD).
-    /// @param newSpeedFactor The speed factor (scaled by WAD). Warning: |speedFactor * error * elapsed| <= 3 must hold.
+    /// @param morpho The address of Morpho.
+    /// @param lnJumpFactor The log of the jump factor (scaled by WAD).
+    /// @param speedFactor The speed factor (scaled by WAD). Warning: |speedFactor * error * elapsed| <= 3 must hold.
     /// Above that, the approximations in wExp are considered too large.
-    /// @param newTargetUtilization The target utilization (scaled by WAD). Should be between 0 and 1.
-    /// @param newInitialRate The initial rate (scaled by WAD).
+    /// @param targetUtilization The target utilization (scaled by WAD). Should be between 0 and 1.
+    /// @param initialRate The initial rate (scaled by WAD).
     constructor(
-        address newMorpho,
-        uint256 newLnJumpFactor,
-        uint256 newSpeedFactor,
-        uint256 newTargetUtilization,
-        uint256 newInitialRate
+        address morpho,
+        uint256 lnJumpFactor,
+        uint256 speedFactor,
+        uint256 targetUtilization,
+        uint256 initialRate
     ) {
-        require(newLnJumpFactor <= uint256(type(int256).max), ErrorsLib.INPUT_TOO_LARGE);
-        require(newSpeedFactor <= uint256(type(int256).max), ErrorsLib.INPUT_TOO_LARGE);
-        require(newTargetUtilization <= WAD, ErrorsLib.INPUT_TOO_LARGE);
+        require(lnJumpFactor <= uint256(type(int256).max), ErrorsLib.INPUT_TOO_LARGE);
+        require(speedFactor <= uint256(type(int256).max), ErrorsLib.INPUT_TOO_LARGE);
+        require(targetUtilization <= WAD, ErrorsLib.INPUT_TOO_LARGE);
 
-        MORPHO = newMorpho;
-        LN_JUMP_FACTOR = newLnJumpFactor;
-        SPEED_FACTOR = newSpeedFactor;
-        TARGET_UTILIZATION = newTargetUtilization;
-        INITIAL_RATE = newInitialRate;
+        MORPHO = morpho;
+        LN_JUMP_FACTOR = lnJumpFactor;
+        SPEED_FACTOR = speedFactor;
+        TARGET_UTILIZATION = targetUtilization;
+        INITIAL_RATE = initialRate;
     }
 
     /* BORROW RATES */
@@ -106,14 +109,13 @@ contract Irm is IIrm {
         int256 errDelta = int256(utilization) - int128(marketIrm[id].prevUtilization);
 
         // Safe "unchecked" cast because LN_JUMP_FACTOR <= type(int256).max.
-        uint256 jumpMultiplier = IrmMathLib.wExp3(errDelta.wMulDown(int256(LN_JUMP_FACTOR)));
+        uint256 jumpMultiplier = MathLib.wExp3(errDelta.wMulDown(int256(LN_JUMP_FACTOR)));
         // Safe "unchecked" cast because SPEED_FACTOR <= type(int256).max.
         int256 speed = int256(SPEED_FACTOR).wMulDown(err);
-        // elapsed is never zero, because Morpho skips the interest accrual in this case.
         uint256 elapsed = block.timestamp - market.lastUpdate;
         // Safe "unchecked" cast because elapsed <= block.timestamp.
         int256 linearVariation = speed * int256(elapsed);
-        uint256 variationMultiplier = IrmMathLib.wExp12(linearVariation);
+        uint256 variationMultiplier = MathLib.wExp12(linearVariation);
 
         // newBorrowRate = prevBorrowRate * jumpMultiplier * variationMultiplier.
         uint256 borrowRateAfterJump = prevBorrowRateCached.wMulDown(jumpMultiplier);
@@ -121,9 +123,9 @@ contract Irm is IIrm {
 
         // Then we compute the average rate over the period (this is what Morpho needs to accrue the interest).
         // avgBorrowRate = 1 / elapsed * ∫ borrowRateAfterJump * exp(speed * t) dt between 0 and elapsed
-        //               = borrowRateAfterJump * (exp(speed * t) - 1) / (speed * elapsed)
-        //               = (newBorrowRate - borrowRateAfterJump) / (speed * elapsed)
-        // And avgBorrowRate ~ borrowRateAfterJump for elapsed around zero.
+        //               = borrowRateAfterJump * (exp(linearVariation) - 1) / (linearVariation)
+        //               = (newBorrowRate - borrowRateAfterJump) / (linearVariation)
+        // And avgBorrowRate ~ borrowRateAfterJump for linearVariation around zero.
         int256 avgBorrowRate;
         if (linearVariation == 0) avgBorrowRate = int256(borrowRateAfterJump);
         else avgBorrowRate = (int256(newBorrowRate) - int256(borrowRateAfterJump)).wDivDown(linearVariation);
