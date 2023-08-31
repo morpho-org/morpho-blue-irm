@@ -51,7 +51,8 @@ contract Irm is IIrm {
 
     /// @notice Constructor.
     /// @param morpho The address of Morpho.
-    /// @param lnJumpFactor The log of the jump factor (scaled by WAD).
+    /// @param lnJumpFactor The log of the jump factor (scaled by WAD). Warning: lnJumpFactor <= 3 must hold. Above
+    /// that, the approximations in wExp are considered too large.
     /// @param speedFactor The speed factor (scaled by WAD). Warning: |speedFactor * error * elapsed| <= 3 must hold.
     /// Above that, the approximations in wExp are considered too large.
     /// @param targetUtilization The target utilization (scaled by WAD). Should be between 0 and 1.
