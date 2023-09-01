@@ -1,10 +1,9 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity 0.8.19;
 
-import {UtilsLib} from "./libraries/UtilsLib.sol";
 import {ErrorsLib} from "./libraries/ErrorsLib.sol";
 import {IIrm} from "morpho-blue/interfaces/IIrm.sol";
-import {UtilsLib as MorphoUtilsLib} from "morpho-blue/libraries/UtilsLib.sol";
+import {UtilsLib} from "morpho-blue/libraries/UtilsLib.sol";
 import {WAD, MathLib as MorphoMathLib} from "morpho-blue/libraries/MathLib.sol";
 import {WAD_INT, MathLib} from "./libraries/MathLib.sol";
 import {MarketParamsLib} from "morpho-blue/libraries/MarketParamsLib.sol";
@@ -23,10 +22,9 @@ struct MarketIrm {
 contract Irm is IIrm {
     using MathLib for int256;
     using MathLib for uint256;
-    using UtilsLib for int256;
+    using UtilsLib for uint256;
     using MorphoMathLib for uint128;
     using MorphoMathLib for uint256;
-    using MorphoUtilsLib for uint256;
     using MarketParamsLib for MarketParams;
 
     /* CONSTANTS */
@@ -40,7 +38,7 @@ contract Irm is IIrm {
     /// @notice Target utilization (scaled by WAD).
     uint256 public immutable TARGET_UTILIZATION;
     /// @notice Initial rate (scaled by WAD).
-    uint256 public immutable INITIAL_RATE;
+    uint128 public immutable INITIAL_RATE;
 
     /* STORAGE */
 
@@ -62,7 +60,7 @@ contract Irm is IIrm {
         uint256 lnJumpFactor,
         uint256 speedFactor,
         uint256 targetUtilization,
-        uint256 initialRate
+        uint128 initialRate
     ) {
         require(lnJumpFactor <= uint256(type(int256).max), ErrorsLib.INPUT_TOO_LARGE);
         require(speedFactor <= uint256(type(int256).max), ErrorsLib.INPUT_TOO_LARGE);
@@ -89,25 +87,25 @@ contract Irm is IIrm {
 
         Id id = marketParams.id();
 
-        (int256 err, uint256 newBorrowRate, uint256 avgBorrowRate) = _borrowRate(id, market);
+        (int128 err, uint128 newBorrowRate, uint256 avgBorrowRate) = _borrowRate(id, market);
 
-        marketIrm[id].prevErr = err.toInt128();
-        marketIrm[id].prevBorrowRate = newBorrowRate.toUint128();
+        marketIrm[id].prevErr = err;
+        marketIrm[id].prevBorrowRate = newBorrowRate;
         return avgBorrowRate;
     }
 
     /// @dev Returns err, newBorrowRate and avgBorrowRate.
-    function _borrowRate(Id id, Market memory market) private view returns (int256, uint256, uint256) {
+    function _borrowRate(Id id, Market memory market) private view returns (int128, uint128, uint256) {
         uint256 utilization =
             market.totalSupplyAssets > 0 ? market.totalBorrowAssets.wDivDown(market.totalSupplyAssets) : 0;
 
-        int256 err;
+        int128 err;
         if (utilization > TARGET_UTILIZATION) {
             // Safe "unchecked" cast because |err| <= WAD.
-            err = int256((utilization - TARGET_UTILIZATION).wDivDown(WAD - TARGET_UTILIZATION));
+            err = int128(int256((utilization - TARGET_UTILIZATION).wDivDown(WAD - TARGET_UTILIZATION)));
         } else {
             // Safe "unchecked" casts because utilization <= WAD and TARGET_UTILIZATION <= WAD.
-            err = (int256(utilization) - int256(TARGET_UTILIZATION)).wDivDown(int256(TARGET_UTILIZATION));
+            err = int128((int256(utilization) - int256(TARGET_UTILIZATION)).wDivDown(int256(TARGET_UTILIZATION)));
         }
 
         if (marketIrm[id].prevBorrowRate == 0) return (err, INITIAL_RATE, INITIAL_RATE);
@@ -138,6 +136,6 @@ contract Irm is IIrm {
         if (linearVariation == 0) avgBorrowRate = int256(borrowRateAfterJump);
         else avgBorrowRate = (int256(newBorrowRate) - int256(borrowRateAfterJump)).wDivDown(linearVariation);
 
-        return (err, MorphoUtilsLib.min(newBorrowRate, type(uint128).max), uint256(avgBorrowRate));
+        return (err, uint128(UtilsLib.min(newBorrowRate, type(uint128).max)), uint256(avgBorrowRate));
     }
 }

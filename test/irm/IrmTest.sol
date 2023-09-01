@@ -15,7 +15,7 @@ contract IrmTest is Test {
     uint256 internal constant LN2 = 0.69314718056 ether;
     uint256 internal constant TARGET_UTILIZATION = 0.8 ether;
     uint256 internal constant SPEED_FACTOR = uint256(0.01 ether) / uint256(10 hours);
-    uint256 internal constant INITIAL_RATE = uint256(0.01 ether) / uint256(365 days);
+    uint128 internal constant INITIAL_RATE = uint128(0.01 ether) / uint128(365 days);
 
     Irm internal irm;
     MarketParams internal marketParams = MarketParams(address(0), address(0), address(0), address(0), 0);
