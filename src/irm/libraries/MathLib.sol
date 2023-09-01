@@ -13,7 +13,7 @@ library MathLib {
 
     /// @dev 12th-order Taylor polynomial of e^x, for x around 0.
     /// @dev The input is limited to a range between -3 and 3.
-    /// @dev The approximation error is less than 1% between -3 and 3. 
+    /// @dev The approximation error is less than 1% between -3 and 3.
     function wExp12(int256 x) internal pure returns (uint256) {
         x = x >= -3 * WAD_INT ? x : -3 * WAD_INT;
         x = x <= 3 * WAD_INT ? x : 3 * WAD_INT;

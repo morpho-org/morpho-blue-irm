@@ -24,5 +24,19 @@ contract MathLibTest is Test {
         x = bound(x, -3 ether, 3 ether);
         assertGe(int256(MathLib.wExp12(x)), int256(WAD) + x);
         if (x < 0) assertLe(MathLib.wExp12(x), WAD);
+        assertApproxEqRel(MathLib.wExp12(x), wExpRef(x), 0.01 ether);
     }
+}
+
+function wExpRef(int256 x) pure returns (uint256) {
+    // `N` should be even otherwise the result can be negative.
+    int256 N = 64;
+    int256 res = WAD_INT;
+    int256 monomial = WAD_INT;
+    for (int256 k = 1; k <= N; k++) {
+        monomial = monomial * x / WAD_INT / k;
+        res += monomial;
+    }
+    // Safe "unchecked" cast because `N` is even.
+    return uint256(res);
 }
