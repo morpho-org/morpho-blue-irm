@@ -1,6 +1,7 @@
 name: test
 
-on: workflow_dispatch
+on:
+  push:
 
 env:
   FOUNDRY_PROFILE: ci
@@ -13,8 +14,17 @@ jobs:
     name: Foundry project
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
+      - name: Generate a token
+        id: generate-token
+        uses: tibdex/github-app-token@b62528385c34dbc9f38e5f4225ac829252d1ea92
         with:
+          app_id: ${{ secrets.APP_ID }}
+          private_key: ${{ secrets.APP_PRIVATE_KEY }}
+
+      - name: Checkout
+        uses: actions/checkout@v3
+        with:
+          token: ${{ steps.generate-token.outputs.token }}
           submodules: recursive
 
       - name: Install Foundry
