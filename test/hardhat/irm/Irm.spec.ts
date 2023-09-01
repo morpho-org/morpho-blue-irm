@@ -164,4 +164,22 @@ describe("Irm", () => {
       await morpho.connect(borrower).withdrawCollateral(marketParams, assets / 8n, borrower.address, borrower.address);
     }
   });
+
+  it("should trace borrow rate [borrowRate]", async () => {
+    const supplier = suppliers[0];
+
+    await morpho.connect(supplier).supply(marketParams, BigInt.WAD, 0, supplier.address, "0x");
+
+    const borrower = borrowers[0];
+
+    await morpho.connect(borrower).supplyCollateral(marketParams, BigInt.WAD, borrower.address, "0x");
+    await morpho.connect(borrower).borrow(marketParams, BigInt.WAD / 2n, 0, borrower.address, borrower.address);
+
+    const block = await hre.ethers.provider.getBlock("latest");
+    await setNextBlockTimestamp(block!.timestamp + 60 * 60 * 24);
+
+    hre.tracer.printNext = true;
+    hre.tracer.enableAllOpcodes = true;
+    await morpho.accrueInterest(marketParams);
+  });
 });
