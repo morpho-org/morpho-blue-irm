@@ -99,14 +99,10 @@ contract Irm is IIrm {
         uint256 utilization =
             market.totalSupplyAssets > 0 ? market.totalBorrowAssets.wDivDown(market.totalSupplyAssets) : 0;
 
-        int128 err;
-        if (utilization > TARGET_UTILIZATION) {
-            // Safe "unchecked" cast because |err| <= WAD.
-            err = int128(int256((utilization - TARGET_UTILIZATION).wDivDown(WAD - TARGET_UTILIZATION)));
-        } else {
-            // Safe "unchecked" casts because utilization <= WAD and TARGET_UTILIZATION <= WAD.
-            err = int128((int256(utilization) - int256(TARGET_UTILIZATION)).wDivDown(int256(TARGET_UTILIZATION)));
-        }
+        uint256 errNormFactor = utilization > TARGET_UTILIZATION ? WAD - TARGET_UTILIZATION : TARGET_UTILIZATION;
+        // Safe "unchecked" int128 cast because |err| <= WAD.
+        // Safe "unchecked" int256 casts because utilization <= WAD, TARGET_UTILIZATION <= WAD and errNormFactor <= WAD.
+        int128 err = int128((int256(utilization) - int256(TARGET_UTILIZATION)).wDivDown(int256(errNormFactor)));
 
         if (marketIrm[id].prevBorrowRate == 0) return (err, INITIAL_RATE, INITIAL_RATE);
 
