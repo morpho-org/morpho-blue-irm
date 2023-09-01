@@ -12,12 +12,11 @@ library MathLib {
     using {wMulDown} for int256;
 
     /// @dev 12th-order Taylor polynomial of e^x, for x around 0.
-    /// @dev The approximation error is less than 1% between -3 and 3. Above 3, the function returns 20 and below -3 the
-    /// function returns 0.05.
+    /// @dev The input is limited to a range between -3 and 3.
+    /// @dev The approximation error is less than 1% between -3 and 3. 
     function wExp12(int256 x) internal pure returns (uint256) {
-        // The approximation error increases quickly below x = -3, so we hardcode the result.
-        if (x < -3 * WAD_INT) return 0.05 ether;
-        if (x > 3 * WAD_INT) return 20 ether;
+        x = x >= -3 * WAD_INT ? x : -3 * WAD_INT;
+        x = x <= 3 * WAD_INT ? x : 3 * WAD_INT;
 
         // `N` should be even otherwise the result can be negative.
         int256 N = 12;
@@ -27,7 +26,7 @@ library MathLib {
             monomial = monomial.wMulDown(x) / k;
             res += monomial;
         }
-        // Safe "unchecked" cast because N is even.
+        // Safe "unchecked" cast because `N` is even.
         return uint256(res);
     }
 
