@@ -95,7 +95,7 @@ contract Irm is IIrm {
     }
 
     /// @dev Returns err, newBorrowRate and avgBorrowRate.
-    function _borrowRate(Id id, Market memory market) private view returns (int128, uint128, uint256) {
+    function _borrowRate(Id id, Market memory market) private view returns (int128, uint128, uint128) {
         uint256 utilization =
             market.totalSupplyAssets > 0 ? market.totalBorrowAssets.wDivDown(market.totalSupplyAssets) : 0;
 
@@ -128,10 +128,16 @@ contract Irm is IIrm {
         //               = borrowRateAfterJump * (exp(linearVariation) - 1) / (linearVariation)
         //               = (newBorrowRate - borrowRateAfterJump) / (linearVariation)
         // And avgBorrowRate ~ borrowRateAfterJump for linearVariation around zero.
-        int256 avgBorrowRate;
-        if (linearVariation == 0) avgBorrowRate = int256(borrowRateAfterJump);
-        else avgBorrowRate = (int256(newBorrowRate) - int256(borrowRateAfterJump)).wDivDown(linearVariation);
+        uint256 avgBorrowRate;
+        if (linearVariation == 0) avgBorrowRate = borrowRateAfterJump;
+        // Safe "unchecked" cast to uint256 because linearVariation < 0 <=> newBorrowRate <= borrowRateAfterJump.
+        else avgBorrowRate = uint256((int256(newBorrowRate) - int256(borrowRateAfterJump)).wDivDown(linearVariation));
 
-        return (err, uint128(UtilsLib.min(newBorrowRate, type(uint128).max)), uint256(avgBorrowRate));
+        // We cap both newBorrowRate and avgBorrowRate to 2^128 - 1.
+        return (
+            err,
+            uint128(UtilsLib.min(newBorrowRate, type(uint128).max)),
+            uint128(UtilsLib.min(avgBorrowRate, type(uint128).max))
+        );
     }
 }
