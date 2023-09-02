@@ -1,6 +1,7 @@
 # Compiler files
 cache/
 out/
+dist/
 
 # Ignores development broadcast logs
 !/broadcast
@@ -12,3 +13,20 @@ docs/
 
 # Dotenv file
 .env
+
+# IDE
+.vscode
+
+# data
+data/
+broadcast/
+
+# Node.js
+node_modules/
+
+# Hardhat
+/types
+/cache_hardhat
+/artifacts
+
+*.log

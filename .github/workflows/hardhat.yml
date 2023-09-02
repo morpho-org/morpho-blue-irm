@@ -1,4 +1,4 @@
-name: Formatting
+name: Hardhat
 
 on:
   push:
@@ -11,8 +11,10 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  lint:
+  build-contracts:
+    name: Compilation
     runs-on: ubuntu-latest
+
     steps:
       - name: Generate a token
         id: generate-token
@@ -21,12 +23,16 @@ jobs:
           app_id: ${{ secrets.APP_ID }}
           private_key: ${{ secrets.APP_PRIVATE_KEY }}
 
-      - uses: actions/checkout@v3
+      - name: Checkout
+        uses: actions/checkout@v3
         with:
           token: ${{ steps.generate-token.outputs.token }}
           submodules: recursive
 
       - uses: ./.github/actions/install
 
-      - name: Run Linter
-        run: yarn lint
+      - name: Build contracts
+        run: yarn build:hardhat --force # don't use compilation cache
+
+      - name: Build typescript
+        run: yarn build:ts
