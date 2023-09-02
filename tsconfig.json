@@ -10,6 +10,6 @@
     "resolveJsonModule": true,
     "declaration": true
   },
-  "include": ["src", "types", "test/hardhat"],
+  "include": ["src", "types", "test/hardhat", "packages/bundlers/src/BundlerAction.ts", "packages/bundlers/src/BundlerAction.ts"],
   "files": ["./hardhat.config.ts"]
 }
