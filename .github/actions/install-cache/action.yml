@@ -1,5 +1,7 @@
 name: Install repository with compilation cache
 
+
+
 runs:
   using: composite
 
@@ -10,9 +12,10 @@ runs:
       uses: actions/cache/restore@v3
       with:
         path: |
-          cache
-          out
+          packages/${{ github.workflow }}/cache
+          packages/${{ github.workflow }}/out
         key: forge-${{ github.ref_name }}-${{ github.workflow }}
         restore-keys: |
           forge-${{ github.base_ref }}
           forge-
+          

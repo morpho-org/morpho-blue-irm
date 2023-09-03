@@ -9,6 +9,7 @@ runs:
       with:
         node-version: 18
         cache: yarn
+        cache-dependency-path: packages/${{ github.workflow }}/yarn.lock
 
     - name: Install Foundry
       uses: foundry-rs/foundry-toolchain@v1
