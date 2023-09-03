@@ -169,9 +169,9 @@ contract IrmTest is Test {
         int256 errDelta = err - prevErr;
         uint256 elapsed = block.timestamp - market1.lastUpdate;
 
-        uint256 jumpMultiplier = MathLib.wExp12(errDelta.wMulDown(int256(LN2)));
+        uint256 jumpMultiplier = MathLib.wExp(errDelta.wMulDown(int256(LN2)));
         int256 speed = int256(SPEED_FACTOR).wMulDown(err);
-        uint256 variationMultiplier = MathLib.wExp12(speed * int256(elapsed));
+        uint256 variationMultiplier = MathLib.wExp(speed * int256(elapsed));
         uint256 expectedBorrowRateAfterJump = INITIAL_RATE.wMulDown(jumpMultiplier);
         uint256 expectedNewBorrowRate = INITIAL_RATE.wMulDown(jumpMultiplier).wMulDown(variationMultiplier);
 
