@@ -8,8 +8,6 @@
     "lib/**/*"
   ],
   "scripts": {
-    "prepare": "husky install",
-    "postinstall": "forge install",
     "build:ts": "yarn build:hardhat && tsc --build ./tsconfig.build.json",
     "build:forge": "FOUNDRY_PROFILE=build forge build",
     "build:hardhat": "npx hardhat compile",
