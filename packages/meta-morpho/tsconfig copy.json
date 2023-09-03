@@ -1,0 +1,15 @@
+{
+  "compilerOptions": {
+    "target": "esnext",
+    "strict": true,
+    "esModuleInterop": true,
+    "rootDir": ".",
+    "baseUrl": ".",
+    "outDir": "dist",
+    "moduleResolution": "node",
+    "resolveJsonModule": true,
+    "declaration": true
+  },
+  "include": ["src", "types", "test/hardhat", "packages/src/BundlerAction.ts", "packages/src/BundlerAction.ts"],
+  "files": ["./hardhat.config.ts"]
+}

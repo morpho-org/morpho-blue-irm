@@ -1,6 +1,6 @@
 {
   "name": "@morpho-blue-periphery/meta-morpho",
-  "description": "Morpho Blue Periphery Bundlers",
+  "description": "Morpho Blue Periphery MetaMorpho",
   "license": "GPL-2.0-or-later",
   "version": "1.0.0",
   "main": "lib/index.js",
