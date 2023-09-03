@@ -28,17 +28,17 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/morpho-labs/morpho-stack.git"
+    "url": "git+https://github.com/morpho-labs/morpho-blue-periphery.git"
   },
   "author": {
     "name": "Morpho Labs",
-    "email": "security@morpho.org",
+    "email": "security@morpho.xyz",
     "url": "https://github.com/morpho-labs"
   },
   "bugs": {
-    "url": "https://github.com/morpho-labs/morpho-stack/issues"
+    "url": "https://github.com/morpho-labs/morpho-blue-periphery/issues"
   },
-  "homepage": "https://github.com/morpho-labs/morpho-stack#readme",
+  "homepage": "https://github.com/morpho-labs/morpho-blue-periphery#readme",
   "dependencies": {
     "ethers": "^6.7.1",
     "ethers-maths": "^4.0.2",
