@@ -6,7 +6,7 @@ import {
   StEthBundler__factory,
   WNativeBundler__factory,
 } from "types";
-import { AuthorizationStruct, MarketParamsStruct, SignatureStruct } from "types/contracts/bundlers/MorphoBundler";
+import { AuthorizationStruct, MarketParamsStruct, SignatureStruct } from "types/contracts/MorphoBundler";
 
 export type BundlerCall = string;
 

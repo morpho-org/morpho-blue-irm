@@ -4,9 +4,9 @@ pragma solidity ^0.8.0;
 import {IAllowanceTransfer} from "@permit2/interfaces/IAllowanceTransfer.sol";
 
 import {ECDSA} from "@openzeppelin/contracts/utils/cryptography/ECDSA.sol";
-import {ERC20Bundler} from "contracts/bundlers/ERC20Bundler.sol";
+import {ERC20Bundler} from "contracts/ERC20Bundler.sol";
 
-import "contracts/bundlers/ethereum-mainnet/EthereumBundler.sol";
+import "contracts/ethereum-mainnet/EthereumBundler.sol";
 
 import "../helpers/ForkTest.sol";
 

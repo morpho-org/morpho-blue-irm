@@ -10,9 +10,9 @@ import {MorphoLib} from "@morpho-blue/libraries/periphery/MorphoLib.sol";
 import {MorphoBalancesLib} from "@morpho-blue/libraries/periphery/MorphoBalancesLib.sol";
 
 import "../../helpers/ForkTest.sol";
-import {MorphoBundler} from "contracts/bundlers/MorphoBundler.sol";
-import {ERC4626Bundler} from "contracts/bundlers/ERC4626Bundler.sol";
-import {ERC20Bundler} from "contracts/bundlers/ERC20Bundler.sol";
+import {MorphoBundler} from "contracts/MorphoBundler.sol";
+import {ERC4626Bundler} from "contracts/ERC4626Bundler.sol";
+import {ERC20Bundler} from "contracts/ERC20Bundler.sol";
 import {ERC4626Mock} from "../../mocks/ERC4626Mock.sol";
 
 contract BaseMigrationTest is ForkTest {

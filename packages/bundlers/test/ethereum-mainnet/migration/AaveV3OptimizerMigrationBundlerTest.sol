@@ -7,7 +7,7 @@ import {IMorpho as IAaveV3Optimizer} from "@morpho-aave-v3/interfaces/IMorpho.so
 
 import {Types} from "@morpho-aave-v3/libraries/Types.sol";
 
-import {AaveV3OptimizerMigrationBundler} from "contracts/bundlers/migration/AaveV3OptimizerMigrationBundler.sol";
+import {AaveV3OptimizerMigrationBundler} from "contracts/migration/AaveV3OptimizerMigrationBundler.sol";
 
 contract AaveV3MigrationBundlerTest is BaseMigrationTest {
     using SafeTransferLib for ERC20;

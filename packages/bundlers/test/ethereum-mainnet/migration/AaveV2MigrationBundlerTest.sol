@@ -5,7 +5,7 @@ import {ILendingPool} from "@morpho-v1/aave-v2/interfaces/aave/ILendingPool.sol"
 import {IAToken} from "@morpho-v1/aave-v2/interfaces/aave/IAToken.sol";
 
 import "./BaseMigrationTest.sol";
-import {AaveV2MigrationBundler} from "contracts/bundlers/migration/AaveV2MigrationBundler.sol";
+import {AaveV2MigrationBundler} from "contracts/migration/AaveV2MigrationBundler.sol";
 
 contract AaveV2MigrationBundlerTest is BaseMigrationTest {
     using SafeTransferLib for ERC20;

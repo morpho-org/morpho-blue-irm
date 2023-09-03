@@ -3,8 +3,8 @@ pragma solidity 0.8.21;
 
 import {ErrorsLib} from "./libraries/ErrorsLib.sol";
 
-import {BaseSelfMulticall} from "../BaseSelfMulticall.sol";
-import {BaseCallbackReceiver} from "../BaseCallbackReceiver.sol";
+import {BaseSelfMulticall} from "./BaseSelfMulticall.sol";
+import {BaseCallbackReceiver} from "./BaseCallbackReceiver.sol";
 
 /// @title BaseBundler
 /// @author Morpho Labs

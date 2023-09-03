@@ -5,7 +5,7 @@ import {IPool} from "@aave/v3-core/interfaces/IPool.sol";
 import {IAToken} from "@aave/v3-core/interfaces/IAToken.sol";
 
 import "./BaseMigrationTest.sol";
-import {AaveV3MigrationBundler} from "contracts/bundlers/migration/AaveV3MigrationBundler.sol";
+import {AaveV3MigrationBundler} from "contracts/migration/AaveV3MigrationBundler.sol";
 
 contract AaveV3MigrationBundlerTest is BaseMigrationTest {
     using SafeTransferLib for ERC20;
