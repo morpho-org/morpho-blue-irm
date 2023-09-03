@@ -1,0 +1,80 @@
+name: irm
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - packages/irm/**
+      - .github/workflows/irm.yml
+  pull_request:
+    paths:
+      - packages/irm/**
+      - .github/workflows/irm.yml
+
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}-${{ github.event_name }}
+  cancel-in-progress: true
+
+
+defaults:
+  run:
+    working-directory: packages/irm
+
+
+env:
+  FOUNDRY_PROFILE: ci
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Generate a token
+        id: generate-token
+        uses: tibdex/github-app-token@b62528385c34dbc9f38e5f4225ac829252d1ea92
+        with:
+          app_id: ${{ secrets.APP_ID }}
+          private_key: ${{ secrets.APP_PRIVATE_KEY }}
+
+      - uses: actions/checkout@v3
+        with:
+          token: ${{ steps.generate-token.outputs.token }}
+          submodules: recursive
+
+      - uses: ./.github/actions/install
+
+      - name: Run Formatter
+        run: forge fmt --check
+
+  foundry-tests:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Generate a token
+        id: generate-token
+        uses: tibdex/github-app-token@b62528385c34dbc9f38e5f4225ac829252d1ea92
+        with:
+          app_id: ${{ secrets.APP_ID }}
+          private_key: ${{ secrets.APP_PRIVATE_KEY }}
+
+      - name: Checkout
+        uses: actions/checkout@v3
+        with:
+          token: ${{ steps.generate-token.outputs.token }}
+          submodules: recursive
+
+      - name: Install Foundry
+        uses: foundry-rs/foundry-toolchain@v1
+        with:
+          version: nightly
+
+      - name: Run Forge build
+        run: |
+          forge --version
+          forge build --sizes
+        id: build
+
+      - name: Run Forge tests
+        run: |
+          forge test -vvv
+        id: test

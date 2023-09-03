@@ -1,16 +1,73 @@
-name: Foundry
+name: meta-morpho
 
 on:
   push:
     branches:
       - main
+    paths:
+      - packages/meta-morpho/**
+      - .github/workflows/meta-morpho.yml
   pull_request:
+    paths:
+      - packages/meta-morpho/**
+      - .github/workflows/meta-morpho.yml
+
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}-${{ github.event_name }}
   cancel-in-progress: true
 
+
+defaults:
+  run:
+    working-directory: packages/meta-morpho
+
+
 jobs:
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Generate a token
+        id: generate-token
+        uses: tibdex/github-app-token@b62528385c34dbc9f38e5f4225ac829252d1ea92
+        with:
+          app_id: ${{ secrets.APP_ID }}
+          private_key: ${{ secrets.APP_PRIVATE_KEY }}
+
+      - uses: actions/checkout@v3
+        with:
+          token: ${{ steps.generate-token.outputs.token }}
+          submodules: recursive
+
+      - uses: ./.github/actions/install
+
+      - name: Run Linter
+        run: yarn lint
+
+  build-ts:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Generate a token
+        id: generate-token
+        uses: tibdex/github-app-token@b62528385c34dbc9f38e5f4225ac829252d1ea92
+        with:
+          app_id: ${{ secrets.APP_ID }}
+          private_key: ${{ secrets.APP_PRIVATE_KEY }}
+
+      - uses: actions/checkout@v3
+        with:
+          token: ${{ steps.generate-token.outputs.token }}
+          submodules: recursive
+
+      - uses: ./.github/actions/install
+
+      - name: Build contracts
+        run: yarn build:hardhat --force # don't use compilation cache
+
+      - name: Build typescript
+        run: yarn build:ts
+
   build-via-ir:
     name: Compilation (via IR)
     runs-on: ubuntu-latest
@@ -65,7 +122,7 @@ jobs:
           path: |
             cache
             out
-          key: forge-${{ github.ref_name }}
+          key: forge-${{ github.ref_name }}-${{ github.workflow }}
 
   test-local:
     needs: build-no-ir
