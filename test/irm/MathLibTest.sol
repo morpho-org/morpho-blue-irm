@@ -19,9 +19,14 @@ contract MathLibTest is Test {
     }
 
     function testWExp(int256 x) public {
-        x = bound(x, -3 ether, 3 ether);
-        assertGe(int256(MathLib.wExp(x)), int256(WAD) + x);
+        // Bounds between log(5e-18) and log((2**255 - 1) / 1e18).
+        x = bound(x, -42 ether, 58.76 ether);
+        if (x >= 0) assertGe(MathLib.wExp(x), WAD + uint256(x));
         if (x < 0) assertLe(MathLib.wExp(x), WAD);
+    }
+
+    function testWExpRef(int256 x) public {
+        x = bound(x, -3 ether, 3 ether);
         assertApproxEqRel(MathLib.wExp(x), wExpRef(x), 0.01 ether);
     }
 }
