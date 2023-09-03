@@ -11,23 +11,33 @@ library MathLib {
     using {wDivDown} for int256;
     using {wMulDown} for int256;
 
-    /// @dev 12th-order Taylor polynomial of e^x, for x around 0.
-    /// @dev The input is limited to a range between -3 and 3.
-    /// @dev The approximation error is less than 1% between -3 and 3.
-    function wExp12(int256 x) internal pure returns (uint256) {
-        x = x >= -3 * WAD_INT ? x : -3 * WAD_INT;
-        x = x <= 3 * WAD_INT ? x : 3 * WAD_INT;
+    /// @dev ln(2).
+    int256 private constant LN2_INT = 0.693147180559945309 ether;
 
-        // `N` should be even otherwise the result can be negative.
-        int256 N = 12;
-        int256 res = WAD_INT;
-        int256 monomial = WAD_INT;
-        for (int256 k = 1; k <= N; k++) {
-            monomial = monomial.wMulDown(x) / k;
-            res += monomial;
+    /// @dev Returns an approximation of exp.
+    function wExp(int256 x) internal pure returns (uint256) {
+        unchecked {
+            // Decompose x as x = q * ln(2) + r with q an integer and -ln(2) < r < ln(2).
+            int256 q = x / LN2_INT;
+            // Safe unchecked * because |q * LN2_INT| <= x.
+            int256 r = x - q * LN2_INT; 
+
+            // Compute e^r.
+            int256 firstTerm = WAD_INT;
+            int256 secondTerm = r;
+            // Safe unchecked * because |r| < 1.
+            int256 thirdTerm = r.wMulDown(r) / 2;
+            // Safe unchecked * because |r| < 1.
+            int256 fourthTerm = thirdTerm.wMulDown(r) / 3;
+            // Safe unchecked * because |r| < 1.
+            int256 fifthTerm = fourthTerm.wMulDown(r) / 12;
+            // Safe unchecked + because expR < 2.
+            uint256 expR = uint256(firstTerm + secondTerm + thirdTerm + fourthTerm + fifthTerm);
+
+            // Return e^x = 2^q * e^r.
+            if (q >= 0) return (1 << uint256(q)) * expR;
+            else return expR / (1 << uint256(-q));
         }
-        // Safe "unchecked" cast because `N` is even.
-        return uint256(res);
     }
 
     function wMulDown(int256 a, int256 b) internal pure returns (int256) {

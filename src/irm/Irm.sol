@@ -49,10 +49,8 @@ contract Irm is IIrm {
 
     /// @notice Constructor.
     /// @param morpho The address of Morpho.
-    /// @param lnJumpFactor The log of the jump factor (scaled by WAD). Warning: lnJumpFactor <= 3 must hold. Above
-    /// that, the approximations in wExp are considered too large.
-    /// @param speedFactor The speed factor (scaled by WAD). Warning: |speedFactor * error * elapsed| <= 3 must hold.
-    /// Above that, the approximations in wExp are considered too large.
+    /// @param lnJumpFactor The log of the jump factor (scaled by WAD).
+    /// @param speedFactor The speed factor (scaled by WAD).
     /// @param targetUtilization The target utilization (scaled by WAD). Should be between 0 and 1.
     /// @param initialRate The initial rate (scaled by WAD).
     constructor(
@@ -111,13 +109,13 @@ contract Irm is IIrm {
         int256 errDelta = err - marketIrm[id].prevErr;
 
         // Safe "unchecked" cast because LN_JUMP_FACTOR <= type(int256).max.
-        uint256 jumpMultiplier = MathLib.wExp12(errDelta.wMulDown(int256(LN_JUMP_FACTOR)));
+        uint256 jumpMultiplier = MathLib.wExp(errDelta.wMulDown(int256(LN_JUMP_FACTOR)));
         // Safe "unchecked" cast because SPEED_FACTOR <= type(int256).max.
         int256 speed = int256(SPEED_FACTOR).wMulDown(err);
         uint256 elapsed = block.timestamp - market.lastUpdate;
         // Safe "unchecked" cast because elapsed <= block.timestamp.
         int256 linearVariation = speed * int256(elapsed);
-        uint256 variationMultiplier = MathLib.wExp12(linearVariation);
+        uint256 variationMultiplier = MathLib.wExp(linearVariation);
 
         // newBorrowRate = prevBorrowRate * jumpMultiplier * variationMultiplier.
         uint256 borrowRateAfterJump = marketIrm[id].prevBorrowRate.wMulDown(jumpMultiplier);
