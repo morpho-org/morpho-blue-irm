@@ -8,8 +8,19 @@
     "outDir": "dist",
     "moduleResolution": "node",
     "resolveJsonModule": true,
-    "declaration": true
+    "declaration": true,
   },
-  "include": ["src", "types", "test/hardhat", "packages/src/BundlerAction.ts", "packages/src/BundlerAction.ts"],
-  "files": ["./hardhat.config.ts"]
+  "include": ["src", "types"],
+  "files": [],
+  "references": [
+    {
+      "path": "./packages/bundlers"
+    },
+    {
+      "path": "./packages/irm"
+    },
+    {
+      "path": "./packages/meta-morpho"
+    }
+  ]
 }

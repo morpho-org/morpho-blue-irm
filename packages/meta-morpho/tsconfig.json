@@ -8,7 +8,8 @@
     "outDir": "dist",
     "moduleResolution": "node",
     "resolveJsonModule": true,
-    "declaration": true
+    "declaration": true,
+    "composite": true
   },
   "include": ["src", "types", "test/hardhat", "packages/src/BundlerAction.ts", "packages/src/BundlerAction.ts"],
   "files": ["./hardhat.config.ts"]

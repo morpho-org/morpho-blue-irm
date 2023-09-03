@@ -1,10 +1,9 @@
 {
-  "name": "@morpho-blue-periphery/bundlers",
+  "name": "@morpho-labs/morpho-blue-bundlers",
   "description": "Morpho Blue Periphery Bundlers",
   "license": "GPL-2.0-or-later",
   "version": "1.0.0",
-  "main": "lib/index.js",
-  "bin": "lib/cli.js",
+  "main": "build/index.js",
   "files": [
     "lib/**/*"
   ],
@@ -26,7 +25,8 @@
     "lint:fix": "yarn lint:forge:fix && yarn lint:ts:fix",
     "lint:ts:fix": "prettier --write src test/hardhat",
     "lint:forge:fix": "forge fmt",
-    "clean": "npx hardhat clean && forge clean"
+    "clean": "npx hardhat clean && forge clean",
+    "build": "tsc --build"
   },
   "repository": {
     "type": "git",
