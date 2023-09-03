@@ -1,0 +1,51 @@
+[submodule "packages/bundlers/lib/forge-std"]
+	path = packages/bundlers/lib/forge-std
+	url = https://github.com/foundry-rs/forge-std
+[submodule "packages/bundlers/lib/permit2"]
+	path = packages/bundlers/lib/permit2
+	url = https://github.com/Uniswap/permit2
+[submodule "packages/bundlers/lib/openzeppelin-contracts"]
+	path = packages/bundlers/lib/openzeppelin-contracts
+	url = https://github.com/openzeppelin/openzeppelin-contracts
+[submodule "packages/bundlers/lib/morpho-utils"]
+	path = packages/bundlers/lib/morpho-utils
+	url = https://github.com/morpho-dao/morpho-utils
+[submodule "packages/bundlers/lib/v3-periphery"]
+	path = packages/bundlers/lib/v3-periphery
+	url = https://github.com/Uniswap/v3-periphery
+[submodule "packages/bundlers/lib/v3-core"]
+	path = packages/bundlers/lib/v3-core
+	url = https://github.com/Uniswap/v3-core
+[submodule "packages/bundlers/lib/morpho-blue"]
+	path = packages/bundlers/lib/morpho-blue
+	url = https://github.com/morpho-labs/morpho-blue
+	branch = 0.8.21
+[submodule "packages/bundlers/lib/solmate"]
+	path = packages/bundlers/lib/solmate
+	url = https://github.com/transmissions11/solmate
+[submodule "packages/bundlers/lib/aave-v3-core"]
+	path = packages/bundlers/lib/aave-v3-core
+	url = https://github.com/aave/aave-v3-core
+[submodule "packages/bundlers/lib/morpho-aave-v3"]
+	path = packages/bundlers/lib/morpho-aave-v3
+	url = https://github.com/morpho-org/morpho-aave-v3
+[submodule "packages/bundlers/lib/morpho-v1"]
+	path = packages/bundlers/lib/morpho-v1
+	url = https://github.com/morpho-org/morpho-v1
+
+
+[submodule "packages/irm/lib/forge-std"]
+	path = packages/irm/lib/forge-std
+	url = https://github.com/foundry-rs/forge-std
+[submodule "packages/irm/lib/morpho-blue"]
+	path = packages/irm/lib/morpho-blue
+	url = https://github.com/morpho-labs/morpho-blue
+
+
+[submodule "packages/meta-morpho/lib/morpho-blue"]
+	path = packages/meta-morpho/lib/morpho-blue
+	url = https://github.com/morpho-labs/morpho-blue
+	branch = 0.8.21
+[submodule "packages/meta-morpho/lib/openzeppelin-contracts"]
+	path = packages/meta-morpho/lib/openzeppelin-contracts
+	url = https://github.com/openzeppelin/openzeppelin-contracts
