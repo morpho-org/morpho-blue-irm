@@ -53,6 +53,17 @@ contract MathLibTest is Test {
         x = bound(x, -3 ether, 3 ether);
         assertApproxEqRel(MathLib.wExp(x), wExpRef(x), 0.03 ether);
     }
+
+    function testWExpRevertTooSmall(int256 x) public {
+        vm.assume(x <= -178 ether);
+        assertEq(MathLib.wExp(x), 0);
+    }
+
+    function testWExpRevertTooBig(int256 x) public {
+        vm.assume(x >= 178 ether);
+        vm.expectRevert();
+        MathLib.wExp(x);
+    }
 }
 
 function wExpRef(int256 x) pure returns (uint256) {
