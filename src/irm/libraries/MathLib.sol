@@ -35,7 +35,7 @@ library MathLib {
             int256 fourthTerm = thirdTerm.wMulDown(r) / 3;
             // Safe unchecked because |r| < 1.
             int256 fifthTerm = fourthTerm.wMulDown(r) / 4;
-            // Safe unchecked because expR < 2.
+            // Safe unchecked because expR < 2 and the sum is positive.
             uint256 expR = uint256(firstTerm + secondTerm + thirdTerm + fourthTerm + fifthTerm);
 
             // Return e^x = 2^q * e^r.
