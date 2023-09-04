@@ -9,6 +9,17 @@ contract MathLibTest is Test {
     using MathLib for uint256;
 
     function testWExp() public {
+        assertApproxEqRel(MathLib.wExp(-14 ether), 0.00000083131 ether, 0.01 ether);
+        assertApproxEqRel(MathLib.wExp(-13 ether), 0.00000226033 ether, 0.01 ether);
+        assertApproxEqRel(MathLib.wExp(-12 ether), 0.00000614421 ether, 0.01 ether);
+        assertApproxEqRel(MathLib.wExp(-11 ether), 0.00001670164 ether, 0.01 ether);
+        assertApproxEqRel(MathLib.wExp(-10 ether), 0.00004539992 ether, 0.01 ether);
+        assertApproxEqRel(MathLib.wExp(-9 ether), 0.00012340980 ether, 0.01 ether);
+        assertApproxEqRel(MathLib.wExp(-8 ether), 0.00033546262 ether, 0.01 ether);
+        assertApproxEqRel(MathLib.wExp(-7 ether), 0.00091188196 ether, 0.01 ether);
+        assertApproxEqRel(MathLib.wExp(-6 ether), 0.00247875217 ether, 0.01 ether);
+        assertApproxEqRel(MathLib.wExp(-5 ether), 0.00673794699 ether, 0.01 ether);
+        assertApproxEqRel(MathLib.wExp(-4 ether), 0.01831563888 ether, 0.01 ether);
         assertApproxEqRel(MathLib.wExp(-3 ether), 0.04978706836 ether, 0.01 ether);
         assertApproxEqRel(MathLib.wExp(-2 ether), 0.13533528323 ether, 0.01 ether);
         assertApproxEqRel(MathLib.wExp(-1 ether), 0.36787944117 ether, 0.01 ether);
@@ -16,6 +27,17 @@ contract MathLibTest is Test {
         assertApproxEqRel(MathLib.wExp(1 ether), 2.71828182846 ether, 0.01 ether);
         assertApproxEqRel(MathLib.wExp(2 ether), 7.38905609893 ether, 0.01 ether);
         assertApproxEqRel(MathLib.wExp(3 ether), 20.0855369232 ether, 0.01 ether);
+        assertApproxEqRel(MathLib.wExp(4 ether), 54.5981500331 ether, 0.01 ether);
+        assertApproxEqRel(MathLib.wExp(5 ether), 148.413159103 ether, 0.01 ether);
+        assertApproxEqRel(MathLib.wExp(6 ether), 403.428793493 ether, 0.01 ether);
+        assertApproxEqRel(MathLib.wExp(7 ether), 1096.63315843 ether, 0.01 ether);
+        assertApproxEqRel(MathLib.wExp(8 ether), 2980.95798704 ether, 0.01 ether);
+        assertApproxEqRel(MathLib.wExp(9 ether), 8103.08392758 ether, 0.01 ether);
+        assertApproxEqRel(MathLib.wExp(10 ether), 22026.4657948 ether, 0.01 ether);
+        assertApproxEqRel(MathLib.wExp(11 ether), 59874.1417152 ether, 0.01 ether);
+        assertApproxEqRel(MathLib.wExp(12 ether), 162754.791419 ether, 0.01 ether);
+        assertApproxEqRel(MathLib.wExp(13 ether), 442413.392009 ether, 0.01 ether);
+        assertApproxEqRel(MathLib.wExp(14 ether), 1202604.28416 ether, 0.01 ether);
     }
 
     function testWExp(int256 x) public {

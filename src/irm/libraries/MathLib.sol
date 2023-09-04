@@ -31,13 +31,13 @@ library MathLib {
             // Safe unchecked * because |r| < 1.
             int256 fourthTerm = thirdTerm.wMulDown(r) / 3;
             // Safe unchecked * because |r| < 1.
-            int256 fifthTerm = fourthTerm.wMulDown(r) / 12;
+            int256 fifthTerm = fourthTerm.wMulDown(r) / 4;
             // Safe unchecked + because expR < 2.
             uint256 expR = uint256(firstTerm + secondTerm + thirdTerm + fourthTerm + fifthTerm);
 
             // Return e^x = 2^q * e^r.
-            if (q >= 0) return (1 << uint256(q)) * expR;
-            else return expR / (1 << uint256(-q));
+            if (q >= 0) return expR << uint256(q);
+            else return expR >> uint256(-q);
         }
     }
 
