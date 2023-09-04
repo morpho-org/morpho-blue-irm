@@ -2,7 +2,7 @@
 pragma solidity ^0.8.0;
 
 import "forge-std/Test.sol";
-import "../../src/irm/libraries/UtilsLib.sol";
+import "src/libraries/UtilsLib.sol";
 
 contract UtilsTest is Test {
     using UtilsLib for uint256;
