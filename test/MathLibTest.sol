@@ -3,8 +3,8 @@ pragma solidity ^0.8.0;
 
 import "forge-std/Test.sol";
 import "solmate/utils/SignedWadMath.sol";
-import "../../src/irm/libraries/MathLib.sol";
-import "../../src/irm/libraries/ErrorsLib.sol";
+import "src/libraries/MathLib.sol";
+import "src/libraries/ErrorsLib.sol";
 
 contract MathLibTest is Test {
     using MathLib for uint128;

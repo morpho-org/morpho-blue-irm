@@ -2,7 +2,7 @@
 pragma solidity ^0.8.0;
 
 import "forge-std/Test.sol";
-import "../../src/irm/Irm.sol";
+import "src/Irm.sol";
 
 contract IrmTest is Test {
     using MathLib for int256;
