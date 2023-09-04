@@ -59,7 +59,7 @@ contract MathLibTest is Test {
         assertEq(MathLib.wExp(x), 0);
     }
 
-    function testWExpRevertTooBig(int256 x) public {
+    function testWExpRevertTooLarge(int256 x) public {
         vm.assume(x >= 178 ether);
         vm.expectRevert();
         MathLib.wExp(x);
