@@ -2,41 +2,39 @@
 pragma solidity ^0.8.0;
 
 import "forge-std/Test.sol";
+import "solmate/utils/SignedWadMath.sol";
 import "../../src/irm/libraries/MathLib.sol";
+import "../../src/irm/libraries/ErrorsLib.sol";
 
 contract MathLibTest is Test {
     using MathLib for uint128;
     using MathLib for uint256;
 
-    function testWExp() public {
-        assertEq(MathLib.wExp12(-5 ether), MathLib.wExp12(-3 ether));
-        assertApproxEqRel(MathLib.wExp12(-3 ether), 0.04978706836 ether, 0.005 ether);
-        assertApproxEqRel(MathLib.wExp12(-2 ether), 0.13533528323 ether, 0.00001 ether);
-        assertApproxEqRel(MathLib.wExp12(-1 ether), 0.36787944117 ether, 0.00000001 ether);
-        assertEq(MathLib.wExp12(0 ether), 1.0 ether);
-        assertApproxEqRel(MathLib.wExp12(1 ether), 2.71828182846 ether, 0.00000001 ether);
-        assertApproxEqRel(MathLib.wExp12(2 ether), 7.38905609893 ether, 0.00001 ether);
-        assertApproxEqRel(MathLib.wExp12(3 ether), 20.0855369232 ether, 0.001 ether);
-        assertEq(MathLib.wExp12(5 ether), MathLib.wExp12(3 ether));
-    }
+    int256 private constant LN2_INT = 0.693147180559945309 ether;
 
     function testWExp(int256 x) public {
-        x = bound(x, -3 ether, 3 ether);
-        assertGe(int256(MathLib.wExp12(x)), int256(WAD) + x);
-        if (x < 0) assertLe(MathLib.wExp12(x), WAD);
-        assertApproxEqRel(MathLib.wExp12(x), wExpRef(x), 0.01 ether);
+        // Bound between ln(1e-9) ~ -27 and ln(max / 1e18 / 1e18) ~ 94, to be able to use `assertApproxEqRel`.
+        x = bound(x, -27 ether, 94 ether);
+        assertApproxEqRel(MathLib.wExp(x), uint256(wadExp(x)), 0.01 ether);
     }
-}
 
-function wExpRef(int256 x) pure returns (uint256) {
-    // `N` should be even otherwise the result can be negative.
-    int256 N = 64;
-    int256 res = WAD_INT;
-    int256 monomial = WAD_INT;
-    for (int256 k = 1; k <= N; k++) {
-        monomial = monomial * x / WAD_INT / k;
-        res += monomial;
+    function testWExpSmall(int256 x) public {
+        // Bound between -(2**255-1) + ln(2)/2 and ln(1e-18).
+        x = bound(x, type(int256).min + LN2_INT / 2, -178 ether);
+        assertEq(MathLib.wExp(x), 0);
     }
-    // Safe "unchecked" cast because `N` is even.
-    return uint256(res);
+
+    function testWExpTooSmall(int256 x) public {
+        // Bound between -(2**255-1) and -(2**255-1) + ln(2)/2 - 1.
+        x = bound(x, type(int256).min, type(int256).min + LN2_INT / 2 - 1);
+        vm.expectRevert(bytes(ErrorsLib.WEXP_UNDERFLOW));
+        assertEq(MathLib.wExp(x), 0);
+    }
+
+    function testWExpTooLarge(int256 x) public {
+        // Bound between ln(2**256-1) ~ 177 and 2**255-1.
+        x = bound(x, 178 ether, type(int256).max);
+        vm.expectRevert(bytes(ErrorsLib.WEXP_OVERFLOW));
+        MathLib.wExp(x);
+    }
 }
