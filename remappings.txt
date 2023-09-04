@@ -4,3 +4,4 @@ forge-std/=lib/forge-std/src/
 morpho-blue/=lib/morpho-blue/src/
 openzeppelin-contracts/=lib/morpho-blue/lib/openzeppelin-contracts/
 openzeppelin/=lib/morpho-blue/lib/openzeppelin-contracts/contracts/
+solmate/=lib/solmate/src/
