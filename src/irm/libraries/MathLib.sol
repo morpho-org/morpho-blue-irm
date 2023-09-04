@@ -20,19 +20,19 @@ library MathLib {
         unchecked {
             // Decompose x as x = q * ln(2) + r with q an integer and -ln(2) < r < ln(2).
             int256 q = x / LN2_INT;
-            // Safe unchecked * because |q * LN2_INT| <= x.
+            // Safe unchecked because |q * LN2_INT| <= x.
             int256 r = x - q * LN2_INT;
 
             // Compute e^r.
             int256 firstTerm = WAD_INT;
             int256 secondTerm = r;
-            // Safe unchecked * because |r| < 1.
+            // Safe unchecked because |r| < 1.
             int256 thirdTerm = r.wMulDown(r) / 2;
-            // Safe unchecked * because |r| < 1.
+            // Safe unchecked because |r| < 1.
             int256 fourthTerm = thirdTerm.wMulDown(r) / 3;
-            // Safe unchecked * because |r| < 1.
+            // Safe unchecked because |r| < 1.
             int256 fifthTerm = fourthTerm.wMulDown(r) / 4;
-            // Safe unchecked + because expR < 2.
+            // Safe unchecked because expR < 2.
             uint256 expR = uint256(firstTerm + secondTerm + thirdTerm + fourthTerm + fifthTerm);
 
             // Return e^x = 2^q * e^r.

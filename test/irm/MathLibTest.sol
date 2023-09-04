@@ -14,7 +14,7 @@ contract MathLibTest is Test {
         assertApproxEqRel(MathLib.wExp(-12 ether), 0.00000614421 ether, 0.01 ether);
         assertApproxEqRel(MathLib.wExp(-11 ether), 0.00001670164 ether, 0.01 ether);
         assertApproxEqRel(MathLib.wExp(-10 ether), 0.00004539992 ether, 0.01 ether);
-        assertApproxEqRel(MathLib.wExp(-9 ether), 0.00012340980 ether, 0.01 ether);
+        assertApproxEqRel(MathLib.wExp(-9 ether), 0.0001234098 ether, 0.01 ether);
         assertApproxEqRel(MathLib.wExp(-8 ether), 0.00033546262 ether, 0.01 ether);
         assertApproxEqRel(MathLib.wExp(-7 ether), 0.00091188196 ether, 0.01 ether);
         assertApproxEqRel(MathLib.wExp(-6 ether), 0.00247875217 ether, 0.01 ether);
