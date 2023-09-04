@@ -20,9 +20,14 @@ library MathLib {
         unchecked {
             // Revert if x > ln(2^256-1) ~ 177.
             require(x <= 177.44567822334599921 ether, ErrorsLib.WEXP_OVERFLOW);
+            // Revert if x > min / 1e18.
+            require(x >= type(int256).min + 1 ether, ErrorsLib.WEXP_UNDERFLOW);
 
             // Decompose x as x = q * ln(2) + r with q an integer and -ln(2)/2 < r <= ln(2)/2.
-            int256 q = (x + (LN2_INT / 2)) / LN2_INT;
+            // q = x / ln(2) rounded half toward zero.
+            int256 offset = (x < 0) ? - (LN2_INT / 2) : (LN2_INT / 2);
+            // Safe unchecked because x is bounded.
+            int256 q = (x + offset) / LN2_INT;
             // Safe unchecked because |q * LN2_INT| <= x.
             int256 r = x - q * LN2_INT;
 

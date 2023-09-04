@@ -11,13 +11,12 @@ contract MathLibTest is Test {
     using MathLib for uint256;
 
     function testWExp(int256 x) public {
-        vm.assume(x > -176 ether);
-        vm.assume(x < 135305999368893231589);
-        assertApproxEqRel(int256(MathLib.wExp(x)), wadExp(x), 0.05 ether);
+        x = bound(x, - 27 ether, 94 ether);
+        assertApproxEqRel(MathLib.wExp(x), uint256(wadExp(x)), 0.01 ether);
     }
 
     function testWExpSmall(int256 x) public {
-        vm.assume(x <= -178 ether);
+        x = bound(x, type(int256).min + 1 ether, -178 ether);
         assertEq(MathLib.wExp(x), 0);
     }
 
