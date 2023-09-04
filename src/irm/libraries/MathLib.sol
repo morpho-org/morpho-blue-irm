@@ -25,9 +25,9 @@ library MathLib {
 
             // Decompose x as x = q * ln(2) + r with q an integer and -ln(2)/2 < r <= ln(2)/2.
             // q = x / ln(2) rounded half toward zero.
-            int256 half = (x < 0) ? -(LN2_INT / 2) : (LN2_INT / 2);
+            int256 roundingAdjustment = (x < 0) ? -(LN2_INT / 2) : (LN2_INT / 2);
             // Safe unchecked because x is bounded.
-            int256 q = (x + half) / LN2_INT;
+            int256 q = (x + roundingAdjustment) / LN2_INT;
             // Safe unchecked because |q * LN2_INT| <= x.
             int256 r = x - q * LN2_INT;
 
