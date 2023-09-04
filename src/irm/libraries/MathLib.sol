@@ -20,7 +20,7 @@ library MathLib {
         unchecked {
             // Revert if x > ln(2^256-1) ~ 177.
             require(x <= 177.44567822334599921 ether, ErrorsLib.WEXP_OVERFLOW);
-            // Revert if x < min + (ln(2)/2).
+            // Revert if x < -(2**255-1) + (ln(2)/2).
             require(x >= type(int256).min + LN2_INT / 2, ErrorsLib.WEXP_UNDERFLOW);
 
             // Decompose x as x = q * ln(2) + r with q an integer and -ln(2)/2 < r <= ln(2)/2.

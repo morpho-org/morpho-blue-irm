@@ -19,20 +19,20 @@ contract MathLibTest is Test {
     }
 
     function testWExpSmall(int256 x) public {
-        // Bound between min + ln(2)/2 and ln(1e-18).
+        // Bound between -(2**255-1) + ln(2)/2 and ln(1e-18).
         x = bound(x, type(int256).min + LN2_INT / 2, -178 ether);
         assertEq(MathLib.wExp(x), 0);
     }
 
     function testWExpTooSmall(int256 x) public {
-        // Bound between min and min + ln(2)/2 - 1.
+        // Bound between -(2**255-1) and -(2**255-1) + ln(2)/2 - 1.
         x = bound(x, type(int256).min, type(int256).min + LN2_INT / 2 - 1);
         vm.expectRevert(bytes(ErrorsLib.WEXP_UNDERFLOW));
         assertEq(MathLib.wExp(x), 0);
     }
 
     function testWExpTooLarge(int256 x) public {
-        // Bound between ln(2**256-1) ~ 177 and max.
+        // Bound between ln(2**256-1) ~ 177 and 2**255-1.
         x = bound(x, 178 ether, type(int256).max);
         vm.expectRevert(bytes(ErrorsLib.WEXP_OVERFLOW));
         MathLib.wExp(x);
