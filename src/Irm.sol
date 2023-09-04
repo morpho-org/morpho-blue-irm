@@ -1,9 +1,9 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity 0.8.19;
 
+import {UtilsLib} from "./libraries/UtilsLib.sol";
 import {ErrorsLib} from "./libraries/ErrorsLib.sol";
 import {IIrm} from "morpho-blue/interfaces/IIrm.sol";
-import {UtilsLib} from "morpho-blue/libraries/UtilsLib.sol";
 import {WAD, MathLib as MorphoMathLib} from "morpho-blue/libraries/MathLib.sol";
 import {WAD_INT, MathLib} from "./libraries/MathLib.sol";
 import {MarketParamsLib} from "morpho-blue/libraries/MarketParamsLib.sol";
@@ -29,6 +29,8 @@ contract Irm is IIrm {
 
     /* CONSTANTS */
 
+    /// @notice Max rate (1B% APR).
+    uint256 public constant MAX_RATE = uint256(1e9 ether) / 365 days;
     /// @notice Address of Morpho.
     address public immutable MORPHO;
     /// @notice Ln of the jump factor (scaled by WAD).
@@ -131,11 +133,7 @@ contract Irm is IIrm {
         // Safe "unchecked" cast to uint256 because linearVariation < 0 <=> newBorrowRate <= borrowRateAfterJump.
         else avgBorrowRate = uint256((int256(newBorrowRate) - int256(borrowRateAfterJump)).wDivDown(linearVariation));
 
-        // We cap both newBorrowRate and avgBorrowRate to 2^128 - 1.
-        return (
-            err,
-            uint128(UtilsLib.min(newBorrowRate, type(uint128).max)),
-            uint128(UtilsLib.min(avgBorrowRate, type(uint128).max))
-        );
+        // We bound both newBorrowRate and avgBorrowRate between 1e-18 and MAX_RATE.
+        return (err, uint128(newBorrowRate.bound(1, MAX_RATE)), uint128(avgBorrowRate.bound(1, MAX_RATE)));
     }
 }
