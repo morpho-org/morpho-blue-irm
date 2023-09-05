@@ -1,10 +1,13 @@
 // SPDX-License-Identifier: UNLICENCED
 methods {
-    function borrowRateView(Irm.MarketParams, Irm.Market) external returns uint256 envfree;
-    function borrowRate(Irm.MarketParams, Irm.Market) external returns uint256 envfree;
+    function MORPHO() external returns address envfree;
 }
 
 rule borrowRateNeverReverts(env e, Irm.MarketParams marketParams, Irm.Market market) {
+    require e.msg.sender == MORPHO();
+    require e.msg.value == 0;
+
     borrowRate@withrevert(e, marketParams, market);
-    assert false;
+
+    assert !lastReverted;
 }
