@@ -76,7 +76,7 @@ contract Irm is IIrm {
     /* BORROW RATES */
 
     /// @inheritdoc IIrm
-    function borrowRateView(MarketParams memory marketParams, Market memory market) public view returns (uint256) {
+    function borrowRateView(MarketParams memory marketParams, Market memory market) external view returns (uint256) {
         (,, uint256 avgBorrowRate) = _borrowRate(marketParams.id(), market);
         return avgBorrowRate;
     }
