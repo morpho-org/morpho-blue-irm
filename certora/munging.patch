@@ -1,0 +1,12 @@
+diff -ruN Irm.sol Irm.sol
+--- Irm.sol	2023-09-19 15:59:58.045886731 +0200
++++ Irm.sol	2023-09-19 16:09:50.491751975 +0200
+@@ -38,7 +38,7 @@
+     /// @notice Speed factor (scaled by WAD).
+     uint256 public immutable SPEED_FACTOR;
+     /// @notice Target utilization (scaled by WAD).
+-    uint256 public immutable TARGET_UTILIZATION;
++    uint256 public TARGET_UTILIZATION;
+     /// @notice Initial rate (scaled by WAD).
+     uint128 public immutable INITIAL_RATE;
+ 
