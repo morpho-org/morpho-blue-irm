@@ -10,5 +10,9 @@ out/
 # Docs
 docs/
 
+# Certora
+.certora**
+emv-*-certora*
+
 # Dotenv file
 .env
