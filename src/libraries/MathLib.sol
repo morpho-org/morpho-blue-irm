@@ -28,7 +28,7 @@ library MathLib {
             int256 roundingAdjustment = (x < 0) ? -(LN2_INT / 2) : (LN2_INT / 2);
             // Safe unchecked because x is bounded.
             int256 q = (x + roundingAdjustment) / LN2_INT;
-            // Safe unchecked because |q * LN2_INT| <= x.
+            // Safe unchecked because |q * LN2_INT| <= |x|.
             int256 r = x - q * LN2_INT;
 
             // Compute e^r with a 2nd-order Taylor polynomial.
