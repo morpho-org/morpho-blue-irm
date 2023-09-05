@@ -1,9 +1,9 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity 0.8.19;
 
+import {UtilsLib} from "./libraries/UtilsLib.sol";
 import {ErrorsLib} from "./libraries/ErrorsLib.sol";
 import {IIrm} from "morpho-blue/interfaces/IIrm.sol";
-import {UtilsLib} from "morpho-blue/libraries/UtilsLib.sol";
 import {WAD, MathLib as MorphoMathLib} from "morpho-blue/libraries/MathLib.sol";
 import {WAD_INT, MathLib} from "./libraries/MathLib.sol";
 import {MarketParamsLib} from "morpho-blue/libraries/MarketParamsLib.sol";
@@ -29,6 +29,8 @@ contract Irm is IIrm {
 
     /* CONSTANTS */
 
+    /// @notice Max rate (1B% APR).
+    uint256 public constant MAX_RATE = uint256(1e9 ether) / 365 days;
     /// @notice Address of Morpho.
     address public immutable MORPHO;
     /// @notice Ln of the jump factor (scaled by WAD).
@@ -49,10 +51,8 @@ contract Irm is IIrm {
 
     /// @notice Constructor.
     /// @param morpho The address of Morpho.
-    /// @param lnJumpFactor The log of the jump factor (scaled by WAD). Warning: lnJumpFactor <= 3 must hold. Above
-    /// that, the approximations in wExp are considered too large.
-    /// @param speedFactor The speed factor (scaled by WAD). Warning: |speedFactor * error * elapsed| <= 3 must hold.
-    /// Above that, the approximations in wExp are considered too large.
+    /// @param lnJumpFactor The log of the jump factor (scaled by WAD).
+    /// @param speedFactor The speed factor (scaled by WAD).
     /// @param targetUtilization The target utilization (scaled by WAD). Should be between 0 and 1.
     /// @param initialRate The initial rate (scaled by WAD).
     constructor(
@@ -111,13 +111,13 @@ contract Irm is IIrm {
         int256 errDelta = err - marketIrm[id].prevErr;
 
         // Safe "unchecked" cast because LN_JUMP_FACTOR <= type(int256).max.
-        uint256 jumpMultiplier = MathLib.wExp12(errDelta.wMulDown(int256(LN_JUMP_FACTOR)));
+        uint256 jumpMultiplier = MathLib.wExp(errDelta.wMulDown(int256(LN_JUMP_FACTOR)));
         // Safe "unchecked" cast because SPEED_FACTOR <= type(int256).max.
         int256 speed = int256(SPEED_FACTOR).wMulDown(err);
         uint256 elapsed = block.timestamp - market.lastUpdate;
         // Safe "unchecked" cast because elapsed <= block.timestamp.
         int256 linearVariation = speed * int256(elapsed);
-        uint256 variationMultiplier = MathLib.wExp12(linearVariation);
+        uint256 variationMultiplier = MathLib.wExp(linearVariation);
 
         // newBorrowRate = prevBorrowRate * jumpMultiplier * variationMultiplier.
         uint256 borrowRateAfterJump = marketIrm[id].prevBorrowRate.wMulDown(jumpMultiplier);
@@ -133,11 +133,7 @@ contract Irm is IIrm {
         // Safe "unchecked" cast to uint256 because linearVariation < 0 <=> newBorrowRate <= borrowRateAfterJump.
         else avgBorrowRate = uint256((int256(newBorrowRate) - int256(borrowRateAfterJump)).wDivDown(linearVariation));
 
-        // We cap both newBorrowRate and avgBorrowRate to 2^128 - 1.
-        return (
-            err,
-            uint128(UtilsLib.min(newBorrowRate, type(uint128).max)),
-            uint128(UtilsLib.min(avgBorrowRate, type(uint128).max))
-        );
+        // We bound both newBorrowRate and avgBorrowRate between 1e-18 and MAX_RATE.
+        return (err, uint128(newBorrowRate.bound(1, MAX_RATE)), uint128(avgBorrowRate.bound(1, MAX_RATE)));
     }
 }
