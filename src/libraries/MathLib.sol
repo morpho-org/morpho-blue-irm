@@ -23,7 +23,7 @@ library MathLib {
             // Revert if x < -(2**255-1) + (ln(2)/2).
             require(x >= type(int256).min + LN2_INT / 2, ErrorsLib.WEXP_UNDERFLOW);
 
-            // Decompose x as x = q * ln(2) + r with q an integer and -ln(2)/2 < r <= ln(2)/2.
+            // Decompose x as x = q * ln(2) + r with q an integer and -ln(2)/2 <= r <= ln(2)/2.
             // q = x / ln(2) rounded half toward zero.
             int256 roundingAdjustment = (x < 0) ? -(LN2_INT / 2) : (LN2_INT / 2);
             // Safe unchecked because x is bounded.
