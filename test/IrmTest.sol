@@ -30,7 +30,7 @@ contract IrmTest is Test {
         vm.assume(market.totalSupplyAssets >= market.totalBorrowAssets);
 
         uint256 avgBorrowRate = irm.borrowRate(marketParams, market);
-        (uint256 prevBorrowRate, int256 prevErr) = irm.marketIrm(marketParams.id());
+        (uint128 prevBorrowRate, int128 prevErr) = irm.marketIrm(marketParams.id());
 
         assertEq(avgBorrowRate, INITIAL_RATE, "avgBorrowRate");
         assertEq(prevBorrowRate, INITIAL_RATE, "prevBorrowRate");
@@ -42,7 +42,7 @@ contract IrmTest is Test {
         vm.assume(market.totalSupplyAssets >= market.totalBorrowAssets);
 
         uint256 avgBorrowRate = irm.borrowRateView(marketParams, market);
-        (uint256 prevBorrowRate, int256 prevErr) = irm.marketIrm(marketParams.id());
+        (uint128 prevBorrowRate, int128 prevErr) = irm.marketIrm(marketParams.id());
 
         assertEq(avgBorrowRate, INITIAL_RATE, "avgBorrowRate");
         assertEq(prevBorrowRate, 0, "prevBorrowRate");
@@ -59,9 +59,9 @@ contract IrmTest is Test {
         market1.lastUpdate = uint128(bound(market1.lastUpdate, 0, block.timestamp - 1));
 
         uint256 avgBorrowRate = irm.borrowRate(marketParams, market1);
-        (uint256 prevBorrowRate,) = irm.marketIrm(marketParams.id());
+        (uint128 prevBorrowRate,) = irm.marketIrm(marketParams.id());
 
-        (uint256 expectedAvgBorrowRate, uint256 expectedPrevBorrowRate) = _expectedBorrowRates(market0, market1);
+        (uint128 expectedAvgBorrowRate, uint128 expectedPrevBorrowRate) = _expectedBorrowRates(market0, market1);
 
         assertEq(prevBorrowRate, expectedPrevBorrowRate, "prevBorrowRate");
         assertEq(avgBorrowRate, expectedAvgBorrowRate, "avgBorrowRate");
@@ -77,9 +77,9 @@ contract IrmTest is Test {
         market1.lastUpdate = uint128(bound(market1.lastUpdate, 0, block.timestamp - 1));
 
         uint256 avgBorrowRate = irm.borrowRateView(marketParams, market1);
-        (uint256 prevBorrowRate,) = irm.marketIrm(marketParams.id());
+        (uint128 prevBorrowRate,) = irm.marketIrm(marketParams.id());
 
-        (uint256 expectedAvgBorrowRate,) = _expectedBorrowRates(market0, market1);
+        (uint128 expectedAvgBorrowRate,) = _expectedBorrowRates(market0, market1);
 
         assertEq(prevBorrowRate, INITIAL_RATE, "prevBorrowRate");
         assertEq(avgBorrowRate, expectedAvgBorrowRate, "avgBorrowRate");
@@ -95,7 +95,7 @@ contract IrmTest is Test {
         market1.lastUpdate = uint128(block.timestamp);
 
         uint256 avgBorrowRate = irm.borrowRate(marketParams, market1);
-        (uint256 prevBorrowRate,) = irm.marketIrm(marketParams.id());
+        (uint128 prevBorrowRate,) = irm.marketIrm(marketParams.id());
 
         (uint256 expectedAvgBorrowRate, uint256 expectedPrevBorrowRate) = _expectedBorrowRates(market0, market1);
 
@@ -114,9 +114,9 @@ contract IrmTest is Test {
         market1.lastUpdate = uint128(block.timestamp);
 
         uint256 avgBorrowRate = irm.borrowRateView(marketParams, market1);
-        (uint256 prevBorrowRate,) = irm.marketIrm(marketParams.id());
+        (uint128 prevBorrowRate,) = irm.marketIrm(marketParams.id());
 
-        (uint256 expectedAvgBorrowRate,) = _expectedBorrowRates(market0, market1);
+        (uint128 expectedAvgBorrowRate,) = _expectedBorrowRates(market0, market1);
 
         assertEq(prevBorrowRate, INITIAL_RATE, "prevBorrowRate");
         assertEq(avgBorrowRate, expectedAvgBorrowRate, "avgBorrowRate");
@@ -132,9 +132,9 @@ contract IrmTest is Test {
         market1.lastUpdate = uint128(bound(market1.lastUpdate, 0, block.timestamp - 1));
 
         uint256 avgBorrowRate = irm.borrowRate(marketParams, market1);
-        (uint256 prevBorrowRate,) = irm.marketIrm(marketParams.id());
+        (uint128 prevBorrowRate,) = irm.marketIrm(marketParams.id());
 
-        (uint256 expectedAvgBorrowRate, uint256 expectedPrevBorrowRate) = _expectedBorrowRates(market0, market1);
+        (uint128 expectedAvgBorrowRate, uint128 expectedPrevBorrowRate) = _expectedBorrowRates(market0, market1);
 
         assertEq(prevBorrowRate, expectedPrevBorrowRate, "prevBorrowRate");
         assertEq(avgBorrowRate, expectedAvgBorrowRate, "avgBorrowRate");
@@ -150,9 +150,9 @@ contract IrmTest is Test {
         market1.lastUpdate = uint128(bound(market1.lastUpdate, 0, block.timestamp - 1));
 
         uint256 avgBorrowRate = irm.borrowRateView(marketParams, market1);
-        (uint256 prevBorrowRate,) = irm.marketIrm(marketParams.id());
+        (uint128 prevBorrowRate,) = irm.marketIrm(marketParams.id());
 
-        (uint256 expectedAvgBorrowRate,) = _expectedBorrowRates(market0, market1);
+        (uint128 expectedAvgBorrowRate,) = _expectedBorrowRates(market0, market1);
 
         assertEq(prevBorrowRate, INITIAL_RATE, "prevBorrowRate");
         assertEq(avgBorrowRate, expectedAvgBorrowRate, "avgBorrowRate");
@@ -162,10 +162,10 @@ contract IrmTest is Test {
     function _expectedBorrowRates(Market memory market0, Market memory market1)
         internal
         view
-        returns (uint256, uint256)
+        returns (uint128, uint128)
     {
-        int256 err = _err(market1);
-        int256 prevErr = _err(market0);
+        int128 err = _err(market1);
+        int128 prevErr = _err(market0);
         int256 errDelta = err - prevErr;
         uint256 elapsed = block.timestamp - market1.lastUpdate;
 
@@ -184,10 +184,10 @@ contract IrmTest is Test {
             );
         }
 
-        return (expectedAvgBorrowRate, expectedNewBorrowRate);
+        return (uint128(expectedAvgBorrowRate), uint128(expectedNewBorrowRate));
     }
 
-    function _err(Market memory market) internal pure returns (int256) {
+    function _err(Market memory market) internal pure returns (int128) {
         uint256 utilization = market.totalBorrowAssets.wDivDown(market.totalSupplyAssets);
 
         int256 err;
@@ -198,6 +198,6 @@ contract IrmTest is Test {
             // Safe "unchecked" casts because utilization <= WAD and TARGET_UTILIZATION <= WAD.
             err = (int256(utilization) - int256(TARGET_UTILIZATION)).wDivDown(int256(TARGET_UTILIZATION));
         }
-        return err;
+        return int128(err);
     }
 }
