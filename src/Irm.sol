@@ -27,6 +27,11 @@ contract Irm is IIrm {
     using MorphoMathLib for uint256;
     using MarketParamsLib for MarketParams;
 
+    /* EVENTS */
+
+    /// @notice Emitted when a borrow rate is updated.
+    event BorrowRateUpdate(Id indexed id, int128 err, uint128 newBorrowRate, uint256 avgBorrowRate);
+
     /* CONSTANTS */
 
     /// @notice Max rate (1B% APR).
@@ -91,6 +96,9 @@ contract Irm is IIrm {
 
         marketIrm[id].prevErr = err;
         marketIrm[id].prevBorrowRate = newBorrowRate;
+
+        emit BorrowRateUpdate(id, err, newBorrowRate, avgBorrowRate);
+
         return avgBorrowRate;
     }
 
