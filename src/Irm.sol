@@ -53,7 +53,7 @@ contract Irm is IIrm {
     /// @param morpho The address of Morpho.
     /// @param lnJumpFactor The log of the jump factor (scaled by WAD).
     /// @param speedFactor The speed factor (scaled by WAD).
-    /// @param targetUtilization The target utilization (scaled by WAD). Should be between 0 and 1.
+    /// @param targetUtilization The target utilization (scaled by WAD). Should be strictly between 0 and 1.
     /// @param initialRate The initial rate (scaled by WAD).
     constructor(
         address morpho,
@@ -64,7 +64,8 @@ contract Irm is IIrm {
     ) {
         require(lnJumpFactor <= uint256(type(int256).max), ErrorsLib.INPUT_TOO_LARGE);
         require(speedFactor <= uint256(type(int256).max), ErrorsLib.INPUT_TOO_LARGE);
-        require(targetUtilization <= WAD, ErrorsLib.INPUT_TOO_LARGE);
+        require(targetUtilization < WAD, ErrorsLib.INPUT_TOO_LARGE);
+        require(targetUtilization > 0, ErrorsLib.ZERO_INPUT);
 
         MORPHO = morpho;
         LN_JUMP_FACTOR = lnJumpFactor;
@@ -101,7 +102,7 @@ contract Irm is IIrm {
 
         uint256 errNormFactor = utilization > TARGET_UTILIZATION ? WAD - TARGET_UTILIZATION : TARGET_UTILIZATION;
         // Safe "unchecked" int128 cast because |err| <= WAD.
-        // Safe "unchecked" int256 casts because utilization <= WAD, TARGET_UTILIZATION <= WAD and errNormFactor <= WAD.
+        // Safe "unchecked" int256 casts because utilization <= WAD, TARGET_UTILIZATION < WAD and errNormFactor <= WAD.
         int128 err = int128((int256(utilization) - int256(TARGET_UTILIZATION)).wDivDown(int256(errNormFactor)));
 
         if (marketIrm[id].prevBorrowRate == 0) return (err, INITIAL_RATE, INITIAL_RATE);
