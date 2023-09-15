@@ -5,7 +5,7 @@ import {UtilsLib} from "./libraries/UtilsLib.sol";
 import {ErrorsLib} from "./libraries/ErrorsLib.sol";
 import {IIrm} from "morpho-blue/interfaces/IIrm.sol";
 import {WAD, MathLib as MorphoMathLib} from "morpho-blue/libraries/MathLib.sol";
-import {WAD_INT, MathLib} from "./libraries/MathLib.sol";
+import {MathLib} from "./libraries/MathLib.sol";
 import {MarketParamsLib} from "morpho-blue/libraries/MarketParamsLib.sol";
 import {Id, MarketParams, Market} from "morpho-blue/interfaces/IMorpho.sol";
 
