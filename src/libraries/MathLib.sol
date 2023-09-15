@@ -6,6 +6,10 @@ import {ErrorsLib} from "./ErrorsLib.sol";
 
 int256 constant WAD_INT = int256(WAD);
 
+/// @title MathLib
+/// @author Morpho Labs
+/// @custom:contact security@morpho.xyz
+/// @notice Library to manage fixed-point arithmetic and approximate exp.
 library MathLib {
     using MathLib for uint128;
     using MathLib for uint256;
