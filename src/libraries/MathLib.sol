@@ -9,7 +9,7 @@ int256 constant WAD_INT = int256(WAD);
 /// @title MathLib
 /// @author Morpho Labs
 /// @custom:contact security@morpho.xyz
-/// @notice Library to manage fixed-point arithmetic and approximate exp.
+/// @notice Library to manage fixed-point arithmetic and approximate the exponential function.
 library MathLib {
     using MathLib for uint128;
     using MathLib for uint256;
