@@ -43,9 +43,9 @@ contract IrmTest is Test {
         vm.assume(market.totalBorrowAssets > 0);
         vm.assume(market.totalSupplyAssets >= market.totalBorrowAssets);
 
-        vm.expectEmit(true, true, true, true, address(irm));
+        vm.expectEmit(address(irm));
         emit BorrowRateUpdate(marketParams.id(), int128(_err(market)), INITIAL_RATE, INITIAL_RATE);
-        uint256 avgBorrowRate = irm.borrowRate(marketParams, market);
+        irm.borrowRate(marketParams, market);
     }
 
     function testFirstBorrowRateView(Market memory market) public {
