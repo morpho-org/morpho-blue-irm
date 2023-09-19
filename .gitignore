@@ -13,6 +13,7 @@ docs/
 # Certora
 .certora**
 emv-*-certora*
+certora/munged
 
 # Dotenv file
 .env
