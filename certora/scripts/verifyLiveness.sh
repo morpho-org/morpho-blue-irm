@@ -5,7 +5,7 @@ set -euxo pipefail
 make -C certora munged
 
 certoraRun \
-    src/Irm.sol \
+    certora/munged/Irm.sol \
     --verify Irm:certora/specs/Liveness.spec \
     --msg "IRM Liveness" \
     --solc_via_ir \
