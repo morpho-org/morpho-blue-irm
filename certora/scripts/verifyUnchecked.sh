@@ -2,6 +2,8 @@
 
 set -euxo pipefail
 
+make -C certora munged
+
 certoraRun \
     certora/harness/LibHarness.sol \
     --verify LibHarness:certora/specs/Unchecked.spec \

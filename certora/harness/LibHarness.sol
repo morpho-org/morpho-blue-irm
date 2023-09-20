@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity 0.8.19;
 
-import "../../src/libraries/MathLib.sol";
+import "../munged/libraries/MathLib.sol";
 
 contract LibHarness {
     using {MathLib.wMulDown} for int256;
