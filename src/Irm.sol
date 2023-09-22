@@ -19,6 +19,7 @@ struct MarketIrm {
 
 /// @title Irm
 /// @author Morpho Labs
+/// @custom:contact security@morpho.xyz
 /// @notice Interest rate model.
 contract Irm is IIrm {
     using MathLib for int256;

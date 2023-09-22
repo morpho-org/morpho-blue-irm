@@ -1,6 +1,10 @@
-// SPDX-License-Identifier: UNLICENCED
+// SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.8.0;
 
+/// @title UtilsLib
+/// @author Morpho Labs
+/// @custom:contact security@morpho.xyz
+/// @notice Library exposing helpers.
 library UtilsLib {
     /// @dev Bounds `x` between `low` and `high`.
     /// @dev Assumes that `low` <= `high`. If it is not the case it returns `low`.
