@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.8.0;
 
-import {WAD, MathLib as MorphoMathLib} from "morpho-blue/libraries/MathLib.sol";
 import {ErrorsLib} from "./ErrorsLib.sol";
+import {WAD} from "morpho-blue/libraries/MathLib.sol";
 
 int256 constant WAD_INT = int256(WAD);
 
