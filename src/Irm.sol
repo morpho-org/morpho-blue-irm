@@ -1,13 +1,14 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity 0.8.19;
 
+import {IIrm} from "morpho-blue/interfaces/IIrm.sol";
+
+import {MathLib} from "./libraries/MathLib.sol";
 import {UtilsLib} from "./libraries/UtilsLib.sol";
 import {ErrorsLib} from "./libraries/ErrorsLib.sol";
-import {IIrm} from "morpho-blue/interfaces/IIrm.sol";
-import {WAD, MathLib as MorphoMathLib} from "morpho-blue/libraries/MathLib.sol";
-import {WAD_INT, MathLib} from "./libraries/MathLib.sol";
 import {MarketParamsLib} from "morpho-blue/libraries/MarketParamsLib.sol";
 import {Id, MarketParams, Market} from "morpho-blue/interfaces/IMorpho.sol";
+import {WAD, MathLib as MorphoMathLib} from "morpho-blue/libraries/MathLib.sol";
 
 struct MarketIrm {
     // Previous final borrow rate. Scaled by WAD.
@@ -18,6 +19,7 @@ struct MarketIrm {
 
 /// @title Irm
 /// @author Morpho Labs
+/// @custom:contact security@morpho.xyz
 /// @notice Interest rate model.
 contract Irm is IIrm {
     using MathLib for int256;
