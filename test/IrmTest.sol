@@ -12,6 +12,8 @@ contract IrmTest is Test {
     using MorphoMathLib for uint256;
     using MarketParamsLib for MarketParams;
 
+    event BorrowRateUpdate(Id indexed id, int128 err, uint128 newBorrowRate, uint256 avgBorrowRate);
+
     uint256 internal constant LN2 = 0.69314718056 ether;
     uint256 internal constant TARGET_UTILIZATION = 0.8 ether;
     uint256 internal constant SPEED_FACTOR = uint256(0.01 ether) / uint256(10 hours);
@@ -35,6 +37,15 @@ contract IrmTest is Test {
         assertEq(avgBorrowRate, INITIAL_RATE, "avgBorrowRate");
         assertEq(prevBorrowRate, INITIAL_RATE, "prevBorrowRate");
         assertEq(prevErr, _err(market), "prevErr");
+    }
+
+    function testBorrowRateEventEmission(Market memory market) public {
+        vm.assume(market.totalBorrowAssets > 0);
+        vm.assume(market.totalSupplyAssets >= market.totalBorrowAssets);
+
+        vm.expectEmit(address(irm));
+        emit BorrowRateUpdate(marketParams.id(), int128(_err(market)), INITIAL_RATE, INITIAL_RATE);
+        irm.borrowRate(marketParams, market);
     }
 
     function testFirstBorrowRateView(Market memory market) public {
