@@ -78,7 +78,7 @@ contract Irm is IIrm {
     /* BORROW RATES */
 
     /// @inheritdoc IIrm
-    function borrowRateView(MarketParams memory marketParams, Market memory market) public view returns (uint256) {
+    function borrowRateView(MarketParams memory marketParams, Market memory market) external view returns (uint256) {
         (,, uint256 avgBorrowRate) = _borrowRate(marketParams.id(), market);
         return avgBorrowRate;
     }
@@ -127,8 +127,8 @@ contract Irm is IIrm {
 
         // Then we compute the average rate over the period (this is what Morpho needs to accrue the interest).
         // avgBorrowRate = 1 / elapsed * ∫ borrowRateAfterJump * exp(speed * t) dt between 0 and elapsed
-        //               = borrowRateAfterJump * (exp(linearVariation) - 1) / (linearVariation)
-        //               = (newBorrowRate - borrowRateAfterJump) / (linearVariation)
+        //               = borrowRateAfterJump * (exp(linearVariation) - 1) / linearVariation
+        //               = (newBorrowRate - borrowRateAfterJump) / linearVariation
         // And avgBorrowRate ~ borrowRateAfterJump for linearVariation around zero.
         uint256 avgBorrowRate;
         if (linearVariation == 0) avgBorrowRate = borrowRateAfterJump;
