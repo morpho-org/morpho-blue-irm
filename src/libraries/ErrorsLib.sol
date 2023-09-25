@@ -9,6 +9,9 @@ library ErrorsLib {
     /// @dev Thrown when the input is too large to fit in the expected type.
     string internal constant INPUT_TOO_LARGE = "input too large";
 
+    /// @dev Thrown when passing the zero input.
+    string internal constant ZERO_INPUT = "zero input";
+
     /// @dev Thrown when wExp underflows.
     string internal constant WEXP_UNDERFLOW = "wExp underflow";
 
