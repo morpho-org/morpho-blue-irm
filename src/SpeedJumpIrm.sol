@@ -37,7 +37,9 @@ contract SpeedJumpIrm is IIrm {
     /* CONSTANTS */
 
     /// @notice Max rate (1B% APR).
-    uint256 public constant MAX_RATE = uint256(1e9 ether) / 365 days;
+    uint256 public constant MAX_RATE = uint256(1e7 ether) / 365 days;
+    /// @notice Min rate (0.1% APR).
+    uint256 public constant MIN_RATE = uint256(0.001 ether) / 365 days;
     /// @notice Address of Morpho.
     address public immutable MORPHO;
     /// @notice Ln of the jump factor (scaled by WAD).
@@ -145,6 +147,6 @@ contract SpeedJumpIrm is IIrm {
         else avgBorrowRate = uint256((int256(newBorrowRate) - int256(borrowRateAfterJump)).wDivDown(linearVariation));
 
         // We bound both newBorrowRate and avgBorrowRate between 1e-18 and MAX_RATE.
-        return (err, uint128(newBorrowRate.bound(1, MAX_RATE)), uint128(avgBorrowRate.bound(1, MAX_RATE)));
+        return (err, uint128(newBorrowRate.bound(MIN_RATE, MAX_RATE)), uint128(avgBorrowRate.bound(MIN_RATE, MAX_RATE)));
     }
 }

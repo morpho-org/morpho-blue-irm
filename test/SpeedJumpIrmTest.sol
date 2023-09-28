@@ -8,6 +8,7 @@ contract SpeedJumpIrmTest is Test {
     using MathLib for int256;
     using MathLib for int256;
     using MathLib for uint256;
+    using UtilsLib for uint256;
     using MorphoMathLib for uint128;
     using MorphoMathLib for uint256;
     using MarketParamsLib for MarketParams;
@@ -195,7 +196,10 @@ contract SpeedJumpIrmTest is Test {
             );
         }
 
-        return (expectedAvgBorrowRate, expectedNewBorrowRate);
+        return (
+            expectedAvgBorrowRate.bound(irm.MIN_RATE(), irm.MAX_RATE()),
+            expectedNewBorrowRate.bound(irm.MIN_RATE(), irm.MAX_RATE())
+        );
     }
 
     function _err(Market memory market) internal pure returns (int256) {
