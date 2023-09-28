@@ -36,9 +36,9 @@ contract SpeedJumpIrm is IIrm {
 
     /* CONSTANTS */
 
-    /// @notice Max rate (1B% APR) (per second) (scaled by WAD).
+    /// @notice Maximum rate per second (scaled by WAD) (1B% APR).
     uint256 public constant MAX_RATE = uint256(1e7 ether) / 365 days;
-    /// @notice Min rate (0.1% APR) (per second) (scaled by WAD).
+    /// @notice Mininimum rate per second (scaled by WAD) (0.1% APR).
     uint256 public constant MIN_RATE = uint256(0.001 ether) / 365 days;
     /// @notice Address of Morpho.
     address public immutable MORPHO;
