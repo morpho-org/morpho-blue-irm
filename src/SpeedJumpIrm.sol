@@ -17,11 +17,11 @@ struct MarketIrm {
     int128 prevErr;
 }
 
-/// @title Irm
+/// @title SpeedJumpIrm
 /// @author Morpho Labs
 /// @custom:contact security@morpho.xyz
 /// @notice Interest rate model.
-contract Irm is IIrm {
+contract SpeedJumpIrm is IIrm {
     using MathLib for int256;
     using MathLib for uint256;
     using UtilsLib for uint256;
