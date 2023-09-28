@@ -148,7 +148,7 @@ contract SpeedJumpIrm is IIrm {
         // Safe "unchecked" cast to uint256 because linearVariation < 0 <=> newBorrowRate <= borrowRateAfterJump.
         else avgBorrowRate = uint256((int256(newBorrowRate) - int256(borrowRateAfterJump)).wDivDown(linearVariation));
 
-        // We bound both newBorrowRate and avgBorrowRate between 1e-18 and MAX_RATE.
+        // We bound both newBorrowRate and avgBorrowRate between MIN_RATE and MAX_RATE.
         return (err, uint128(newBorrowRate.bound(MIN_RATE, MAX_RATE)), uint128(avgBorrowRate.bound(MIN_RATE, MAX_RATE)));
     }
 }
