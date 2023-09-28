@@ -45,8 +45,8 @@ contract SpeedJumpIrm is IIrm {
     /// @notice Ln of the jump factor (scaled by WAD).
     uint256 public immutable LN_JUMP_FACTOR;
     /// @notice Speed factor (scaled by WAD).
-    /// @dev The speed is per second, so the rate moves at a speed of SPEED_FACTOR * err each second (compounded). A
-    /// typical value for the SPEED_FACTOR would be 10 ethers / 365 days.
+    /// @dev The speed is per second, so the rate moves at a speed of SPEED_FACTOR * err each second (while being
+    /// continuously compounded). A typical value for the SPEED_FACTOR would be 10 ethers / 365 days.
     uint256 public immutable SPEED_FACTOR;
     /// @notice Target utilization (scaled by WAD).
     uint256 public immutable TARGET_UTILIZATION;
