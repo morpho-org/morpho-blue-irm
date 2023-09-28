@@ -36,15 +36,17 @@ contract SpeedJumpIrm is IIrm {
 
     /* CONSTANTS */
 
-    /// @notice Max rate (1B% APR).
+    /// @notice Maximum rate per second (scaled by WAD) (1B% APR).
     uint256 public constant MAX_RATE = uint256(1e7 ether) / 365 days;
-    /// @notice Min rate (0.1% APR).
+    /// @notice Mininimum rate per second (scaled by WAD) (0.1% APR).
     uint256 public constant MIN_RATE = uint256(0.001 ether) / 365 days;
     /// @notice Address of Morpho.
     address public immutable MORPHO;
     /// @notice Ln of the jump factor (scaled by WAD).
     uint256 public immutable LN_JUMP_FACTOR;
     /// @notice Speed factor (scaled by WAD).
+    /// @dev The speed is per second, so the rate moves at a speed of SPEED_FACTOR * err each second (while being
+    /// continuously compounded). A typical value for the SPEED_FACTOR would be 10 ethers / 365 days.
     uint256 public immutable SPEED_FACTOR;
     /// @notice Target utilization (scaled by WAD).
     uint256 public immutable TARGET_UTILIZATION;
@@ -146,7 +148,7 @@ contract SpeedJumpIrm is IIrm {
         // Safe "unchecked" cast to uint256 because linearVariation < 0 <=> newBorrowRate <= borrowRateAfterJump.
         else avgBorrowRate = uint256((int256(newBorrowRate) - int256(borrowRateAfterJump)).wDivDown(linearVariation));
 
-        // We bound both newBorrowRate and avgBorrowRate between 1e-18 and MAX_RATE.
+        // We bound both newBorrowRate and avgBorrowRate between MIN_RATE and MAX_RATE.
         return (err, uint128(newBorrowRate.bound(MIN_RATE, MAX_RATE)), uint128(avgBorrowRate.bound(MIN_RATE, MAX_RATE)));
     }
 }
