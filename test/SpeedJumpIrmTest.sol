@@ -2,9 +2,9 @@
 pragma solidity ^0.8.0;
 
 import "forge-std/Test.sol";
-import "src/Irm.sol";
+import "src/SpeedJumpIrm.sol";
 
-contract IrmTest is Test {
+contract SpeedJumpIrmTest is Test {
     using MathLib for int256;
     using MathLib for int256;
     using MathLib for uint256;
@@ -19,11 +19,11 @@ contract IrmTest is Test {
     uint256 internal constant SPEED_FACTOR = uint256(0.01 ether) / uint256(10 hours);
     uint128 internal constant INITIAL_RATE = uint128(0.01 ether) / uint128(365 days);
 
-    Irm internal irm;
+    SpeedJumpIrm internal irm;
     MarketParams internal marketParams = MarketParams(address(0), address(0), address(0), address(0), 0);
 
     function setUp() public {
-        irm = new Irm(address(this), LN2, SPEED_FACTOR, TARGET_UTILIZATION, INITIAL_RATE);
+        irm = new SpeedJumpIrm(address(this), LN2, SPEED_FACTOR, TARGET_UTILIZATION, INITIAL_RATE);
         vm.warp(90 days);
     }
 
