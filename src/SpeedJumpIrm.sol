@@ -119,11 +119,12 @@ contract SpeedJumpIrm is IIrm {
         // Safe "unchecked" int256 casts because utilization <= WAD, TARGET_UTILIZATION < WAD and errNormFactor <= WAD.
         int128 err = int128((int256(utilization) - int256(TARGET_UTILIZATION)).wDivDown(int256(errNormFactor)));
 
-        if (marketIrm[id].prevBorrowRate == 0) return (err, INITIAL_RATE, INITIAL_RATE);
+        MarketIrm storage irm = marketIrm[id];
+        if (irm.prevBorrowRate == 0) return (err, INITIAL_RATE, INITIAL_RATE);
 
         // errDelta = err - prevErr.
         // errDelta is between -1 and 1, scaled by WAD.
-        int256 errDelta = err - marketIrm[id].prevErr;
+        int256 errDelta = err - irm.prevErr;
 
         // Safe "unchecked" cast because LN_JUMP_FACTOR <= type(int256).max.
         uint256 jumpMultiplier = MathLib.wExp(errDelta.wMulDown(int256(LN_JUMP_FACTOR)));
@@ -135,7 +136,7 @@ contract SpeedJumpIrm is IIrm {
         uint256 variationMultiplier = MathLib.wExp(linearVariation);
 
         // newBorrowRate = prevBorrowRate * jumpMultiplier * variationMultiplier.
-        uint256 borrowRateAfterJump = marketIrm[id].prevBorrowRate.wMulDown(jumpMultiplier);
+        uint256 borrowRateAfterJump = irm.prevBorrowRate.wMulDown(jumpMultiplier);
         uint256 newBorrowRate = borrowRateAfterJump.wMulDown(variationMultiplier);
 
         // Then we compute the average rate over the period (this is what Morpho needs to accrue the interest).
