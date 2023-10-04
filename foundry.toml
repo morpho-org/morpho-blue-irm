@@ -7,4 +7,5 @@ via-ir = true
 [profile.default.fmt]
 wrap_comments = true
 
+
 # See more config options https://github.com/foundry-rs/foundry/blob/master/crates/config/README.md#all-options
