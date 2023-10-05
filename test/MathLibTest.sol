@@ -1,10 +1,11 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.8.0;
 
-import "forge-std/Test.sol";
-import "src/libraries/MathLib.sol";
-import "src/libraries/ErrorsLib.sol";
-import {wadExp} from "lib/solmate/src/utils/SignedWadMath.sol";
+import {MathLib} from "@irm/src/libraries/MathLib.sol";
+import {ErrorsLib} from "@irm/src/libraries/ErrorsLib.sol";
+import {wadExp} from "@irm/lib/solmate/src/utils/SignedWadMath.sol";
+
+import "@irm/lib/forge-std/src/Test.sol";
 
 contract MathLibTest is Test {
     using MathLib for uint128;

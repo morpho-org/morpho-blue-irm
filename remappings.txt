@@ -1,1 +1,3 @@
-@irm/=lib/
+@irm/src/=src/
+@irm/test/=test/
+@irm/lib/=lib/
