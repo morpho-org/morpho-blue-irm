@@ -13,19 +13,30 @@ contract SpeedJumpIrmTest is Test {
     using MorphoMathLib for uint256;
     using MarketParamsLib for MarketParams;
 
-    event BorrowRateUpdate(Id indexed id, int128 err, uint128 newBorrowRate, uint256 avgBorrowRate);
+    event BorrowRateUpdate(Id indexed id, uint256 avgBorrowRate, uint256 baseBorrowRate);
 
     uint256 internal constant LN2 = 0.69314718056 ether;
     uint256 internal constant TARGET_UTILIZATION = 0.8 ether;
     uint256 internal constant SPEED_FACTOR = uint256(0.01 ether) / uint256(10 hours);
-    uint128 internal constant INITIAL_RATE = uint128(0.01 ether) / uint128(365 days);
+    // rate for utilization=0 and baseRate=initialBaseRate.
+    uint256 internal constant INITIAL_RATE = uint128(0.01 ether) / uint128(365 days);
+    uint256 internal constant INITIAL_BASE_RATE = uint256(INITIAL_RATE) * LN2 / 1 ether;
 
     SpeedJumpIrm internal irm;
     MarketParams internal marketParams = MarketParams(address(0), address(0), address(0), address(0), 0);
 
     function setUp() public {
-        irm = new SpeedJumpIrm(address(this), LN2, SPEED_FACTOR, TARGET_UTILIZATION, INITIAL_RATE);
+        irm = new SpeedJumpIrm(address(this), LN2, SPEED_FACTOR, TARGET_UTILIZATION, INITIAL_BASE_RATE);
         vm.warp(90 days);
+    }
+
+    function testFirstBorrowRateEmptyMarket() public {
+        Market memory market;
+        uint256 avgBorrowRate = irm.borrowRate(marketParams, market);
+        uint256 baseRate = irm.baseRate(marketParams.id());
+
+        assertEq(avgBorrowRate, INITIAL_BASE_RATE.wMulDown(MathLib.wExp(-1 ether)), "avgBorrowRate");
+        assertEq(baseRate, INITIAL_BASE_RATE, "baseRate");
     }
 
     function testFirstBorrowRate(Market memory market) public {
@@ -33,11 +44,10 @@ contract SpeedJumpIrmTest is Test {
         vm.assume(market.totalSupplyAssets >= market.totalBorrowAssets);
 
         uint256 avgBorrowRate = irm.borrowRate(marketParams, market);
-        (uint256 prevBorrowRate, int256 prevErr) = irm.marketIrm(marketParams.id());
+        uint256 baseRate = irm.baseRate(marketParams.id());
 
-        assertEq(avgBorrowRate, INITIAL_RATE, "avgBorrowRate");
-        assertEq(prevBorrowRate, INITIAL_RATE, "prevBorrowRate");
-        assertEq(prevErr, _err(market), "prevErr");
+        assertEq(avgBorrowRate, INITIAL_BASE_RATE.wMulDown(MathLib.wExp(_err(market))), "avgBorrowRate");
+        assertEq(baseRate, INITIAL_BASE_RATE, "baseRate");
     }
 
     function testBorrowRateEventEmission(Market memory market) public {
@@ -45,7 +55,7 @@ contract SpeedJumpIrmTest is Test {
         vm.assume(market.totalSupplyAssets >= market.totalBorrowAssets);
 
         vm.expectEmit(address(irm));
-        emit BorrowRateUpdate(marketParams.id(), int128(_err(market)), INITIAL_RATE, INITIAL_RATE);
+        emit BorrowRateUpdate(marketParams.id(), INITIAL_RATE, INITIAL_RATE);
         irm.borrowRate(marketParams, market);
     }
 
@@ -54,11 +64,10 @@ contract SpeedJumpIrmTest is Test {
         vm.assume(market.totalSupplyAssets >= market.totalBorrowAssets);
 
         uint256 avgBorrowRate = irm.borrowRateView(marketParams, market);
-        (uint256 prevBorrowRate, int256 prevErr) = irm.marketIrm(marketParams.id());
+        uint256 baseRate = irm.baseRate(marketParams.id());
 
-        assertEq(avgBorrowRate, INITIAL_RATE, "avgBorrowRate");
-        assertEq(prevBorrowRate, 0, "prevBorrowRate");
-        assertEq(prevErr, 0, "prevErr");
+        assertEq(avgBorrowRate, INITIAL_BASE_RATE.wMulDown(MathLib.wExp(_err(market))), "avgBorrowRate");
+        assertEq(baseRate, 0, "prevBorrowRate");
     }
 
     function testBorrowRate(Market memory market0, Market memory market1) public {
@@ -70,13 +79,12 @@ contract SpeedJumpIrmTest is Test {
         vm.assume(market1.totalSupplyAssets >= market1.totalBorrowAssets);
         market1.lastUpdate = uint128(bound(market1.lastUpdate, 0, block.timestamp - 1));
 
-        uint256 avgBorrowRate = irm.borrowRate(marketParams, market1);
-        (uint256 prevBorrowRate,) = irm.marketIrm(marketParams.id());
+        uint256 expectedBaseRate = _expectedBaseRate(marketParams.id(), market1);
 
-        (uint256 expectedAvgBorrowRate, uint256 expectedPrevBorrowRate) = _expectedBorrowRates(market0, market1);
-
-        assertEq(prevBorrowRate, expectedPrevBorrowRate, "prevBorrowRate");
-        assertEq(avgBorrowRate, expectedAvgBorrowRate, "avgBorrowRate");
+        assertApproxEqRel(
+            irm.borrowRate(marketParams, market1), _expectedAvgRate(market0, market1), 0.01 ether, "avgBorrowRate"
+        );
+        assertApproxEqRel(irm.baseRate(marketParams.id()), expectedBaseRate, 0.001 ether, "baseRate");
     }
 
     function testBorrowRateView(Market memory market0, Market memory market1) public {
@@ -88,13 +96,9 @@ contract SpeedJumpIrmTest is Test {
         vm.assume(market1.totalSupplyAssets >= market1.totalBorrowAssets);
         market1.lastUpdate = uint128(bound(market1.lastUpdate, 0, block.timestamp - 1));
 
-        uint256 avgBorrowRate = irm.borrowRateView(marketParams, market1);
-        (uint256 prevBorrowRate,) = irm.marketIrm(marketParams.id());
-
-        (uint256 expectedAvgBorrowRate,) = _expectedBorrowRates(market0, market1);
-
-        assertEq(prevBorrowRate, INITIAL_RATE, "prevBorrowRate");
-        assertEq(avgBorrowRate, expectedAvgBorrowRate, "avgBorrowRate");
+        assertApproxEqRel(
+            irm.borrowRateView(marketParams, market1), _expectedAvgRate(market0, market1), 0.01 ether, "avgBorrowRate"
+        );
     }
 
     function testBorrowRateJumpOnly(Market memory market0, Market memory market1) public {
@@ -106,14 +110,12 @@ contract SpeedJumpIrmTest is Test {
         vm.assume(market1.totalSupplyAssets >= market1.totalBorrowAssets);
         market1.lastUpdate = uint128(block.timestamp);
 
-        uint256 avgBorrowRate = irm.borrowRate(marketParams, market1);
-        (uint256 prevBorrowRate,) = irm.marketIrm(marketParams.id());
-
-        (uint256 expectedAvgBorrowRate, uint256 expectedPrevBorrowRate) = _expectedBorrowRates(market0, market1);
-
-        assertEq(expectedAvgBorrowRate, expectedPrevBorrowRate, "expectedAvgBorrowRate");
-        assertEq(avgBorrowRate, expectedAvgBorrowRate, "avgBorrowRate");
-        assertEq(prevBorrowRate, expectedPrevBorrowRate, "prevBorrowRate");
+        assertApproxEqRel(
+            irm.borrowRate(marketParams, market1), _expectedAvgRate(market0, market1), 0.01 ether, "avgBorrowRate"
+        );
+        assertApproxEqRel(
+            irm.baseRate(marketParams.id()), _expectedBaseRate(marketParams.id(), market1), 0.001 ether, "baseRate"
+        );
     }
 
     function testBorrowRateViewJumpOnly(Market memory market0, Market memory market1) public {
@@ -125,13 +127,9 @@ contract SpeedJumpIrmTest is Test {
         vm.assume(market1.totalSupplyAssets >= market1.totalBorrowAssets);
         market1.lastUpdate = uint128(block.timestamp);
 
-        uint256 avgBorrowRate = irm.borrowRateView(marketParams, market1);
-        (uint256 prevBorrowRate,) = irm.marketIrm(marketParams.id());
-
-        (uint256 expectedAvgBorrowRate,) = _expectedBorrowRates(market0, market1);
-
-        assertEq(prevBorrowRate, INITIAL_RATE, "prevBorrowRate");
-        assertEq(avgBorrowRate, expectedAvgBorrowRate, "avgBorrowRate");
+        assertApproxEqRel(
+            irm.borrowRateView(marketParams, market1), _expectedAvgRate(market0, market1), 0.01 ether, "avgBorrowRate"
+        );
     }
 
     function testBorrowRateSpeedOnly(Market memory market0, Market memory market1) public {
@@ -143,13 +141,12 @@ contract SpeedJumpIrmTest is Test {
         market1.totalSupplyAssets = market0.totalSupplyAssets;
         market1.lastUpdate = uint128(bound(market1.lastUpdate, 0, block.timestamp - 1));
 
-        uint256 avgBorrowRate = irm.borrowRate(marketParams, market1);
-        (uint256 prevBorrowRate,) = irm.marketIrm(marketParams.id());
+        uint256 expectedBaseRate = _expectedBaseRate(marketParams.id(), market1);
 
-        (uint256 expectedAvgBorrowRate, uint256 expectedPrevBorrowRate) = _expectedBorrowRates(market0, market1);
-
-        assertEq(prevBorrowRate, expectedPrevBorrowRate, "prevBorrowRate");
-        assertEq(avgBorrowRate, expectedAvgBorrowRate, "avgBorrowRate");
+        assertApproxEqRel(
+            irm.borrowRate(marketParams, market1), _expectedAvgRate(market0, market1), 0.01 ether, "avgBorrowRate"
+        );
+        assertApproxEqRel(irm.baseRate(marketParams.id()), expectedBaseRate, 0.001 ether, "baseRate");
     }
 
     function testBorrowRateViewSpeedOnly(Market memory market0, Market memory market1) public {
@@ -161,31 +158,35 @@ contract SpeedJumpIrmTest is Test {
         market1.totalSupplyAssets = market0.totalSupplyAssets;
         market1.lastUpdate = uint128(bound(market1.lastUpdate, 0, block.timestamp - 1));
 
-        uint256 avgBorrowRate = irm.borrowRateView(marketParams, market1);
-        (uint256 prevBorrowRate,) = irm.marketIrm(marketParams.id());
-
-        (uint256 expectedAvgBorrowRate,) = _expectedBorrowRates(market0, market1);
-
-        assertEq(prevBorrowRate, INITIAL_RATE, "prevBorrowRate");
-        assertEq(avgBorrowRate, expectedAvgBorrowRate, "avgBorrowRate");
+        assertApproxEqRel(
+            irm.borrowRateView(marketParams, market1), _expectedAvgRate(market0, market1), 0.01 ether, "avgBorrowRate"
+        );
     }
 
-    /// @dev Returns the expected `avgBorrowRate` and `prevBorrowRate`.
-    function _expectedBorrowRates(Market memory market0, Market memory market1)
-        internal
-        view
-        returns (uint256, uint256)
-    {
-        int256 err = _err(market1);
+    function _expectedBaseRate(Id id, Market memory market) internal view returns (uint256) {
+        uint256 baseRate = irm.baseRate(id);
+        console.log(irm.baseRate(id));
+
+        int256 speed = int256(SPEED_FACTOR).wMulDown(_err(market));
+        uint256 elapsed = (baseRate > 0) ? block.timestamp - market.lastUpdate : 0;
+        int256 linearVariation = speed * int256(elapsed);
+        uint256 variationMultiplier = MathLib.wExp(linearVariation);
+        return (baseRate > 0) ? baseRate.wMulDown(variationMultiplier) : INITIAL_BASE_RATE;
+    }
+
+    /// @dev Returns the expected `avgBorrowRate` and `baseBorrowRate`.
+    function _expectedAvgRate(Market memory market0, Market memory market1) internal view returns (uint256) {
         int256 prevErr = _err(market0);
+        int256 err = _err(market1);
         int256 errDelta = err - prevErr;
-        uint256 elapsed = block.timestamp - market1.lastUpdate;
+        uint256 elapsed = block.timestamp - market0.lastUpdate;
 
         uint256 jumpMultiplier = MathLib.wExp(errDelta.wMulDown(int256(LN2)));
-        int256 speed = int256(SPEED_FACTOR).wMulDown(err);
+        int256 speed = int256(SPEED_FACTOR).wMulDown(prevErr);
         uint256 variationMultiplier = MathLib.wExp(speed * int256(elapsed));
-        uint256 expectedBorrowRateAfterJump = INITIAL_RATE.wMulDown(jumpMultiplier);
-        uint256 expectedNewBorrowRate = INITIAL_RATE.wMulDown(jumpMultiplier).wMulDown(variationMultiplier);
+        uint256 initialRate = INITIAL_BASE_RATE.wMulDown(MathLib.wExp(prevErr));
+        uint256 expectedBorrowRateAfterJump = initialRate.wMulDown(jumpMultiplier);
+        uint256 expectedNewBorrowRate = expectedBorrowRateAfterJump.wMulDown(variationMultiplier);
 
         uint256 expectedAvgBorrowRate;
         if (speed * int256(elapsed) == 0) {
@@ -196,13 +197,11 @@ contract SpeedJumpIrmTest is Test {
             );
         }
 
-        return (
-            expectedAvgBorrowRate.bound(irm.MIN_RATE(), irm.MAX_RATE()),
-            expectedNewBorrowRate.bound(irm.MIN_RATE(), irm.MAX_RATE())
-        );
+        return expectedAvgBorrowRate;
     }
 
     function _err(Market memory market) internal pure returns (int256) {
+        if (market.totalSupplyAssets == 0) return -1 ether;
         uint256 utilization = market.totalBorrowAssets.wDivDown(market.totalSupplyAssets);
 
         int256 err;
