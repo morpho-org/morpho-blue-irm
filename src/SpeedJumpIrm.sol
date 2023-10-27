@@ -1,14 +1,14 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity 0.8.19;
 
-import {IIrm} from "morpho-blue/interfaces/IIrm.sol";
+import {IIrm} from "../lib/morpho-blue/src/interfaces/IIrm.sol";
 
 import {MathLib} from "./libraries/MathLib.sol";
 import {UtilsLib} from "./libraries/UtilsLib.sol";
 import {ErrorsLib} from "./libraries/ErrorsLib.sol";
-import {MarketParamsLib} from "morpho-blue/libraries/MarketParamsLib.sol";
-import {Id, MarketParams, Market} from "morpho-blue/interfaces/IMorpho.sol";
-import {WAD, MathLib as MorphoMathLib} from "morpho-blue/libraries/MathLib.sol";
+import {MarketParamsLib} from "../lib/morpho-blue/src/libraries/MarketParamsLib.sol";
+import {Id, MarketParams, Market} from "../lib/morpho-blue/src/interfaces/IMorpho.sol";
+import {WAD, MathLib as MorphoMathLib} from "../lib/morpho-blue/src/libraries/MathLib.sol";
 
 import "forge-std/console.sol";
 
@@ -31,9 +31,9 @@ contract SpeedJumpIrm is IIrm {
 
     /* CONSTANTS */
 
-    /// @notice Max rate (1B% APR) (per second) (scaled by WAD).
+    /// @notice Maximum rate per second (scaled by WAD) (1B% APR).
     uint256 public constant MAX_RATE = uint256(1e7 ether) / 365 days;
-    /// @notice Min rate (0.1% APR) (per second) (scaled by WAD).
+    /// @notice Mininimum rate per second (scaled by WAD) (0.1% APR).
     uint256 public constant MIN_RATE = uint256(0.001 ether) / 365 days;
     /// @notice Address of Morpho.
     address public immutable MORPHO;

@@ -1,8 +1,9 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.8.0;
 
-import "forge-std/Test.sol";
-import "src/SpeedJumpIrm.sol";
+import "../src/SpeedJumpIrm.sol";
+
+import "../lib/forge-std/src/Test.sol";
 
 contract SpeedJumpIrmTest is Test {
     using MathLib for int256;

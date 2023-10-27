@@ -1,8 +1,9 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.8.0;
 
-import "forge-std/Test.sol";
-import "src/libraries/UtilsLib.sol";
+import "../src/libraries/UtilsLib.sol";
+
+import "../lib/forge-std/src/Test.sol";
 
 contract UtilsTest is Test {
     using UtilsLib for uint256;
