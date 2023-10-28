@@ -113,13 +113,18 @@ contract SpeedJumpIrm is IIrm {
         int256 err = (int256(utilization) - int256(TARGET_UTILIZATION)).wDivDown(int256(errNormFactor));
 
         // Safe "unchecked" cast because SPEED_FACTOR <= type(int256).max.
+        console.log("baseRateIRM", baseRate[id]);
         int256 speed = int256(SPEED_FACTOR).wMulDown(err);
+        console.log("speedIRM", uint256(speed));
         uint256 elapsed = (baseRate[id] > 0) ? block.timestamp - market.lastUpdate : 0;
+        console.log("elapsedIRM", elapsed);
         // Safe "unchecked" cast because elapsed <= block.timestamp.
         int256 linearVariation = speed * int256(elapsed);
         uint256 variationMultiplier = MathLib.wExp(linearVariation);
+        console.log("variationMultiplierIRM", variationMultiplier);
         uint256 newBaseRate = (baseRate[id] > 0) ? baseRate[id].wMulDown(variationMultiplier) : INITIAL_BASE_RATE;
-        uint256 newBorrowRate = newBaseRate.wMulDown(MathLib.wExp(err));
+        uint256 newBorrowRate = newBaseRate.wMulDown(MathLib.wExp(err.wMulDown(int256(LN_JUMP_FACTOR))));
+        console.log("newBorrowRateIRM", newBorrowRate);
 
         // Then we compute the average rate over the period (this is what Morpho needs to accrue the interest).
         // avgBorrowRate = 1 / elapsed * ∫ borrowRateAfterJump * exp(speed * t) dt between 0 and elapsed
@@ -132,9 +137,14 @@ contract SpeedJumpIrm is IIrm {
         } else {
             // Safe "unchecked" cast to uint256 because linearVariation < 0 <=> newBorrowRate <= borrowRateAfterJump.
             avgBorrowRate = uint256(
-                (int256(newBorrowRate) - int256(baseRate[id].wMulDown(MathLib.wExp(err)))).wDivDown(linearVariation)
+                (
+                    int256(newBorrowRate)
+                        - int256(baseRate[id].wMulDown(MathLib.wExp(err.wMulDown(int256(LN_JUMP_FACTOR)))))
+                ).wDivDown(linearVariation)
             );
         }
+
+        console.log("avgBorrowRateIRM", avgBorrowRate);
 
         // We bound both newBorrowRate and avgBorrowRate between MIN_RATE and MAX_RATE.
         return (avgBorrowRate, newBaseRate);
