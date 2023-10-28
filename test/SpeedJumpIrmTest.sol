@@ -109,7 +109,10 @@ contract SpeedJumpIrmTest is Test {
         market1.lastUpdate = uint128(bound(market1.lastUpdate, 0, block.timestamp - 1));
 
         assertApproxEqRel(
-            irm.borrowRateView(marketParams, market1), _expectedAvgRateCurve(marketParams.id(), market1), 0.01 ether, "avgBorrowRate"
+            irm.borrowRateView(marketParams, market1),
+            _expectedAvgRateCurve(marketParams.id(), market1),
+            0.01 ether,
+            "avgBorrowRate"
         );
         assertApproxEqRel(
             irm.borrowRateView(marketParams, market1), _expectedAvgRate(market0, market1), 0.01 ether, "avgBorrowRate2"
@@ -146,7 +149,10 @@ contract SpeedJumpIrmTest is Test {
         market1.lastUpdate = uint128(block.timestamp);
 
         assertApproxEqRel(
-            irm.borrowRateView(marketParams, market1), _expectedAvgRateCurve(marketParams.id(), market1), 0.01 ether, "avgBorrowRate"
+            irm.borrowRateView(marketParams, market1),
+            _expectedAvgRateCurve(marketParams.id(), market1),
+            0.01 ether,
+            "avgBorrowRate"
         );
         assertApproxEqRel(
             irm.borrowRateView(marketParams, market1), _expectedAvgRate(market0, market1), 0.01 ether, "avgBorrowRate2"
@@ -183,7 +189,10 @@ contract SpeedJumpIrmTest is Test {
         market1.lastUpdate = uint128(bound(market1.lastUpdate, 0, block.timestamp - 1));
 
         assertApproxEqRel(
-            irm.borrowRateView(marketParams, market1), _expectedAvgRateCurve(marketParams.id(), market1), 0.01 ether, "avgBorrowRate"
+            irm.borrowRateView(marketParams, market1),
+            _expectedAvgRateCurve(marketParams.id(), market1),
+            0.01 ether,
+            "avgBorrowRate"
         );
         assertApproxEqRel(
             irm.borrowRateView(marketParams, market1), _expectedAvgRate(market0, market1), 0.01 ether, "avgBorrowRate2"
@@ -229,7 +238,8 @@ contract SpeedJumpIrmTest is Test {
         uint256 elapsed = block.timestamp - market1.lastUpdate;
 
         // uint256 jumpMultiplier = MathLib.wExp(errDelta.wMulDown(int256(LN2)));
-        uint256 jumpMultiplier = MathLib.wExp(-prevErr.wMulDown(int256(LN2))).wMulDown(MathLib.wExp(err.wMulDown(int256(LN2))));
+        uint256 jumpMultiplier =
+            MathLib.wExp(-prevErr.wMulDown(int256(LN2))).wMulDown(MathLib.wExp(err.wMulDown(int256(LN2))));
         int256 speed = int256(SPEED_FACTOR).wMulDown(err);
         uint256 variationMultiplier = MathLib.wExp(speed * int256(elapsed));
         uint256 initialRate = INITIAL_BASE_RATE.wMulDown(MathLib.wExp(prevErr.wMulDown(int256(LN2))));
