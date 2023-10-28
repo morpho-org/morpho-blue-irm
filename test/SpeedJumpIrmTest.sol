@@ -143,7 +143,10 @@ contract SpeedJumpIrmTest is Test {
         market1.lastUpdate = uint128(block.timestamp);
 
         assertApproxEqRel(
-            irm.borrowRateView(marketParams, market1), _expectedAvgRateCurve(marketParams.id(), market1), 0.01 ether, "avgBorrowRate"
+            irm.borrowRateView(marketParams, market1),
+            _expectedAvgRateCurve(marketParams.id(), market1),
+            0.01 ether,
+            "avgBorrowRate"
         );
         assertApproxEqRel(
             irm.borrowRateView(marketParams, market1), _expectedAvgRate(market0, market1), 0.01 ether, "avgBorrowRate"
@@ -180,7 +183,10 @@ contract SpeedJumpIrmTest is Test {
         market1.lastUpdate = uint128(bound(market1.lastUpdate, 0, block.timestamp - 1));
 
         assertApproxEqRel(
-            irm.borrowRateView(marketParams, market1), _expectedAvgRateCurve(marketParams.id(), market1), 0.01 ether, "avgBorrowRate"
+            irm.borrowRateView(marketParams, market1),
+            _expectedAvgRateCurve(marketParams.id(), market1),
+            0.01 ether,
+            "avgBorrowRate"
         );
         assertApproxEqRel(
             irm.borrowRateView(marketParams, market1), _expectedAvgRate(market0, market1), 0.01 ether, "avgBorrowRate"
