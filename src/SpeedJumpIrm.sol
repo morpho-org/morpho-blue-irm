@@ -29,10 +29,10 @@ contract SpeedJumpIrm is IIrm {
 
     /* CONSTANTS */
 
-    /// @notice Maximum rate per second (scaled by WAD) (1B% APR).
-    uint256 public constant MAX_RATE = uint256(1e7 ether) / 365 days;
-    /// @notice Mininimum rate per second (scaled by WAD) (0.1% APR).
-    uint256 public constant MIN_RATE = uint256(0.001 ether) / 365 days;
+    /// @notice Maximum base rate per second (scaled by WAD) (1B% APR).
+    uint256 public constant MAX_BASE_RATE = uint256(1e7 ether) / 365 days;
+    /// @notice Mininimum base rate per second (scaled by WAD) (0.1% APR).
+    uint256 public constant MIN_BASE_RATE = uint256(0.001 ether) / 365 days;
     /// @notice Address of Morpho.
     address public immutable MORPHO;
     /// @notice Ln of the jump factor (scaled by WAD).
@@ -117,7 +117,7 @@ contract SpeedJumpIrm is IIrm {
         int256 linearVariation = speed * int256(elapsed);
         uint256 variationMultiplier = MathLib.wExp(linearVariation);
         uint256 newBaseRate = (baseRate[id] > 0) ? baseRate[id].wMulDown(variationMultiplier) : INITIAL_BASE_RATE;
-        uint256 newBorrowRate = newBaseRate.wMulDown(MathLib.wExp(err.wMulDown(int256(LN_JUMP_FACTOR))));
+        uint256 newBorrowRate = _curve(newBaseRate, err);
 
         // Then we compute the average rate over the period (this is what Morpho needs to accrue the interest).
         // avgBorrowRate = 1 / elapsed * ∫ borrowRateAfterJump * exp(speed * t) dt between 0 and elapsed
@@ -129,15 +129,15 @@ contract SpeedJumpIrm is IIrm {
             avgBorrowRate = newBorrowRate;
         } else {
             // Safe "unchecked" cast to uint256 because linearVariation < 0 <=> newBorrowRate <= borrowRateAfterJump.
-            avgBorrowRate = uint256(
-                (
-                    int256(newBorrowRate)
-                        - int256(baseRate[id].wMulDown(MathLib.wExp(err.wMulDown(int256(LN_JUMP_FACTOR)))))
-                ).wDivDown(linearVariation)
-            );
+            avgBorrowRate =
+                uint256((int256(newBorrowRate) - int256(_curve(baseRate[id], err))).wDivDown(linearVariation));
         }
 
         // We bound both newBorrowRate and avgBorrowRate between MIN_RATE and MAX_RATE.
-        return (avgBorrowRate, newBaseRate);
+        return (avgBorrowRate, newBaseRate.bound(MIN_BASE_RATE, MAX_BASE_RATE));
+    }
+
+    function _curve(uint256 _baseRate, int256 err) internal view returns (uint256) {
+        return _baseRate.wMulDown(MathLib.wExp(int256(LN_JUMP_FACTOR).wMulDown(err)));
     }
 }

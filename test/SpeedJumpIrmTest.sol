@@ -154,7 +154,9 @@ contract SpeedJumpIrmTest is Test {
         uint256 elapsed = (baseRate > 0) ? block.timestamp - market.lastUpdate : 0;
         int256 linearVariation = speed * int256(elapsed);
         uint256 variationMultiplier = MathLib.wExp(linearVariation);
-        return (baseRate > 0) ? baseRate.wMulDown(variationMultiplier) : INITIAL_BASE_RATE;
+        return (baseRate > 0)
+            ? baseRate.wMulDown(variationMultiplier).bound(irm.MIN_BASE_RATE(), irm.MAX_BASE_RATE())
+            : INITIAL_BASE_RATE;
     }
 
     function _expectedAvgRateCurve(Id id, Market memory market) internal view returns (uint256) {
