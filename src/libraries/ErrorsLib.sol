@@ -12,9 +12,6 @@ library ErrorsLib {
     /// @dev Thrown when passing the zero input.
     string internal constant ZERO_INPUT = "zero input";
 
-    /// @dev Thrown when wExp underflows.
-    string internal constant WEXP_UNDERFLOW = "wExp underflow";
-
     /// @dev Thrown when wExp overflows.
     string internal constant WEXP_OVERFLOW = "wExp overflow";
 

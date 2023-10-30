@@ -28,7 +28,6 @@ contract MathLibTest is Test {
     function testWExpTooSmall(int256 x) public {
         // Bound between -(2**255-1) and -(2**255-1) + ln(2)/2 - 1.
         x = bound(x, type(int256).min, type(int256).min + LN2_INT / 2 - 1);
-        vm.expectRevert(bytes(ErrorsLib.WEXP_UNDERFLOW));
         assertEq(MathLib.wExp(x), 0);
     }
 

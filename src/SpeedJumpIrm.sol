@@ -3,9 +3,9 @@ pragma solidity 0.8.19;
 
 import {IIrm} from "../lib/morpho-blue/src/interfaces/IIrm.sol";
 
-import {MathLib} from "./libraries/MathLib.sol";
 import {UtilsLib} from "./libraries/UtilsLib.sol";
 import {ErrorsLib} from "./libraries/ErrorsLib.sol";
+import {MathLib, WAD_INT} from "./libraries/MathLib.sol";
 import {MarketParamsLib} from "../lib/morpho-blue/src/libraries/MarketParamsLib.sol";
 import {Id, MarketParams, Market} from "../lib/morpho-blue/src/interfaces/IMorpho.sol";
 import {WAD, MathLib as MorphoMathLib} from "../lib/morpho-blue/src/libraries/MathLib.sol";
@@ -35,8 +35,8 @@ contract SpeedJumpIrm is IIrm {
     uint256 public constant MIN_BASE_RATE = uint256(0.001 ether) / 365 days;
     /// @notice Address of Morpho.
     address public immutable MORPHO;
-    /// @notice Ln of the jump factor (scaled by WAD).
-    uint256 public immutable LN_JUMP_FACTOR;
+    /// @notice Jump factor (scaled by WAD).
+    uint256 public immutable JUMP_FACTOR;
     /// @notice Speed factor (scaled by WAD).
     /// @dev The speed is per second, so the rate moves at a speed of SPEED_FACTOR * err each second (while being
     /// continuously compounded). A typical value for the SPEED_FACTOR would be 10 ethers / 365 days.
@@ -55,24 +55,24 @@ contract SpeedJumpIrm is IIrm {
 
     /// @notice Constructor.
     /// @param morpho The address of Morpho.
-    /// @param lnJumpFactor The log of the jump factor (scaled by WAD).
+    /// @param jumpFactor The log of the jump factor (scaled by WAD).
     /// @param speedFactor The speed factor (scaled by WAD).
     /// @param targetUtilization The target utilization (scaled by WAD). Should be strictly between 0 and 1.
     /// @param initialBaseRate The initial rate (scaled by WAD).
     constructor(
         address morpho,
-        uint256 lnJumpFactor,
+        uint256 jumpFactor,
         uint256 speedFactor,
         uint256 targetUtilization,
         uint256 initialBaseRate
     ) {
-        require(lnJumpFactor <= uint256(type(int256).max), ErrorsLib.INPUT_TOO_LARGE);
+        require(jumpFactor <= uint256(type(int256).max), ErrorsLib.INPUT_TOO_LARGE);
         require(speedFactor <= uint256(type(int256).max), ErrorsLib.INPUT_TOO_LARGE);
         require(targetUtilization < WAD, ErrorsLib.INPUT_TOO_LARGE);
         require(targetUtilization > 0, ErrorsLib.ZERO_INPUT);
 
         MORPHO = morpho;
-        LN_JUMP_FACTOR = lnJumpFactor;
+        JUMP_FACTOR = jumpFactor;
         SPEED_FACTOR = speedFactor;
         TARGET_UTILIZATION = targetUtilization;
         INITIAL_BASE_RATE = initialBaseRate;
@@ -138,6 +138,11 @@ contract SpeedJumpIrm is IIrm {
     }
 
     function _curve(uint256 _baseRate, int256 err) internal view returns (uint256) {
-        return _baseRate.wMulDown(MathLib.wExp(int256(LN_JUMP_FACTOR).wMulDown(err)));
+        // Safe "unchecked" cast because err >= -1 (in WAD).
+        if (err < 0) {
+            return
+                uint256((WAD_INT - WAD_INT.wDivDown(int256(JUMP_FACTOR))).wMulDown(err) + WAD_INT).wMulDown(_baseRate);
+        }
+        return uint256((int256(JUMP_FACTOR) - WAD_INT).wMulDown(err) + WAD_INT).wMulDown(_baseRate);
     }
 }
