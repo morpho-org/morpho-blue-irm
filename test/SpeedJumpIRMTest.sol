@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.8.0;
 
-import "../src/AdaptativeCurveIRM.sol";
+import "../src/SpeedJumpIRM.sol";
 
 import "../lib/forge-std/src/Test.sol";
 
