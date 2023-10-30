@@ -35,13 +35,15 @@ contract SpeedJumpIrm is IIrm {
     uint256 public constant MIN_BASE_RATE = uint256(0.001 ether) / 365 days;
     /// @notice Address of Morpho.
     address public immutable MORPHO;
-    /// @notice Jump factor (scaled by WAD).
-    uint256 public immutable JUMP_FACTOR;
-    /// @notice Speed factor (scaled by WAD).
-    /// @dev The speed is per second, so the rate moves at a speed of SPEED_FACTOR * err each second (while being
-    /// continuously compounded). A typical value for the SPEED_FACTOR would be 10 ethers / 365 days.
-    uint256 public immutable SPEED_FACTOR;
+    /// @notice Curve steepness (scaled by WAD).
+    /// @dev Verified to be greater than 1 at construction.
+    uint256 public immutable CURVE_STEEPNESS;
+    /// @notice Adjustment speed (scaled by WAD).
+    /// @dev The speed is per second, so the rate moves at a speed of ADJUSTMENT_SPEED * err each second (while being
+    /// continuously compounded). A typical value for the ADJUSTMENT_SPEED would be 10 ethers / 365 days.
+    uint256 public immutable ADJUSTMENT_SPEED;
     /// @notice Target utilization (scaled by WAD).
+    /// @dev Verified to be strictly between 0 and 1 at construction.
     uint256 public immutable TARGET_UTILIZATION;
     /// @notice Initial rate (scaled by WAD).
     uint256 public immutable INITIAL_BASE_RATE;
@@ -55,25 +57,26 @@ contract SpeedJumpIrm is IIrm {
 
     /// @notice Constructor.
     /// @param morpho The address of Morpho.
-    /// @param jumpFactor The log of the jump factor (scaled by WAD).
-    /// @param speedFactor The speed factor (scaled by WAD).
-    /// @param targetUtilization The target utilization (scaled by WAD). Should be strictly between 0 and 1.
-    /// @param initialBaseRate The initial rate (scaled by WAD).
+    /// @param curveSteepness The curve steepness (scaled by WAD).
+    /// @param adjustmentSpeed The adjustment speed (scaled by WAD).
+    /// @param targetUtilization The target utilization (scaled by WAD).
+    /// @param initialBaseRate The initial base rate (scaled by WAD).
     constructor(
         address morpho,
-        uint256 jumpFactor,
-        uint256 speedFactor,
+        uint256 curveSteepness,
+        uint256 adjustmentSpeed,
         uint256 targetUtilization,
         uint256 initialBaseRate
     ) {
-        require(jumpFactor <= uint256(type(int256).max), ErrorsLib.INPUT_TOO_LARGE);
-        require(speedFactor <= uint256(type(int256).max), ErrorsLib.INPUT_TOO_LARGE);
+        require(curveSteepness <= uint256(type(int256).max), ErrorsLib.INPUT_TOO_LARGE);
+        require(curveSteepness >= WAD, ErrorsLib.INPUT_TOO_SMALL);
+        require(adjustmentSpeed <= uint256(type(int256).max), ErrorsLib.INPUT_TOO_LARGE);
         require(targetUtilization < WAD, ErrorsLib.INPUT_TOO_LARGE);
         require(targetUtilization > 0, ErrorsLib.ZERO_INPUT);
 
         MORPHO = morpho;
-        JUMP_FACTOR = jumpFactor;
-        SPEED_FACTOR = speedFactor;
+        CURVE_STEEPNESS = curveSteepness;
+        ADJUSTMENT_SPEED = adjustmentSpeed;
         TARGET_UTILIZATION = targetUtilization;
         INITIAL_BASE_RATE = initialBaseRate;
     }
@@ -110,8 +113,8 @@ contract SpeedJumpIrm is IIrm {
         // Safe "unchecked" int256 casts because utilization <= WAD, TARGET_UTILIZATION < WAD and errNormFactor <= WAD.
         int256 err = (int256(utilization) - int256(TARGET_UTILIZATION)).wDivDown(int256(errNormFactor));
 
-        // Safe "unchecked" cast because SPEED_FACTOR <= type(int256).max.
-        int256 speed = int256(SPEED_FACTOR).wMulDown(err);
+        // Safe "unchecked" cast because ADJUSTMENT_SPEED <= type(int256).max.
+        int256 speed = int256(ADJUSTMENT_SPEED).wMulDown(err);
         uint256 elapsed = (baseRate[id] > 0) ? block.timestamp - market.lastUpdate : 0;
         // Safe "unchecked" cast because elapsed <= block.timestamp.
         int256 linearVariation = speed * int256(elapsed);
@@ -140,9 +143,10 @@ contract SpeedJumpIrm is IIrm {
     function _curve(uint256 _baseRate, int256 err) internal view returns (uint256) {
         // Safe "unchecked" cast because err >= -1 (in WAD).
         if (err < 0) {
-            return
-                uint256((WAD_INT - WAD_INT.wDivDown(int256(JUMP_FACTOR))).wMulDown(err) + WAD_INT).wMulDown(_baseRate);
+            return uint256((WAD_INT - WAD_INT.wDivDown(int256(CURVE_STEEPNESS))).wMulDown(err) + WAD_INT).wMulDown(
+                _baseRate
+            );
         }
-        return uint256((int256(JUMP_FACTOR) - WAD_INT).wMulDown(err) + WAD_INT).wMulDown(_baseRate);
+        return uint256((int256(CURVE_STEEPNESS) - WAD_INT).wMulDown(err) + WAD_INT).wMulDown(_baseRate);
     }
 }

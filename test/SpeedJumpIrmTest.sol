@@ -16,16 +16,16 @@ contract SpeedJumpIrmTest is Test {
 
     event BorrowRateUpdate(Id indexed id, uint256 avgBorrowRate, uint256 baseRate);
 
-    uint256 internal constant JUMP_FACTOR = 2 ether;
+    uint256 internal constant CURVE_STEEPNESS = 4 ether;
+    uint256 internal constant ADJUSTMENT_SPEED = 50 ether / uint256(365 days);
     uint256 internal constant TARGET_UTILIZATION = 0.8 ether;
-    uint256 internal constant SPEED_FACTOR = uint256(0.01 ether) / uint256(10 hours);
     uint256 internal constant INITIAL_BASE_RATE = uint128(0.01 ether) / uint128(365 days);
 
     SpeedJumpIrm internal irm;
     MarketParams internal marketParams = MarketParams(address(0), address(0), address(0), address(0), 0);
 
     function setUp() public {
-        irm = new SpeedJumpIrm(address(this), JUMP_FACTOR, SPEED_FACTOR, TARGET_UTILIZATION, INITIAL_BASE_RATE);
+        irm = new SpeedJumpIrm(address(this), CURVE_STEEPNESS, ADJUSTMENT_SPEED, TARGET_UTILIZATION, INITIAL_BASE_RATE);
         vm.warp(90 days);
     }
 
@@ -134,7 +134,7 @@ contract SpeedJumpIrmTest is Test {
 
     function _expectedBaseRate(Id id, Market memory market) internal view returns (uint256) {
         uint256 baseRate = irm.baseRate(id);
-        int256 speed = int256(SPEED_FACTOR).wMulDown(_err(market));
+        int256 speed = int256(ADJUSTMENT_SPEED).wMulDown(_err(market));
         uint256 elapsed = (baseRate > 0) ? block.timestamp - market.lastUpdate : 0;
         int256 linearVariation = speed * int256(elapsed);
         uint256 variationMultiplier = MathLib.wExp(linearVariation);
@@ -146,7 +146,7 @@ contract SpeedJumpIrmTest is Test {
     function _expectedAvgRate(Id id, Market memory market) internal view returns (uint256) {
         uint256 baseRate = irm.baseRate(id);
         int256 err = _err(market);
-        int256 speed = int256(SPEED_FACTOR).wMulDown(err);
+        int256 speed = int256(ADJUSTMENT_SPEED).wMulDown(err);
         uint256 elapsed = (baseRate > 0) ? block.timestamp - market.lastUpdate : 0;
         int256 linearVariation = speed * int256(elapsed);
         uint256 variationMultiplier = MathLib.wExp(linearVariation);
@@ -165,8 +165,12 @@ contract SpeedJumpIrmTest is Test {
 
     function _curve(uint256 baseRate, int256 err) internal view returns (uint256) {
         // Safe "unchecked" cast because err >= -1 (in WAD).
-        if (err < 0) return uint256((WAD_INT / 2).wMulDown(err) + WAD_INT).wMulDown(baseRate);
-        return uint256(WAD_INT.wMulDown(err) + WAD_INT).wMulDown(baseRate);
+        if (err < 0) {
+            return uint256((WAD_INT - WAD_INT.wDivDown(int256(CURVE_STEEPNESS))).wMulDown(err) + WAD_INT).wMulDown(
+                baseRate
+            );
+        }
+        return uint256((int256(CURVE_STEEPNESS) - WAD_INT).wMulDown(err) + WAD_INT).wMulDown(baseRate);
     }
 
     function _err(Market memory market) internal pure returns (int256) {
