@@ -25,7 +25,8 @@ contract AdaptativeCurveIRMTest is Test {
     MarketParams internal marketParams = MarketParams(address(0), address(0), address(0), address(0), 0);
 
     function setUp() public {
-        irm = new AdaptativeCurveIRM(address(this), CURVE_STEEPNESS, ADJUSTMENT_SPEED, TARGET_UTILIZATION, INITIAL_BASE_RATE);
+        irm =
+        new AdaptativeCurveIRM(address(this), CURVE_STEEPNESS, ADJUSTMENT_SPEED, TARGET_UTILIZATION, INITIAL_BASE_RATE);
         vm.warp(90 days);
     }
 

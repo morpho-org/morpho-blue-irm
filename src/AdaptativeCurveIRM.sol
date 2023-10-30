@@ -131,7 +131,8 @@ contract AdaptativeCurveIRM is IIrm {
         if (linearVariation == 0 || baseRate[id] == 0) {
             avgBorrowRate = newBorrowRate;
         } else {
-            // Safe "unchecked" cast to uint256 because linearVariation < 0 <=> newBorrowRate <= borrowRateStartOfThePeriod.
+            // Safe "unchecked" cast to uint256 because linearVariation < 0 <=> newBorrowRate <=
+            // borrowRateStartOfThePeriod.
             avgBorrowRate =
                 uint256((int256(newBorrowRate) - int256(_curve(baseRate[id], err))).wDivDown(linearVariation));
         }
