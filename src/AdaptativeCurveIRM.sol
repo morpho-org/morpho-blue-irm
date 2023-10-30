@@ -10,11 +10,10 @@ import {MarketParamsLib} from "../lib/morpho-blue/src/libraries/MarketParamsLib.
 import {Id, MarketParams, Market} from "../lib/morpho-blue/src/interfaces/IMorpho.sol";
 import {WAD, MathLib as MorphoMathLib} from "../lib/morpho-blue/src/libraries/MathLib.sol";
 
-/// @title SpeedJumpIrm
+/// @title AdaptativeCurveIRM
 /// @author Morpho Labs
 /// @custom:contact security@morpho.xyz
-/// @notice Interest rate model.
-contract SpeedJumpIrm is IIrm {
+contract AdaptativeCurveIRM is IIrm {
     using MathLib for int256;
     using MathLib for uint256;
     using UtilsLib for uint256;
@@ -123,15 +122,16 @@ contract SpeedJumpIrm is IIrm {
         uint256 newBorrowRate = _curve(newBaseRate, err);
 
         // Then we compute the average rate over the period (this is what Morpho needs to accrue the interest).
-        // avgBorrowRate = 1 / elapsed * ∫ borrowRateAfterJump * exp(speed * t) dt between 0 and elapsed
-        //               = borrowRateAfterJump * (exp(linearVariation) - 1) / linearVariation
-        //               = (newBorrowRate - borrowRateAfterJump) / linearVariation
-        // And avgBorrowRate ~ borrowRateAfterJump for linearVariation around zero.
+        // avgBorrowRate = 1 / elapsed * ∫ borrowRateStartOfThePeriod * exp(speed * t) dt between 0 and elapsed
+        //               = borrowRateStartOfThePeriod * (exp(linearVariation) - 1) / linearVariation
+        //               = (newBorrowRate - borrowRateStartOfThePeriod) / linearVariation
+        // And avgBorrowRate ~ borrowRateStartOfThePeriod ~ newBorrowRate for linearVariation around zero.
+        // Also, when it is the first interaction (baseRate == 0).
         uint256 avgBorrowRate;
         if (linearVariation == 0 || baseRate[id] == 0) {
             avgBorrowRate = newBorrowRate;
         } else {
-            // Safe "unchecked" cast to uint256 because linearVariation < 0 <=> newBorrowRate <= borrowRateAfterJump.
+            // Safe "unchecked" cast to uint256 because linearVariation < 0 <=> newBorrowRate <= borrowRateStartOfThePeriod.
             avgBorrowRate =
                 uint256((int256(newBorrowRate) - int256(_curve(baseRate[id], err))).wDivDown(linearVariation));
         }

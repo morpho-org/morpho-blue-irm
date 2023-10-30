@@ -1,11 +1,11 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.8.0;
 
-import "../src/SpeedJumpIrm.sol";
+import "../src/AdaptativeCurveIRM.sol";
 
 import "../lib/forge-std/src/Test.sol";
 
-contract SpeedJumpIrmTest is Test {
+contract AdaptativeCurveIRMTest is Test {
     using MathLib for int256;
     using MathLib for int256;
     using MathLib for uint256;
@@ -21,11 +21,11 @@ contract SpeedJumpIrmTest is Test {
     uint256 internal constant TARGET_UTILIZATION = 0.8 ether;
     uint256 internal constant INITIAL_BASE_RATE = uint128(0.01 ether) / uint128(365 days);
 
-    SpeedJumpIrm internal irm;
+    AdaptativeCurveIRM internal irm;
     MarketParams internal marketParams = MarketParams(address(0), address(0), address(0), address(0), 0);
 
     function setUp() public {
-        irm = new SpeedJumpIrm(address(this), CURVE_STEEPNESS, ADJUSTMENT_SPEED, TARGET_UTILIZATION, INITIAL_BASE_RATE);
+        irm = new AdaptativeCurveIRM(address(this), CURVE_STEEPNESS, ADJUSTMENT_SPEED, TARGET_UTILIZATION, INITIAL_BASE_RATE);
         vm.warp(90 days);
     }
 
