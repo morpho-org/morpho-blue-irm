@@ -118,7 +118,10 @@ contract AdaptativeCurveIRM is IIrm {
         // Safe "unchecked" cast because elapsed <= block.timestamp.
         int256 linearVariation = speed * int256(elapsed);
         uint256 variationMultiplier = MathLib.wExp(linearVariation);
-        uint256 newBaseRate = (baseRate[id] > 0) ? baseRate[id].wMulDown(variationMultiplier) : INITIAL_BASE_RATE;
+        // newBaseRate is bounded between MIN_BASE_RATE, MAX_BASE_RATE.
+        uint256 newBaseRate = (baseRate[id] > 0)
+            ? baseRate[id].wMulDown(variationMultiplier).bound(MIN_BASE_RATE, MAX_BASE_RATE)
+            : INITIAL_BASE_RATE;
         uint256 newBorrowRate = _curve(newBaseRate, err);
 
         // Then we compute the average rate over the period (this is what Morpho needs to accrue the interest).
@@ -137,8 +140,7 @@ contract AdaptativeCurveIRM is IIrm {
                 uint256((int256(newBorrowRate) - int256(_curve(baseRate[id], err))).wDivDown(linearVariation));
         }
 
-        // We bound both newBorrowRate and avgBorrowRate between MIN_RATE and MAX_RATE.
-        return (avgBorrowRate, newBaseRate.bound(MIN_BASE_RATE, MAX_BASE_RATE));
+        return (avgBorrowRate, newBaseRate);
     }
 
     function _curve(uint256 _baseRate, int256 err) internal view returns (uint256) {
