@@ -67,6 +67,7 @@ contract AdaptativeCurveIRM is IIrm {
         uint256 targetUtilization,
         uint256 initialBaseRate
     ) {
+        require(morpho != address(0), ErrorsLib.ZERO_ADDRESS);
         require(curveSteepness <= uint256(type(int256).max), ErrorsLib.INPUT_TOO_LARGE);
         require(curveSteepness >= WAD, ErrorsLib.INPUT_TOO_SMALL);
         require(adjustmentSpeed <= uint256(type(int256).max), ErrorsLib.INPUT_TOO_LARGE);

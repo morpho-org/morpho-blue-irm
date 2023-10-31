@@ -30,6 +30,11 @@ contract AdaptativeCurveIRMTest is Test {
         vm.warp(90 days);
     }
 
+    function testDeployment() public {
+        vm.expectRevert(bytes(ErrorsLib.ZERO_ADDRESS));
+        new AdaptativeCurveIRM(address(0), 0, 0, 0, 0);
+    }
+
     function testFirstBorrowRateEmptyMarket() public {
         Market memory market;
         uint256 avgBorrowRate = irm.borrowRate(marketParams, market);
