@@ -3,7 +3,7 @@ src = "src"
 out = "out"
 test = "test"
 libs = ["lib"]
-via-ir = true
+via-ir = false
 
 [profile.default.fuzz]
 runs = 4096

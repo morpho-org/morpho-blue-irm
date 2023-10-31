@@ -112,13 +112,17 @@ contract AdaptativeCurveIRM is IIrm {
         // Safe "unchecked" int256 casts because utilization <= WAD, TARGET_UTILIZATION < WAD and errNormFactor <= WAD.
         int256 err = (int256(utilization) - int256(TARGET_UTILIZATION)).wDivDown(int256(errNormFactor));
 
-        // Safe "unchecked" cast because ADJUSTMENT_SPEED <= type(int256).max.
-        int256 speed = int256(ADJUSTMENT_SPEED).wMulDown(err);
-        uint256 elapsed = (baseRate[id] > 0) ? block.timestamp - market.lastUpdate : 0;
-        // Safe "unchecked" cast because elapsed <= block.timestamp.
-        int256 linearVariation = speed * int256(elapsed);
-        uint256 variationMultiplier = MathLib.wExp(linearVariation);
-        uint256 newBaseRate = (baseRate[id] > 0) ? baseRate[id].wMulDown(variationMultiplier) : INITIAL_BASE_RATE;
+        int256 linearVariation;
+        {
+            // Safe "unchecked" cast because ADJUSTMENT_SPEED <= type(int256).max.
+            int256 speed = int256(ADJUSTMENT_SPEED).wMulDown(err);
+            uint256 elapsed = (baseRate[id] > 0) ? block.timestamp - market.lastUpdate : 0;
+            // Safe "unchecked" cast because elapsed <= block.timestamp.
+            linearVariation = speed * int256(elapsed);
+        }
+
+        uint256 newBaseRate =
+            (baseRate[id] > 0) ? baseRate[id].wMulDown(MathLib.wExp(linearVariation)) : INITIAL_BASE_RATE;
         uint256 newBorrowRate = _curve(newBaseRate, err);
 
         // Then we compute the average rate over the period (this is what Morpho needs to accrue the interest).
