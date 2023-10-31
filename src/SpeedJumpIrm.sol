@@ -24,7 +24,7 @@ contract AdaptativeCurveIRM is IIrm {
     /* EVENTS */
 
     /// @notice Emitted when a borrow rate is updated.
-    event BorrowRateUpdate(Id indexed id, uint256 avgBorrowRate, uint256 baseRate);
+    event BorrowRateUpdate(Id indexed id, uint256 avgBorrowRate, uint256 rateAtTarget);
 
     /* CONSTANTS */
 
@@ -49,8 +49,9 @@ contract AdaptativeCurveIRM is IIrm {
 
     /* STORAGE */
 
-    /// @notice Base rate of markets.
-    mapping(Id => uint256) public baseRate;
+    /// @notice Rate at target utilization.
+    /// @dev Tells the height of the curve.
+    mapping(Id => uint256) public rateAtTarget;
 
     /* CONSTRUCTOR */
 
@@ -59,13 +60,13 @@ contract AdaptativeCurveIRM is IIrm {
     /// @param curveSteepness The curve steepness (scaled by WAD).
     /// @param adjustmentSpeed The adjustment speed (scaled by WAD).
     /// @param targetUtilization The target utilization (scaled by WAD).
-    /// @param initialBaseRate The initial base rate (scaled by WAD).
+    /// @param initialRateAtTarget The initial rate at target (scaled by WAD).
     constructor(
         address morpho,
         uint256 curveSteepness,
         uint256 adjustmentSpeed,
         uint256 targetUtilization,
-        uint256 initialBaseRate
+        uint256 initialRateAtTarget
     ) {
         require(morpho != address(0), ErrorsLib.ZERO_ADDRESS);
         require(curveSteepness <= uint256(type(int256).max), ErrorsLib.INPUT_TOO_LARGE);
@@ -78,7 +79,7 @@ contract AdaptativeCurveIRM is IIrm {
         CURVE_STEEPNESS = curveSteepness;
         ADJUSTMENT_SPEED = adjustmentSpeed;
         TARGET_UTILIZATION = targetUtilization;
-        INITIAL_BASE_RATE = initialBaseRate;
+        INITIAL_BASE_RATE = initialRateAtTarget;
     }
 
     /* BORROW RATES */
@@ -95,11 +96,11 @@ contract AdaptativeCurveIRM is IIrm {
 
         Id id = marketParams.id();
 
-        (uint256 avgBorrowRate, uint256 newBaseRate) = _borrowRate(id, market);
+        (uint256 avgBorrowRate, uint256 newRateAtTarget) = _borrowRate(id, market);
 
-        baseRate[id] = newBaseRate;
+        rateAtTarget[id] = newRateAtTarget;
 
-        emit BorrowRateUpdate(id, avgBorrowRate, newBaseRate);
+        emit BorrowRateUpdate(id, avgBorrowRate, newRateAtTarget);
 
         return avgBorrowRate;
     }
@@ -116,43 +117,44 @@ contract AdaptativeCurveIRM is IIrm {
         // Safe "unchecked" cast because ADJUSTMENT_SPEED <= type(int256).max.
         int256 speed = int256(ADJUSTMENT_SPEED).wMulDown(err);
 
-        uint256 prevBaseRate = baseRate[id];
-        uint256 elapsed = (prevBaseRate > 0) ? block.timestamp - market.lastUpdate : 0;
+        uint256 prevRateAtTarget = rateAtTarget[id];
+        uint256 elapsed = (prevRateAtTarget > 0) ? block.timestamp - market.lastUpdate : 0;
         // Safe "unchecked" cast because elapsed <= block.timestamp.
         int256 linearVariation = speed * int256(elapsed);
         uint256 variationMultiplier = MathLib.wExp(linearVariation);
-        // newBaseRate is bounded between MIN_BASE_RATE, MAX_BASE_RATE.
-        uint256 newBaseRate = (prevBaseRate > 0)
-            ? prevBaseRate.wMulDown(variationMultiplier).bound(MIN_BASE_RATE, MAX_BASE_RATE)
+        // newRateAtTarget is bounded between MIN_BASE_RATE, MAX_BASE_RATE.
+        uint256 newRateAtTarget = (prevRateAtTarget > 0)
+            ? prevRateAtTarget.wMulDown(variationMultiplier).bound(MIN_BASE_RATE, MAX_BASE_RATE)
             : INITIAL_BASE_RATE;
-        uint256 newBorrowRate = _curve(newBaseRate, err);
+        uint256 newBorrowRate = _curve(newRateAtTarget, err);
 
+        uint256 borrowRateStartOfThePeriod = _curve(prevRateAtTarget, err);
         // Then we compute the average rate over the period (this is what Morpho needs to accrue the interest).
         // avgBorrowRate = 1 / elapsed * ∫ borrowRateStartOfThePeriod * exp(speed * t) dt between 0 and elapsed
         //               = borrowRateStartOfThePeriod * (exp(linearVariation) - 1) / linearVariation
         //               = (newBorrowRate - borrowRateStartOfThePeriod) / linearVariation
         // And avgBorrowRate ~ borrowRateStartOfThePeriod ~ newBorrowRate for linearVariation around zero.
-        // Also, when it is the first interaction (baseRate == 0).
+        // Also, when it is the first interaction (rateAtTarget == 0).
         uint256 avgBorrowRate;
-        if (linearVariation == 0 || prevBaseRate == 0) {
+        if (linearVariation == 0 || prevRateAtTarget == 0) {
             avgBorrowRate = newBorrowRate;
         } else {
             // Safe "unchecked" cast to uint256 because linearVariation < 0 <=> newBorrowRate <=
             // borrowRateStartOfThePeriod.
             avgBorrowRate =
-                uint256((int256(newBorrowRate) - int256(_curve(prevBaseRate, err))).wDivDown(linearVariation));
+                uint256((int256(newBorrowRate) - int256(borrowRateStartOfThePeriod)).wDivDown(linearVariation));
         }
 
-        return (avgBorrowRate, newBaseRate);
+        return (avgBorrowRate, newRateAtTarget);
     }
 
-    function _curve(uint256 _baseRate, int256 err) internal view returns (uint256) {
+    function _curve(uint256 _rateAtTarget, int256 err) internal view returns (uint256) {
         // Safe "unchecked" cast because err >= -1 (in WAD).
         if (err < 0) {
             return uint256((WAD_INT - WAD_INT.wDivDown(int256(CURVE_STEEPNESS))).wMulDown(err) + WAD_INT).wMulDown(
-                _baseRate
+                _rateAtTarget
             );
         }
-        return uint256((int256(CURVE_STEEPNESS) - WAD_INT).wMulDown(err) + WAD_INT).wMulDown(_baseRate);
+        return uint256((int256(CURVE_STEEPNESS) - WAD_INT).wMulDown(err) + WAD_INT).wMulDown(_rateAtTarget);
     }
 }
