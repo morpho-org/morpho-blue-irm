@@ -162,7 +162,8 @@ contract AdaptativeCurveIRMTest is Test {
             avgBorrowRate = newBorrowRate;
         } else {
             // Safe "unchecked" cast to uint256 because linearVariation < 0 <=> newBorrowRate <= borrowRateAfterJump.
-            avgBorrowRate = uint256((int256(newBorrowRate) - int256(_curve(rateAtTarget, err))).wDivDown(linearVariation));
+            avgBorrowRate =
+                uint256((int256(newBorrowRate) - int256(_curve(rateAtTarget, err))).wDivDown(linearVariation));
         }
         return avgBorrowRate;
     }
