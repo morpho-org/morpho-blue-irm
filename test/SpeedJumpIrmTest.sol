@@ -19,7 +19,7 @@ contract AdaptativeCurveIRMTest is Test {
     uint256 internal constant CURVE_STEEPNESS = 4 ether;
     uint256 internal constant ADJUSTMENT_SPEED = 50 ether / uint256(365 days);
     uint256 internal constant TARGET_UTILIZATION = 0.8 ether;
-    uint256 internal constant INITIAL_BASE_RATE = uint128(0.01 ether) / uint128(365 days);
+    uint256 internal constant INITIAL_BASE_RATE = 0.01 ether / uint256(365 days);
 
     AdaptativeCurveIRM internal irm;
     MarketParams internal marketParams = MarketParams(address(0), address(0), address(0), address(0), 0);
@@ -59,11 +59,10 @@ contract AdaptativeCurveIRMTest is Test {
         vm.assume(market.totalBorrowAssets > 0);
         vm.assume(market.totalSupplyAssets >= market.totalBorrowAssets);
 
-        // TODO: fix this failing test
-        // Reason: Expected an emit, but the call reverted instead. Ensure you're testing the happy path when using the
-        // `expectEmit` cheatcode.
-        // vm.expectEmit(true, true, true, true, address(irm));
-        // emit BorrowRateUpdate(marketParams.id(), INITIAL_RATE, INITIAL_RATE);
+        vm.expectEmit(true, true, true, true, address(irm));
+        emit BorrowRateUpdate(
+            marketParams.id(), _curve(INITIAL_BASE_RATE, _err(market)), _expectedBaseRate(marketParams.id(), market)
+        );
         irm.borrowRate(marketParams, market);
     }
 
@@ -98,7 +97,7 @@ contract AdaptativeCurveIRMTest is Test {
         assertApproxEqRel(irm.baseRate(marketParams.id()), expectedBaseRate, 0.001 ether, "baseRate");
     }
 
-    function testBorrowRateJumpOnly(Market memory market0, Market memory market1) public {
+    function testBorrowRateNoTimeElapsed(Market memory market0, Market memory market1) public {
         vm.assume(market0.totalBorrowAssets > 0);
         vm.assume(market0.totalSupplyAssets >= market0.totalBorrowAssets);
         irm.borrowRate(marketParams, market0);
@@ -118,7 +117,7 @@ contract AdaptativeCurveIRMTest is Test {
         assertApproxEqRel(irm.baseRate(marketParams.id()), expectedBaseRate, 0.001 ether, "baseRate");
     }
 
-    function testBorrowRateSpeedOnly(Market memory market0, Market memory market1) public {
+    function testBorrowRateNoUtilizationChange(Market memory market0, Market memory market1) public {
         vm.assume(market0.totalBorrowAssets > 0);
         vm.assume(market0.totalSupplyAssets >= market0.totalBorrowAssets);
         irm.borrowRate(marketParams, market0);

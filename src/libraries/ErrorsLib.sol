@@ -11,7 +11,7 @@ library ErrorsLib {
 
     /// @dev Thrown when the input is too small.
     string internal constant INPUT_TOO_SMALL = "input too small";
-    
+
     /// @dev Thrown when passing the zero address.
     string internal constant ZERO_ADDRESS = "zero address";
 
