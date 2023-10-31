@@ -164,7 +164,7 @@ contract AdaptativeCurveIRMTest is Test {
         return avgBorrowRate;
     }
 
-    function _curve(uint256 baseRate, int256 err) internal view returns (uint256) {
+    function _curve(uint256 baseRate, int256 err) internal pure returns (uint256) {
         // Safe "unchecked" cast because err >= -1 (in WAD).
         if (err < 0) {
             return uint256((WAD_INT - WAD_INT.wDivDown(int256(CURVE_STEEPNESS))).wMulDown(err) + WAD_INT).wMulDown(
