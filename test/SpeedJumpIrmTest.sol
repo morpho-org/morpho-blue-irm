@@ -150,8 +150,7 @@ contract AdaptativeCurveIRMTest is Test {
         int256 speed = int256(ADJUSTMENT_SPEED).wMulDown(err);
         uint256 elapsed = (baseRate > 0) ? block.timestamp - market.lastUpdate : 0;
         int256 linearVariation = speed * int256(elapsed);
-        uint256 variationMultiplier = MathLib.wExp(linearVariation);
-        uint256 newBaseRate = (baseRate > 0) ? baseRate.wMulDown(variationMultiplier) : INITIAL_BASE_RATE;
+        uint256 newBaseRate = _expectedBaseRate(id, market);
         uint256 newBorrowRate = _curve(newBaseRate, err);
 
         uint256 avgBorrowRate;
