@@ -28,10 +28,10 @@ contract AdaptativeCurveIRM is IIrm {
 
     /* CONSTANTS */
 
-    /// @notice Maximum base rate per second (scaled by WAD) (1B% APR).
-    uint256 public constant MAX_BASE_RATE = uint256(1e7 ether) / 365 days;
-    /// @notice Mininimum base rate per second (scaled by WAD) (0.1% APR).
-    uint256 public constant MIN_BASE_RATE = uint256(0.001 ether) / 365 days;
+    /// @notice Maximum rate at target per second (scaled by WAD) (1B% APR).
+    uint256 public constant MAX_RATE_AT_TARGET = uint256(1e7 ether) / 365 days;
+    /// @notice Mininimum rate at target per second (scaled by WAD) (0.1% APR).
+    uint256 public constant MIN_RATE_AT_TARGET = uint256(0.001 ether) / 365 days;
     /// @notice Address of Morpho.
     address public immutable MORPHO;
     /// @notice Curve steepness (scaled by WAD).
@@ -44,8 +44,8 @@ contract AdaptativeCurveIRM is IIrm {
     /// @notice Target utilization (scaled by WAD).
     /// @dev Verified to be strictly between 0 and 1 at construction.
     uint256 public immutable TARGET_UTILIZATION;
-    /// @notice Initial rate (scaled by WAD).
-    uint256 public immutable INITIAL_BASE_RATE;
+    /// @notice Initial rate at target (scaled by WAD).
+    uint256 public immutable INITIAL_RATE_AT_TARGET;
 
     /* STORAGE */
 
@@ -79,7 +79,7 @@ contract AdaptativeCurveIRM is IIrm {
         CURVE_STEEPNESS = curveSteepness;
         ADJUSTMENT_SPEED = adjustmentSpeed;
         TARGET_UTILIZATION = targetUtilization;
-        INITIAL_BASE_RATE = initialRateAtTarget;
+        INITIAL_RATE_AT_TARGET = initialRateAtTarget;
     }
 
     /* BORROW RATES */
@@ -106,6 +106,7 @@ contract AdaptativeCurveIRM is IIrm {
     }
 
     /// @dev Returns err, newBorrowRate and avgBorrowRate.
+    /// @dev Assumes that the inputs `marketParams` and `id` match.
     function _borrowRate(Id id, Market memory market) private view returns (uint256, uint256) {
         uint256 utilization =
             market.totalSupplyAssets > 0 ? market.totalBorrowAssets.wDivDown(market.totalSupplyAssets) : 0;
@@ -122,10 +123,10 @@ contract AdaptativeCurveIRM is IIrm {
         // Safe "unchecked" cast because elapsed <= block.timestamp.
         int256 linearVariation = speed * int256(elapsed);
         uint256 variationMultiplier = MathLib.wExp(linearVariation);
-        // newRateAtTarget is bounded between MIN_BASE_RATE, MAX_BASE_RATE.
+        // newRateAtTarget is bounded between MIN_RATE_AT_TARGET, MAX_RATE_AT_TARGET.
         uint256 newRateAtTarget = (prevRateAtTarget > 0)
-            ? prevRateAtTarget.wMulDown(variationMultiplier).bound(MIN_BASE_RATE, MAX_BASE_RATE)
-            : INITIAL_BASE_RATE;
+            ? prevRateAtTarget.wMulDown(variationMultiplier).bound(MIN_RATE_AT_TARGET, MAX_RATE_AT_TARGET)
+            : INITIAL_RATE_AT_TARGET;
         uint256 newBorrowRate = _curve(newRateAtTarget, err);
 
         uint256 borrowRateStartOfThePeriod = _curve(prevRateAtTarget, err);
@@ -148,7 +149,7 @@ contract AdaptativeCurveIRM is IIrm {
         return (avgBorrowRate, newRateAtTarget);
     }
 
-    function _curve(uint256 _rateAtTarget, int256 err) internal view returns (uint256) {
+    function _curve(uint256 _rateAtTarget, int256 err) private view returns (uint256) {
         // Safe "unchecked" cast because err >= -1 (in WAD).
         if (err < 0) {
             return uint256((WAD_INT - WAD_INT.wDivDown(int256(CURVE_STEEPNESS))).wMulDown(err) + WAD_INT).wMulDown(

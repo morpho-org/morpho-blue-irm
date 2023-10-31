@@ -137,6 +137,16 @@ contract AdaptativeCurveIRMTest is Test {
         assertApproxEqRel(irm.rateAtTarget(marketParams.id()), expectedRateAtTarget, 0.001 ether, "rateAtTarget");
     }
 
+    function invariantMinRateAtTarget() public {
+        Market memory market;
+        assertGt(irm.borrowRate(marketParams, market), irm.MIN_RATE_AT_TARGET());
+    }
+
+    function invariantMaxRateAtTarget() public {
+        Market memory market;
+        assertLt(irm.borrowRate(marketParams, market), irm.MAX_RATE_AT_TARGET());
+    }
+
     function _expectedRateAtTarget(Id id, Market memory market) internal view returns (uint256) {
         uint256 rateAtTarget = irm.rateAtTarget(id);
         int256 speed = int256(ADJUSTMENT_SPEED).wMulDown(_err(market));
@@ -144,7 +154,7 @@ contract AdaptativeCurveIRMTest is Test {
         int256 linearVariation = speed * int256(elapsed);
         uint256 variationMultiplier = MathLib.wExp(linearVariation);
         return (rateAtTarget > 0)
-            ? rateAtTarget.wMulDown(variationMultiplier).bound(irm.MIN_BASE_RATE(), irm.MAX_BASE_RATE())
+            ? rateAtTarget.wMulDown(variationMultiplier).bound(irm.MIN_RATE_AT_TARGET(), irm.MAX_RATE_AT_TARGET())
             : INITIAL_BASE_RATE;
     }
 
