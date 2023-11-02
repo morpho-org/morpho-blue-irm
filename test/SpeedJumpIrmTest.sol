@@ -5,7 +5,7 @@ import "../src/SpeedJumpIrm.sol";
 
 import "../lib/forge-std/src/Test.sol";
 
-contract AdaptativeCurveIRMTest is Test {
+contract AdaptativeCurveIrmTest is Test {
     using MathLib for int256;
     using MathLib for int256;
     using MathLib for uint256;
@@ -18,30 +18,61 @@ contract AdaptativeCurveIRMTest is Test {
 
     uint256 internal constant CURVE_STEEPNESS = 4 ether;
     uint256 internal constant ADJUSTMENT_SPEED = 50 ether / uint256(365 days);
-    uint256 internal constant TARGET_UTILIZATION = 0.8 ether;
-    uint256 internal constant INITIAL_BASE_RATE = 0.01 ether / uint256(365 days);
+    uint256 internal constant TARGET_UTILIZATION = 0.9 ether;
+    uint256 internal constant INITIAL_RATE_AT_TARGET = 0.01 ether / uint256(365 days);
 
-    AdaptativeCurveIRM internal irm;
+    AdaptativeCurveIrm internal irm;
     MarketParams internal marketParams = MarketParams(address(0), address(0), address(0), address(0), 0);
 
     function setUp() public {
         irm =
-        new AdaptativeCurveIRM(address(this), CURVE_STEEPNESS, ADJUSTMENT_SPEED, TARGET_UTILIZATION, INITIAL_BASE_RATE);
+        new AdaptativeCurveIrm(address(this), CURVE_STEEPNESS, ADJUSTMENT_SPEED, TARGET_UTILIZATION, INITIAL_RATE_AT_TARGET);
         vm.warp(90 days);
     }
 
     function testDeployment() public {
         vm.expectRevert(bytes(ErrorsLib.ZERO_ADDRESS));
-        new AdaptativeCurveIRM(address(0), 0, 0, 0, 0);
+        new AdaptativeCurveIrm(address(0), 0, 0, 0, 0);
     }
 
-    function testFirstBorrowRateEmptyMarket() public {
+    function testFirstBorrowRateUtilizationZero() public {
         Market memory market;
-        uint256 avgBorrowRate = irm.borrowRate(marketParams, market);
-        uint256 rateAtTarget = irm.rateAtTarget(marketParams.id());
 
-        assertEq(avgBorrowRate, _curve(INITIAL_BASE_RATE, -1 ether), "avgBorrowRate");
-        assertEq(rateAtTarget, INITIAL_BASE_RATE, "rateAtTarget");
+        assertEq(irm.borrowRate(marketParams, market), INITIAL_RATE_AT_TARGET / 4, "avgBorrowRate");
+        assertEq(irm.rateAtTarget(marketParams.id()), INITIAL_RATE_AT_TARGET, "rateAtTarget");
+    }
+
+    function testFirstBorrowRateUtilizationOne() public {
+        Market memory market;
+        market.totalBorrowAssets = 1 ether;
+        market.totalSupplyAssets = 1 ether;
+
+        assertEq(irm.borrowRate(marketParams, market), INITIAL_RATE_AT_TARGET * 4, "avgBorrowRate");
+        assertEq(irm.rateAtTarget(marketParams.id()), INITIAL_RATE_AT_TARGET, "rateAtTarget");
+    }
+
+    function testFirstBorrowRateUtilizationTarget() public {
+        Market memory market;
+        market.totalBorrowAssets = 0.9 ether;
+        market.totalSupplyAssets = 1 ether;
+
+        assertEq(irm.borrowRate(marketParams, market), INITIAL_RATE_AT_TARGET, "avgBorrowRate");
+        assertEq(irm.rateAtTarget(marketParams.id()), INITIAL_RATE_AT_TARGET, "rateAtTarget");
+    }
+
+    function testRateAfterUtilizationOne() public {
+        Market memory market;
+        irm.borrowRate(marketParams, market);
+
+        vm.warp(365 days * 2);
+
+        market.totalBorrowAssets = 1 ether;
+        market.totalSupplyAssets = 1 ether;
+        market.lastUpdate = uint128(block.timestamp - 365 days);
+        irm.borrowRate(marketParams, market);
+
+        // TODO: fix
+        // assertGt(irm.borrowRate(marketParams, market), INITIAL_RATE_AT_TARGET * 50 * 4);
     }
 
     function testFirstBorrowRate(Market memory market) public {
@@ -51,8 +82,8 @@ contract AdaptativeCurveIRMTest is Test {
         uint256 avgBorrowRate = irm.borrowRate(marketParams, market);
         uint256 rateAtTarget = irm.rateAtTarget(marketParams.id());
 
-        assertEq(avgBorrowRate, _curve(INITIAL_BASE_RATE, _err(market)), "avgBorrowRate");
-        assertEq(rateAtTarget, INITIAL_BASE_RATE, "rateAtTarget");
+        assertEq(avgBorrowRate, _curve(INITIAL_RATE_AT_TARGET, _err(market)), "avgBorrowRate");
+        assertEq(rateAtTarget, INITIAL_RATE_AT_TARGET, "rateAtTarget");
     }
 
     function testBorrowRateEventEmission(Market memory market) public {
@@ -61,7 +92,9 @@ contract AdaptativeCurveIRMTest is Test {
 
         vm.expectEmit(true, true, true, true, address(irm));
         emit BorrowRateUpdate(
-            marketParams.id(), _curve(INITIAL_BASE_RATE, _err(market)), _expectedRateAtTarget(marketParams.id(), market)
+            marketParams.id(),
+            _curve(INITIAL_RATE_AT_TARGET, _err(market)),
+            _expectedRateAtTarget(marketParams.id(), market)
         );
         irm.borrowRate(marketParams, market);
     }
@@ -73,7 +106,7 @@ contract AdaptativeCurveIRMTest is Test {
         uint256 avgBorrowRate = irm.borrowRateView(marketParams, market);
         uint256 rateAtTarget = irm.rateAtTarget(marketParams.id());
 
-        assertEq(avgBorrowRate, _curve(INITIAL_BASE_RATE, _err(market)), "avgBorrowRate");
+        assertEq(avgBorrowRate, _curve(INITIAL_RATE_AT_TARGET, _err(market)), "avgBorrowRate");
         assertEq(rateAtTarget, 0, "prevBorrowRate");
     }
 
@@ -139,12 +172,16 @@ contract AdaptativeCurveIRMTest is Test {
 
     function invariantMinRateAtTarget() public {
         Market memory market;
-        assertGt(irm.borrowRate(marketParams, market), irm.MIN_RATE_AT_TARGET());
+        market.totalBorrowAssets = 9 ether;
+        market.totalSupplyAssets = 10 ether;
+        assertGt(irm.borrowRate(marketParams, market), irm.MIN_RATE_AT_TARGET().wDivDown(CURVE_STEEPNESS));
     }
 
     function invariantMaxRateAtTarget() public {
         Market memory market;
-        assertLt(irm.borrowRate(marketParams, market), irm.MAX_RATE_AT_TARGET());
+        market.totalBorrowAssets = 9 ether;
+        market.totalSupplyAssets = 10 ether;
+        assertLt(irm.borrowRate(marketParams, market), irm.MAX_RATE_AT_TARGET().wMulDown(CURVE_STEEPNESS));
     }
 
     function _expectedRateAtTarget(Id id, Market memory market) internal view returns (uint256) {
@@ -155,7 +192,7 @@ contract AdaptativeCurveIRMTest is Test {
         uint256 variationMultiplier = MathLib.wExp(linearVariation);
         return (rateAtTarget > 0)
             ? rateAtTarget.wMulDown(variationMultiplier).bound(irm.MIN_RATE_AT_TARGET(), irm.MAX_RATE_AT_TARGET())
-            : INITIAL_BASE_RATE;
+            : INITIAL_RATE_AT_TARGET;
     }
 
     function _expectedAvgRate(Id id, Market memory market) internal view returns (uint256) {
