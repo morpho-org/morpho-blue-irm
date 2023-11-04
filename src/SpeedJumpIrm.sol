@@ -154,6 +154,7 @@ contract AdaptativeCurveIrm is IIrm {
                 //                                                              <=> endBorrowRate <= startBorrowRate.
                 avgBorrowRate = uint256((int256(endBorrowRate) - int256(startBorrowRate)).wDivDown(linearVariation));
             }
+
             return (avgBorrowRate, endRateAtTarget);
         }
     }
