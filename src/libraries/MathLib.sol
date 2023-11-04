@@ -14,7 +14,6 @@ library MathLib {
     using MathLib for uint128;
     using MathLib for uint256;
     using {wDivDown} for int256;
-    using {wMulDown} for int256;
 
     /// @dev ln(2).
     int256 private constant LN2_INT = 0.693147180559945309 ether;
@@ -37,7 +36,7 @@ library MathLib {
 
             // Compute e^r with a 2nd-order Taylor polynomial.
             // Safe unchecked because |r| < 1, expR < 2 and the sum is positive.
-            uint256 expR = uint256(WAD_INT + r + r.wMulDown(r) / 2);
+            uint256 expR = uint256(WAD_INT + r + (r * r) / WAD_INT / 2);
 
             // Return e^x = 2^q * e^r.
             if (q >= 0) return expR << uint256(q);
@@ -45,8 +44,9 @@ library MathLib {
         }
     }
 
-    function wMulDown(int256 a, int256 b) internal pure returns (int256) {
-        return a * b / WAD_INT;
+    function wMulDown(uint256 a, int256 b) internal pure returns (int256) {
+        require(a <= uint256(type(int256).max));
+        return int256(a) * b / WAD_INT;
     }
 
     function wDivDown(int256 a, int256 b) internal pure returns (int256) {

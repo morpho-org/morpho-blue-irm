@@ -186,7 +186,7 @@ contract AdaptativeCurveIrmTest is Test {
 
     function _expectedRateAtTarget(Id id, Market memory market) internal view returns (uint256) {
         uint256 rateAtTarget = irm.rateAtTarget(id);
-        int256 speed = int256(ADJUSTMENT_SPEED).wMulDown(_err(market));
+        int256 speed = ADJUSTMENT_SPEED.wMulDown(_err(market));
         uint256 elapsed = (rateAtTarget > 0) ? block.timestamp - market.lastUpdate : 0;
         int256 linearVariation = speed * int256(elapsed);
         uint256 variationMultiplier = MathLib.wExp(linearVariation);
@@ -198,7 +198,7 @@ contract AdaptativeCurveIrmTest is Test {
     function _expectedAvgRate(Id id, Market memory market) internal view returns (uint256) {
         uint256 rateAtTarget = irm.rateAtTarget(id);
         int256 err = _err(market);
-        int256 speed = int256(ADJUSTMENT_SPEED).wMulDown(err);
+        int256 speed = ADJUSTMENT_SPEED.wMulDown(err);
         uint256 elapsed = (rateAtTarget > 0) ? block.timestamp - market.lastUpdate : 0;
         int256 linearVariation = speed * int256(elapsed);
         uint256 newRateAtTarget = _expectedRateAtTarget(id, market);
@@ -218,11 +218,10 @@ contract AdaptativeCurveIrmTest is Test {
     function _curve(uint256 rateAtTarget, int256 err) internal pure returns (uint256) {
         // Safe "unchecked" cast because err >= -1 (in WAD).
         if (err < 0) {
-            return uint256((WAD_INT - WAD_INT.wDivDown(int256(CURVE_STEEPNESS))).wMulDown(err) + WAD_INT).wMulDown(
-                rateAtTarget
-            );
+            return uint256((WAD - WAD.wDivDown(CURVE_STEEPNESS)).wMulDown(err) + WAD_INT).wMulDown(rateAtTarget);
+        } else {
+            return uint256((CURVE_STEEPNESS - WAD).wMulDown(err) + WAD_INT).wMulDown(rateAtTarget);
         }
-        return uint256((int256(CURVE_STEEPNESS) - WAD_INT).wMulDown(err) + WAD_INT).wMulDown(rateAtTarget);
     }
 
     function _err(Market memory market) internal pure returns (int256) {

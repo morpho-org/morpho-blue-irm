@@ -105,7 +105,7 @@ contract AdaptativeCurveIrm is IIrm {
         return avgBorrowRate;
     }
 
-    /// @dev Returns err, endBorrowRate and avgBorrowRate.
+    /// @dev Returns avgBorrowRate and newRateAtTarget.
     /// @dev Assumes that the inputs `marketParams` and `id` match.
     function _borrowRate(Id id, Market memory market) private view returns (uint256, uint256) {
         uint256 utilization =
@@ -116,44 +116,49 @@ contract AdaptativeCurveIrm is IIrm {
         int256 err = (int256(utilization) - int256(TARGET_UTILIZATION)).wDivDown(int256(errNormFactor));
 
         // Safe "unchecked" cast because ADJUSTMENT_SPEED <= type(int256).max.
-        int256 speed = int256(ADJUSTMENT_SPEED).wMulDown(err);
+        int256 speed = ADJUSTMENT_SPEED.wMulDown(err);
 
-        uint256 prevRateAtTarget = rateAtTarget[id];
-        uint256 elapsed = (prevRateAtTarget > 0) ? block.timestamp - market.lastUpdate : 0;
+        uint256 startRateAtTarget = rateAtTarget[id];
+        uint256 elapsed = (startRateAtTarget > 0) ? block.timestamp - market.lastUpdate : 0;
         // Safe "unchecked" cast because elapsed <= block.timestamp.
         int256 linearVariation = speed * int256(elapsed);
         uint256 variationMultiplier = MathLib.wExp(linearVariation);
-        // newRateAtTarget is bounded between MIN_RATE_AT_TARGET and MAX_RATE_AT_TARGET.
-        uint256 newRateAtTarget = (prevRateAtTarget > 0)
-            ? prevRateAtTarget.wMulDown(variationMultiplier).bound(MIN_RATE_AT_TARGET, MAX_RATE_AT_TARGET)
+        // endRateAtTarget is bounded between MIN_RATE_AT_TARGET and MAX_RATE_AT_TARGET.
+        uint256 endRateAtTarget = (startRateAtTarget > 0)
+            ? startRateAtTarget.wMulDown(variationMultiplier).bound(MIN_RATE_AT_TARGET, MAX_RATE_AT_TARGET)
             : INITIAL_RATE_AT_TARGET;
-        uint256 endBorrowRate = _curve(newRateAtTarget, err);
+        uint256 endBorrowRate = _curve(endRateAtTarget, err);
 
-        uint256 startBorrowRate = _curve(prevRateAtTarget, err);
         // Then we compute the average rate over the period (this is what Morpho needs to accrue the interest).
+        // NB: startBorrowRate is defined below.
         // avgBorrowRate = 1 / elapsed * ∫ startBorrowRate * exp(speed * t) dt between 0 and elapsed
         //               = startBorrowRate * (exp(linearVariation) - 1) / linearVariation
         //               = (endBorrowRate - startBorrowRate) / linearVariation
         // And avgBorrowRate ~ startBorrowRate ~ endBorrowRate for linearVariation around zero.
         // Also, when it is the first interaction (rateAtTarget == 0).
         uint256 avgBorrowRate;
-        if (linearVariation == 0 || prevRateAtTarget == 0) {
+        if (linearVariation == 0 || startRateAtTarget == 0) {
             avgBorrowRate = endBorrowRate;
         } else {
-            // Safe "unchecked" cast to uint256 because linearVariation < 0 <=> endBorrowRate <= startBorrowRate.
+            uint256 startBorrowRate = _curve(startRateAtTarget, err);
+            // Safe "unchecked" cast to uint256 because linearVariation < 0 <=> variationMultiplier <= 1.
+            //                                                              <=> endBorrowRate <= startBorrowRate.
             avgBorrowRate = uint256((int256(endBorrowRate) - int256(startBorrowRate)).wDivDown(linearVariation));
         }
 
-        return (avgBorrowRate, newRateAtTarget);
+        return (avgBorrowRate, endRateAtTarget);
     }
 
+    /// @dev Returns the rate for a given `_rateAtTarget` and an `err`.
+    /// The formula of the curve is the following:
+    /// r = ((1-1/C)*err + 1) * rateAtTarget if err < 0
+    ///     ((C-1)*err + 1) * rateAtTarget else.
     function _curve(uint256 _rateAtTarget, int256 err) private view returns (uint256) {
         // Safe "unchecked" cast because err >= -1 (in WAD).
         if (err < 0) {
-            return uint256((WAD_INT - WAD_INT.wDivDown(int256(CURVE_STEEPNESS))).wMulDown(err) + WAD_INT).wMulDown(
-                _rateAtTarget
-            );
+            return uint256((WAD - WAD.wDivDown(CURVE_STEEPNESS)).wMulDown(err) + WAD_INT).wMulDown(_rateAtTarget);
+        } else {
+            return uint256((CURVE_STEEPNESS - WAD).wMulDown(err) + WAD_INT).wMulDown(_rateAtTarget);
         }
-        return uint256((int256(CURVE_STEEPNESS) - WAD_INT).wMulDown(err) + WAD_INT).wMulDown(_rateAtTarget);
     }
 }
