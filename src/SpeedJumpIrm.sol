@@ -74,6 +74,8 @@ contract AdaptativeCurveIrm is IIrm {
         require(adjustmentSpeed <= uint256(type(int256).max), ErrorsLib.INPUT_TOO_LARGE);
         require(targetUtilization < WAD, ErrorsLib.INPUT_TOO_LARGE);
         require(targetUtilization > 0, ErrorsLib.ZERO_INPUT);
+        require(initialRateAtTarget >= MIN_RATE_AT_TARGET, ErrorsLib.INPUT_TOO_SMALL);
+        require(initialRateAtTarget <= MAX_RATE_AT_TARGET, ErrorsLib.INPUT_TOO_LARGE);
 
         MORPHO = morpho;
         CURVE_STEEPNESS = curveSteepness;
@@ -115,38 +117,43 @@ contract AdaptativeCurveIrm is IIrm {
         // Safe "unchecked" int256 casts because utilization <= WAD, TARGET_UTILIZATION < WAD and errNormFactor <= WAD.
         int256 err = (int256(utilization) - int256(TARGET_UTILIZATION)).wDivDown(int256(errNormFactor));
 
-        // Safe "unchecked" cast because ADJUSTMENT_SPEED <= type(int256).max.
-        int256 speed = ADJUSTMENT_SPEED.wMulDown(err);
-
         uint256 startRateAtTarget = rateAtTarget[id];
-        uint256 elapsed = (startRateAtTarget > 0) ? block.timestamp - market.lastUpdate : 0;
-        // Safe "unchecked" cast because elapsed <= block.timestamp.
-        int256 linearVariation = speed * int256(elapsed);
-        uint256 variationMultiplier = MathLib.wExp(linearVariation);
-        // endRateAtTarget is bounded between MIN_RATE_AT_TARGET and MAX_RATE_AT_TARGET.
-        uint256 endRateAtTarget = (startRateAtTarget > 0)
-            ? startRateAtTarget.wMulDown(variationMultiplier).bound(MIN_RATE_AT_TARGET, MAX_RATE_AT_TARGET)
-            : INITIAL_RATE_AT_TARGET;
-        uint256 endBorrowRate = _curve(endRateAtTarget, err);
 
-        // Then we compute the average rate over the period (this is what Morpho needs to accrue the interest).
-        // NB: startBorrowRate is defined below.
-        // avgBorrowRate = 1 / elapsed * ∫ startBorrowRate * exp(speed * t) dt between 0 and elapsed
-        //               = startBorrowRate * (exp(linearVariation) - 1) / linearVariation
-        //               = (endBorrowRate - startBorrowRate) / linearVariation
-        // And avgBorrowRate ~ startBorrowRate ~ endBorrowRate for linearVariation around zero.
-        // Also, when it is the first interaction (rateAtTarget == 0).
-        uint256 avgBorrowRate;
-        if (linearVariation == 0 || startRateAtTarget == 0) {
-            avgBorrowRate = endBorrowRate;
+        // First interaction.
+        if (startRateAtTarget == 0) {
+            return (_curve(INITIAL_RATE_AT_TARGET, err), INITIAL_RATE_AT_TARGET);
         } else {
-            uint256 startBorrowRate = _curve(startRateAtTarget, err);
-            // Safe "unchecked" cast to uint256 because linearVariation < 0 <=> variationMultiplier <= 1.
-            //                                                              <=> endBorrowRate <= startBorrowRate.
-            avgBorrowRate = uint256((int256(endBorrowRate) - int256(startBorrowRate)).wDivDown(linearVariation));
-        }
+            // Safe "unchecked" cast because ADJUSTMENT_SPEED <= type(int256).max.
+            int256 speed = ADJUSTMENT_SPEED.wMulDown(err);
 
-        return (avgBorrowRate, endRateAtTarget);
+            // market.lastUpdate != 0 because it is not the first interaction with this market.
+            uint256 elapsed = block.timestamp - market.lastUpdate;
+            // Safe "unchecked" cast because elapsed <= block.timestamp.
+            int256 linearVariation = speed * int256(elapsed);
+            uint256 variationMultiplier = MathLib.wExp(linearVariation);
+            // endRateAtTarget is bounded between MIN_RATE_AT_TARGET and MAX_RATE_AT_TARGET.
+            uint256 endRateAtTarget =
+                startRateAtTarget.wMulDown(variationMultiplier).bound(MIN_RATE_AT_TARGET, MAX_RATE_AT_TARGET);
+            uint256 endBorrowRate = _curve(endRateAtTarget, err);
+
+            // Then we compute the average rate over the period (this is what Morpho needs to accrue the interest).
+            // NB: startBorrowRate is defined below.
+            // avgBorrowRate = 1 / elapsed * ∫ startBorrowRate * exp(speed * t) dt between 0 and elapsed
+            //               = startBorrowRate * (exp(linearVariation) - 1) / linearVariation
+            //               = (endBorrowRate - startBorrowRate) / linearVariation
+            // And avgBorrowRate ~ startBorrowRate ~ endBorrowRate for linearVariation around zero.
+            // Also, when it is the first interaction (rateAtTarget == 0).
+            uint256 avgBorrowRate;
+            if (linearVariation == 0) {
+                avgBorrowRate = endBorrowRate;
+            } else {
+                uint256 startBorrowRate = _curve(startRateAtTarget, err);
+                // Safe "unchecked" cast to uint256 because linearVariation < 0 <=> variationMultiplier <= 1.
+                //                                                              <=> endBorrowRate <= startBorrowRate.
+                avgBorrowRate = uint256((int256(endBorrowRate) - int256(startBorrowRate)).wDivDown(linearVariation));
+            }
+            return (avgBorrowRate, endRateAtTarget);
+        }
     }
 
     /// @dev Returns the rate for a given `_rateAtTarget` and an `err`.
