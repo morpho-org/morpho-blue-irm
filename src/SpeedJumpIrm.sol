@@ -124,6 +124,8 @@ contract AdaptativeCurveIrm is IIrm {
             return (_curve(INITIAL_RATE_AT_TARGET, err), INITIAL_RATE_AT_TARGET);
         } else {
             // Safe "unchecked" cast because ADJUSTMENT_SPEED <= type(int256).max.
+            // Note that the speed is assumed constant between two interactions, but in theory it increases because of
+            // interests. So the rate will be slightly underestimated.
             int256 speed = ADJUSTMENT_SPEED.wMulDown(err);
 
             // market.lastUpdate != 0 because it is not the first interaction with this market.
@@ -136,13 +138,13 @@ contract AdaptativeCurveIrm is IIrm {
                 startRateAtTarget.wMulDown(variationMultiplier).bound(MIN_RATE_AT_TARGET, MAX_RATE_AT_TARGET);
             uint256 endBorrowRate = _curve(endRateAtTarget, err);
 
-            // Then we compute the average rate over the period (this is what Morpho needs to accrue the interest).
-            // NB: startBorrowRate is defined below.
+            // Then we compute the average rate over the period.
+            // Note that startBorrowRate is defined in the computations below.
             // avgBorrowRate = 1 / elapsed * ∫ startBorrowRate * exp(speed * t) dt between 0 and elapsed
             //               = startBorrowRate * (exp(linearVariation) - 1) / linearVariation
             //               = (endBorrowRate - startBorrowRate) / linearVariation
-            // And avgBorrowRate ~ startBorrowRate ~ endBorrowRate for linearVariation around zero.
-            // Also, when it is the first interaction (rateAtTarget == 0).
+            // And avgBorrowRate ~ startBorrowRate = endBorrowRate for linearVariation around zero.
+            // Also, when it is the first interaction (rateAtTarget = 0).
             uint256 avgBorrowRate;
             if (linearVariation == 0) {
                 avgBorrowRate = endBorrowRate;
