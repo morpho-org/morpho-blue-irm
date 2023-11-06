@@ -26,7 +26,7 @@ contract AdaptativeCurveIrmTest is Test {
 
     function setUp() public {
         irm =
-        new AdaptativeCurveIrm(address(this), CURVE_STEEPNESS, ADJUSTMENT_SPEED, TARGET_UTILIZATION, INITIAL_RATE_AT_TARGET);
+        new AdaptativeCurveIrm(address(this), uint256(CURVE_STEEPNESS), uint256(ADJUSTMENT_SPEED), uint256(TARGET_UTILIZATION), INITIAL_RATE_AT_TARGET);
         vm.warp(90 days);
     }
 

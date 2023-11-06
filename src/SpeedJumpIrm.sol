@@ -63,16 +63,16 @@ contract AdaptativeCurveIrm is IIrm {
     /// @param initialRateAtTarget The initial rate at target (scaled by WAD).
     constructor(
         address morpho,
-        int256 curveSteepness,
-        int256 adjustmentSpeed,
-        int256 targetUtilization,
+        uint256 curveSteepness,
+        uint256 adjustmentSpeed,
+        uint256 targetUtilization,
         uint256 initialRateAtTarget
     ) {
         require(morpho != address(0), ErrorsLib.ZERO_ADDRESS);
-        require(curveSteepness <= type(int256).max, ErrorsLib.INPUT_TOO_LARGE);
-        require(curveSteepness >= WAD_INT, ErrorsLib.INPUT_TOO_SMALL);
-        require(adjustmentSpeed <= type(int256).max, ErrorsLib.INPUT_TOO_LARGE);
-        require(targetUtilization < WAD_INT, ErrorsLib.INPUT_TOO_LARGE);
+        require(curveSteepness <= uint256(type(int256).max), ErrorsLib.INPUT_TOO_LARGE);
+        require(curveSteepness >= WAD, ErrorsLib.INPUT_TOO_SMALL);
+        require(adjustmentSpeed <= uint256(type(int256).max), ErrorsLib.INPUT_TOO_LARGE);
+        require(targetUtilization < WAD, ErrorsLib.INPUT_TOO_LARGE);
         require(targetUtilization > 0, ErrorsLib.ZERO_INPUT);
         require(initialRateAtTarget >= MIN_RATE_AT_TARGET, ErrorsLib.INPUT_TOO_SMALL);
         require(initialRateAtTarget <= MAX_RATE_AT_TARGET, ErrorsLib.INPUT_TOO_LARGE);
@@ -113,7 +113,7 @@ contract AdaptativeCurveIrm is IIrm {
     /// @dev Returns avgBorrowRate and newRateAtTarget.
     /// @dev Assumes that the inputs `marketParams` and `id` match.
     function _borrowRate(Id id, Market memory market) private view returns (uint256, uint256) {
-        // Safe "unchecked" cast because market.totalBorrowAssets <= type(uint128).max.
+        // Safe "unchecked" cast because the utilization is smaller than 1 (scaled by WAD).
         int256 utilization =
             int256(market.totalSupplyAssets > 0 ? market.totalBorrowAssets.wDivDown(market.totalSupplyAssets) : 0);
 
