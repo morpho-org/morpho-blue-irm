@@ -165,10 +165,8 @@ contract AdaptativeCurveIrm is IIrm {
     ///     ((C-1)*err + 1) * rateAtTarget else.
     function _curve(uint256 _rateAtTarget, int256 err) private view returns (uint256) {
         // Safe "unchecked" cast because err >= -1 (in WAD).
-        if (err < 0) {
-            return uint256((WAD - WAD.wDivDown(CURVE_STEEPNESS)).wMulDown(err) + WAD_INT).wMulDown(_rateAtTarget);
-        } else {
-            return uint256((CURVE_STEEPNESS - WAD).wMulDown(err) + WAD_INT).wMulDown(_rateAtTarget);
-        }
+        uint256 steeringCoeff = err < 0 ? WAD - WAD.wDivDown(CURVE_STEEPNESS) : CURVE_STEEPNESS - WAD;
+
+        return uint256(steeringCoeff.wMulDown(err) + WAD_INT).wMulDown(_rateAtTarget);
     }
 }
