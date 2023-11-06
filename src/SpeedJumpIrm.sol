@@ -36,14 +36,14 @@ contract AdaptativeCurveIrm is IIrm {
     address public immutable MORPHO;
     /// @notice Curve steepness (scaled by WAD).
     /// @dev Verified to be greater than 1 at construction.
-    uint256 public immutable CURVE_STEEPNESS;
+    int256 public immutable CURVE_STEEPNESS;
     /// @notice Adjustment speed (scaled by WAD).
     /// @dev The speed is per second, so the rate moves at a speed of ADJUSTMENT_SPEED * err each second (while being
     /// continuously compounded). A typical value for the ADJUSTMENT_SPEED would be 10 ethers / 365 days.
-    uint256 public immutable ADJUSTMENT_SPEED;
+    int256 public immutable ADJUSTMENT_SPEED;
     /// @notice Target utilization (scaled by WAD).
     /// @dev Verified to be strictly between 0 and 1 at construction.
-    uint256 public immutable TARGET_UTILIZATION;
+    int256 public immutable TARGET_UTILIZATION;
     /// @notice Initial rate at target (scaled by WAD).
     uint256 public immutable INITIAL_RATE_AT_TARGET;
 
@@ -63,24 +63,27 @@ contract AdaptativeCurveIrm is IIrm {
     /// @param initialRateAtTarget The initial rate at target (scaled by WAD).
     constructor(
         address morpho,
-        uint256 curveSteepness,
-        uint256 adjustmentSpeed,
-        uint256 targetUtilization,
+        int256 curveSteepness,
+        int256 adjustmentSpeed,
+        int256 targetUtilization,
         uint256 initialRateAtTarget
     ) {
         require(morpho != address(0), ErrorsLib.ZERO_ADDRESS);
-        require(curveSteepness <= uint256(type(int256).max), ErrorsLib.INPUT_TOO_LARGE);
-        require(curveSteepness >= WAD, ErrorsLib.INPUT_TOO_SMALL);
-        require(adjustmentSpeed <= uint256(type(int256).max), ErrorsLib.INPUT_TOO_LARGE);
-        require(targetUtilization < WAD, ErrorsLib.INPUT_TOO_LARGE);
+        require(curveSteepness <= type(int256).max, ErrorsLib.INPUT_TOO_LARGE);
+        require(curveSteepness >= WAD_INT, ErrorsLib.INPUT_TOO_SMALL);
+        require(adjustmentSpeed <= type(int256).max, ErrorsLib.INPUT_TOO_LARGE);
+        require(targetUtilization < WAD_INT, ErrorsLib.INPUT_TOO_LARGE);
         require(targetUtilization > 0, ErrorsLib.ZERO_INPUT);
         require(initialRateAtTarget >= MIN_RATE_AT_TARGET, ErrorsLib.INPUT_TOO_SMALL);
         require(initialRateAtTarget <= MAX_RATE_AT_TARGET, ErrorsLib.INPUT_TOO_LARGE);
 
         MORPHO = morpho;
-        CURVE_STEEPNESS = curveSteepness;
-        ADJUSTMENT_SPEED = adjustmentSpeed;
-        TARGET_UTILIZATION = targetUtilization;
+        // Safe "unchecked" cast.
+        CURVE_STEEPNESS = int256(curveSteepness);
+        // Safe "unchecked" cast.
+        ADJUSTMENT_SPEED = int256(adjustmentSpeed);
+        // Safe "unchecked" cast.
+        TARGET_UTILIZATION = int256(targetUtilization);
         INITIAL_RATE_AT_TARGET = initialRateAtTarget;
     }
 
@@ -110,12 +113,12 @@ contract AdaptativeCurveIrm is IIrm {
     /// @dev Returns avgBorrowRate and newRateAtTarget.
     /// @dev Assumes that the inputs `marketParams` and `id` match.
     function _borrowRate(Id id, Market memory market) private view returns (uint256, uint256) {
-        uint256 utilization =
-            market.totalSupplyAssets > 0 ? market.totalBorrowAssets.wDivDown(market.totalSupplyAssets) : 0;
+        // Safe "unchecked" cast because market.totalBorrowAssets <= type(uint128).max.
+        int256 utilization =
+            int256(market.totalSupplyAssets > 0 ? market.totalBorrowAssets.wDivDown(market.totalSupplyAssets) : 0);
 
-        uint256 errNormFactor = utilization > TARGET_UTILIZATION ? WAD - TARGET_UTILIZATION : TARGET_UTILIZATION;
-        // Safe "unchecked" int256 casts because utilization <= WAD, TARGET_UTILIZATION < WAD and errNormFactor <= WAD.
-        int256 err = (int256(utilization) - int256(TARGET_UTILIZATION)).wDivDown(int256(errNormFactor));
+        int256 errNormFactor = utilization > TARGET_UTILIZATION ? WAD_INT - TARGET_UTILIZATION : TARGET_UTILIZATION;
+        int256 err = (utilization - TARGET_UTILIZATION).wDivDown(errNormFactor);
 
         uint256 startRateAtTarget = rateAtTarget[id];
 
@@ -123,7 +126,6 @@ contract AdaptativeCurveIrm is IIrm {
         if (startRateAtTarget == 0) {
             return (_curve(INITIAL_RATE_AT_TARGET, err), INITIAL_RATE_AT_TARGET);
         } else {
-            // Safe "unchecked" cast because ADJUSTMENT_SPEED <= type(int256).max.
             // Note that the speed is assumed constant between two interactions, but in theory it increases because of
             // interests. So the rate will be slightly underestimated.
             int256 speed = ADJUSTMENT_SPEED.wMulDown(err);
@@ -166,9 +168,10 @@ contract AdaptativeCurveIrm is IIrm {
     function _curve(uint256 _rateAtTarget, int256 err) private view returns (uint256) {
         // Safe "unchecked" cast because err >= -1 (in WAD).
         if (err < 0) {
-            return uint256((WAD - WAD.wDivDown(CURVE_STEEPNESS)).wMulDown(err) + WAD_INT).wMulDown(_rateAtTarget);
+            return
+                uint256((WAD_INT - WAD_INT.wDivDown(CURVE_STEEPNESS)).wMulDown(err) + WAD_INT).wMulDown(_rateAtTarget);
         } else {
-            return uint256((CURVE_STEEPNESS - WAD).wMulDown(err) + WAD_INT).wMulDown(_rateAtTarget);
+            return uint256((CURVE_STEEPNESS - WAD_INT).wMulDown(err) + WAD_INT).wMulDown(_rateAtTarget);
         }
     }
 }
