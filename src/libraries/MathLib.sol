@@ -23,7 +23,7 @@ library MathLib {
         unchecked {
             // Revert if x > ln(2^256-1) ~ 177.
             require(x <= 177.44567822334599921 ether, ErrorsLib.WEXP_OVERFLOW);
-            // Return zero if x < -(2**255-1) + (ln(2)/2).
+            // Return zero if x < -2**255 + (ln(2)/2).
             if (x < type(int256).min + LN2_INT / 2) return 0;
 
             // Decompose x as x = q * ln(2) + r with q an integer and -ln(2)/2 <= r <= ln(2)/2.
@@ -31,11 +31,11 @@ library MathLib {
             int256 roundingAdjustment = (x < 0) ? -(LN2_INT / 2) : (LN2_INT / 2);
             // Safe unchecked because x is bounded.
             int256 q = (x + roundingAdjustment) / LN2_INT;
-            // Safe unchecked because |q * LN2_INT| <= |x|.
+            // Safe unchecked because |q * LN2_INT - x| <= LN2_INT/2.
             int256 r = x - q * LN2_INT;
 
             // Compute e^r with a 2nd-order Taylor polynomial.
-            // Safe unchecked because |r| < 1, expR < 2 and the sum is positive.
+            // Safe unchecked because |r| < 1e18, and the sum is positive.
             uint256 expR = uint256(WAD_INT + r + (r * r) / WAD_INT / 2);
 
             // Return e^x = 2^q * e^r.
