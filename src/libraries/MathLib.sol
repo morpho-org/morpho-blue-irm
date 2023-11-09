@@ -44,9 +44,8 @@ library MathLib {
         }
     }
 
-    function wMulDown(uint256 a, int256 b) internal pure returns (int256) {
-        require(a <= uint256(type(int256).max));
-        return int256(a) * b / WAD_INT;
+    function wMulDown(int256 a, int256 b) internal pure returns (int256) {
+        return a * b / WAD_INT;
     }
 
     function wDivDown(int256 a, int256 b) internal pure returns (int256) {

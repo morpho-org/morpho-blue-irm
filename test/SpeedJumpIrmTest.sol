@@ -16,9 +16,9 @@ contract AdaptativeCurveIrmTest is Test {
 
     event BorrowRateUpdate(Id indexed id, uint256 avgBorrowRate, uint256 rateAtTarget);
 
-    uint256 internal constant CURVE_STEEPNESS = 4 ether;
-    uint256 internal constant ADJUSTMENT_SPEED = 50 ether / uint256(365 days);
-    uint256 internal constant TARGET_UTILIZATION = 0.9 ether;
+    int256 internal constant CURVE_STEEPNESS = 4 ether;
+    int256 internal constant ADJUSTMENT_SPEED = 50 ether / int256(365 days);
+    int256 internal constant TARGET_UTILIZATION = 0.9 ether;
     uint256 internal constant INITIAL_RATE_AT_TARGET = 0.01 ether / uint256(365 days);
 
     AdaptativeCurveIrm internal irm;
@@ -26,7 +26,7 @@ contract AdaptativeCurveIrmTest is Test {
 
     function setUp() public {
         irm =
-        new AdaptativeCurveIrm(address(this), CURVE_STEEPNESS, ADJUSTMENT_SPEED, TARGET_UTILIZATION, INITIAL_RATE_AT_TARGET);
+        new AdaptativeCurveIrm(address(this), uint256(CURVE_STEEPNESS), uint256(ADJUSTMENT_SPEED), uint256(TARGET_UTILIZATION), INITIAL_RATE_AT_TARGET);
         vm.warp(90 days);
     }
 
@@ -176,14 +176,18 @@ contract AdaptativeCurveIrmTest is Test {
         Market memory market;
         market.totalBorrowAssets = 9 ether;
         market.totalSupplyAssets = 10 ether;
-        assertGt(irm.borrowRate(marketParams, market), irm.MIN_RATE_AT_TARGET().wDivDown(CURVE_STEEPNESS));
+        assertGt(
+            irm.borrowRate(marketParams, market), uint256(int256(irm.MIN_RATE_AT_TARGET()).wDivDown(CURVE_STEEPNESS))
+        );
     }
 
     function invariantMaxRateAtTarget() public {
         Market memory market;
         market.totalBorrowAssets = 9 ether;
         market.totalSupplyAssets = 10 ether;
-        assertLt(irm.borrowRate(marketParams, market), irm.MAX_RATE_AT_TARGET().wMulDown(CURVE_STEEPNESS));
+        assertLt(
+            irm.borrowRate(marketParams, market), uint256(int256(irm.MAX_RATE_AT_TARGET()).wMulDown(CURVE_STEEPNESS))
+        );
     }
 
     function _expectedRateAtTarget(Id id, Market memory market) internal view returns (uint256) {
@@ -221,25 +225,24 @@ contract AdaptativeCurveIrmTest is Test {
         // Safe "unchecked" cast because err >= -1 (in WAD).
         if (err < 0) {
             return uint256(
-                (WAD - WAD.wDivDown(CURVE_STEEPNESS)).wMulDown(rateAtTarget).wMulDown(err) + int256(rateAtTarget)
+                (WAD_INT - WAD_INT.wDivDown(CURVE_STEEPNESS)).wMulDown(int256(rateAtTarget)).wMulDown(err)
+                    + int256(rateAtTarget)
             );
         } else {
-            return uint256((CURVE_STEEPNESS - WAD).wMulDown(rateAtTarget).wMulDown(err) + int256(rateAtTarget));
+            return
+                uint256((CURVE_STEEPNESS - WAD_INT).wMulDown(int256(rateAtTarget)).wMulDown(err) + int256(rateAtTarget));
         }
     }
 
-    function _err(Market memory market) internal pure returns (int256) {
+    function _err(Market memory market) internal pure returns (int256 err) {
         if (market.totalSupplyAssets == 0) return -1 ether;
-        uint256 utilization = market.totalBorrowAssets.wDivDown(market.totalSupplyAssets);
 
-        int256 err;
+        int256 utilization = int256(market.totalBorrowAssets.wDivDown(market.totalSupplyAssets));
+
         if (utilization > TARGET_UTILIZATION) {
-            // Safe "unchecked" cast because |err| <= WAD.
-            err = int256((utilization - TARGET_UTILIZATION).wDivDown(WAD - TARGET_UTILIZATION));
+            err = (utilization - TARGET_UTILIZATION).wDivDown(WAD_INT - TARGET_UTILIZATION);
         } else {
-            // Safe "unchecked" casts because utilization <= WAD and TARGET_UTILIZATION <= WAD.
-            err = (int256(utilization) - int256(TARGET_UTILIZATION)).wDivDown(int256(TARGET_UTILIZATION));
+            err = (utilization - TARGET_UTILIZATION).wDivDown(TARGET_UTILIZATION);
         }
-        return err;
     }
 }

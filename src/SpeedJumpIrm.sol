@@ -36,14 +36,15 @@ contract AdaptativeCurveIrm is IIrm {
     address public immutable MORPHO;
     /// @notice Curve steepness (scaled by WAD).
     /// @dev Verified to be greater than 1 at construction.
-    uint256 public immutable CURVE_STEEPNESS;
+    int256 public immutable CURVE_STEEPNESS;
     /// @notice Adjustment speed (scaled by WAD).
     /// @dev The speed is per second, so the rate moves at a speed of ADJUSTMENT_SPEED * err each second (while being
     /// continuously compounded). A typical value for the ADJUSTMENT_SPEED would be 10 ethers / 365 days.
-    uint256 public immutable ADJUSTMENT_SPEED;
+    /// @dev Verified to be non-negative at construction.
+    int256 public immutable ADJUSTMENT_SPEED;
     /// @notice Target utilization (scaled by WAD).
     /// @dev Verified to be strictly between 0 and 1 at construction.
-    uint256 public immutable TARGET_UTILIZATION;
+    int256 public immutable TARGET_UTILIZATION;
     /// @notice Initial rate at target (scaled by WAD).
     uint256 public immutable INITIAL_RATE_AT_TARGET;
 
@@ -78,9 +79,12 @@ contract AdaptativeCurveIrm is IIrm {
         require(initialRateAtTarget <= MAX_RATE_AT_TARGET, ErrorsLib.INPUT_TOO_LARGE);
 
         MORPHO = morpho;
-        CURVE_STEEPNESS = curveSteepness;
-        ADJUSTMENT_SPEED = adjustmentSpeed;
-        TARGET_UTILIZATION = targetUtilization;
+        // Safe "unchecked" cast.
+        CURVE_STEEPNESS = int256(curveSteepness);
+        // Safe "unchecked" cast.
+        ADJUSTMENT_SPEED = int256(adjustmentSpeed);
+        // Safe "unchecked" cast.
+        TARGET_UTILIZATION = int256(targetUtilization);
         INITIAL_RATE_AT_TARGET = initialRateAtTarget;
     }
 
@@ -110,12 +114,12 @@ contract AdaptativeCurveIrm is IIrm {
     /// @dev Returns avgBorrowRate and newRateAtTarget.
     /// @dev Assumes that the inputs `marketParams` and `id` match.
     function _borrowRate(Id id, Market memory market) private view returns (uint256, uint256) {
-        uint256 utilization =
-            market.totalSupplyAssets > 0 ? market.totalBorrowAssets.wDivDown(market.totalSupplyAssets) : 0;
+        // Safe "unchecked" cast because the utilization is smaller than 1 (scaled by WAD).
+        int256 utilization =
+            int256(market.totalSupplyAssets > 0 ? market.totalBorrowAssets.wDivDown(market.totalSupplyAssets) : 0);
 
-        uint256 errNormFactor = utilization > TARGET_UTILIZATION ? WAD - TARGET_UTILIZATION : TARGET_UTILIZATION;
-        // Safe "unchecked" int256 casts because utilization <= WAD, TARGET_UTILIZATION < WAD and errNormFactor <= WAD.
-        int256 err = (int256(utilization) - int256(TARGET_UTILIZATION)).wDivDown(int256(errNormFactor));
+        int256 errNormFactor = utilization > TARGET_UTILIZATION ? WAD_INT - TARGET_UTILIZATION : TARGET_UTILIZATION;
+        int256 err = (utilization - TARGET_UTILIZATION).wDivDown(errNormFactor);
 
         uint256 startRateAtTarget = rateAtTarget[id];
 
@@ -123,7 +127,6 @@ contract AdaptativeCurveIrm is IIrm {
         if (startRateAtTarget == 0) {
             return (_curve(INITIAL_RATE_AT_TARGET, err), INITIAL_RATE_AT_TARGET);
         } else {
-            // Safe "unchecked" cast because ADJUSTMENT_SPEED <= type(int256).max.
             // Note that the speed is assumed constant between two interactions, but in theory it increases because of
             // interests. So the rate will be slightly underestimated.
             int256 speed = ADJUSTMENT_SPEED.wMulDown(err);
@@ -164,8 +167,9 @@ contract AdaptativeCurveIrm is IIrm {
     /// r = ((1-1/C)*err + 1) * rateAtTarget if err < 0
     ///     ((C-1)*err + 1) * rateAtTarget else.
     function _curve(uint256 _rateAtTarget, int256 err) private view returns (uint256) {
-        uint256 steeringCoeff =
-            (err < 0 ? WAD - WAD.wDivDown(CURVE_STEEPNESS) : CURVE_STEEPNESS - WAD).wMulDown(_rateAtTarget);
+        // Safe "unchecked" cast of _rateAtTarget because _rateAtTarget <= MAX_RATE_AT_TARGET.
+        int256 steeringCoeff = (err < 0 ? WAD_INT - WAD_INT.wDivDown(CURVE_STEEPNESS) : CURVE_STEEPNESS - WAD_INT)
+            .wMulDown(int256(_rateAtTarget));
         // Safe "unchecked" cast of _rateAtTarget because _rateAtTarget <= MAX_RATE_AT_TARGET.
         // Safe "unchecked" cast of the result because r >= 0.
         return uint256(steeringCoeff.wMulDown(err) + int256(_rateAtTarget));
