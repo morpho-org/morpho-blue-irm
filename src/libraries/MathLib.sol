@@ -21,7 +21,8 @@ library MathLib {
     int256 internal constant UPPER_LIMIT = 135.999582271169154765 ether;
 
     /// @dev The value of wExp(UPPER_LIMIT).
-    uint256 internal constant CAPPED_VALUE = 115792089237316195323137357242501015631897353894317901381819896896488577433600;
+    uint256 internal constant CAPPED_VALUE =
+        115792089237316195323137357242501015631897353894317901381819896896488577433600;
 
     /// @dev Returns an approximation of exp.
     function wExp(int256 x) internal pure returns (uint256) {
