@@ -32,9 +32,7 @@ contract MathLibTest is Test {
     }
 
     function testWExpTooLarge(int256 x) public {
-        // Bound between ln(2**256-1) ~ 177 and 2**255-1.
-        x = bound(x, 178 ether, type(int256).max);
-        vm.expectRevert(bytes(ErrorsLib.WEXP_OVERFLOW));
-        MathLib.wExp(x);
+        x = bound(x, MathLib.UPPER_LIMIT, type(int256).max);
+        assertEq(MathLib.wExp(x), MathLib.CAPPED_VALUE);
     }
 }

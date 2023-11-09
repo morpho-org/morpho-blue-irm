@@ -1,7 +1,6 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.8.0;
 
-import {ErrorsLib} from "./ErrorsLib.sol";
 import {WAD} from "../../lib/morpho-blue/src/libraries/MathLib.sol";
 
 int256 constant WAD_INT = int256(WAD);
@@ -16,13 +15,20 @@ library MathLib {
     using {wDivDown} for int256;
 
     /// @dev ln(2).
-    int256 private constant LN2_INT = 0.693147180559945309 ether;
+    int256 internal constant LN2_INT = 0.693147180559945309 ether;
+
+    /// @dev Above this limit `wExp` would overflow. Instead, we return a capped value.
+    int256 internal constant UPPER_LIMIT = 135.999582271169154765 ether;
+
+    /// @dev The value of wExp(UPPER_LIMIT).
+    uint256 internal constant CAPPED_VALUE = 115792089237316195323137357242501015631897353894317901381819896896488577433600;
 
     /// @dev Returns an approximation of exp.
     function wExp(int256 x) internal pure returns (uint256) {
         unchecked {
-            // Revert if x > ln(2^256-1) ~ 177.
-            require(x <= 177.44567822334599921 ether, ErrorsLib.WEXP_OVERFLOW);
+            // Return a capped value to avoid overflows.
+            if (x >= UPPER_LIMIT) return CAPPED_VALUE;
+
             // Return zero if x < -(2**255-1) + (ln(2)/2).
             if (x < type(int256).min + LN2_INT / 2) return 0;
 
