@@ -40,6 +40,7 @@ contract AdaptativeCurveIrm is IIrm {
     /// @notice Adjustment speed (scaled by WAD).
     /// @dev The speed is per second, so the rate moves at a speed of ADJUSTMENT_SPEED * err each second (while being
     /// continuously compounded). A typical value for the ADJUSTMENT_SPEED would be 10 ethers / 365 days.
+    /// @dev Verified to be non-negative at construction.
     int256 public immutable ADJUSTMENT_SPEED;
     /// @notice Target utilization (scaled by WAD).
     /// @dev Verified to be strictly between 0 and 1 at construction.
