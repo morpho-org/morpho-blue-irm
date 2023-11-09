@@ -20,13 +20,13 @@ contract MathLibTest is Test {
     }
 
     function testWExpSmall(int256 x) public {
-        // Bound between -(2**255-1) + ln(2)/2 and ln(1e-18).
+        // Bound between -2**255 + ln(2)/2 and ln(1e-18).
         x = bound(x, type(int256).min + LN2_INT / 2, -178 ether);
         assertEq(MathLib.wExp(x), 0);
     }
 
     function testWExpTooSmall(int256 x) public {
-        // Bound between -(2**255-1) and -(2**255-1) + ln(2)/2 - 1.
+        // Bound between -2**255 and -2**255 + ln(2)/2 - 1.
         x = bound(x, type(int256).min, type(int256).min + LN2_INT / 2 - 1);
         assertEq(MathLib.wExp(x), 0);
     }
