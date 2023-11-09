@@ -38,7 +38,9 @@ contract AdaptativeCurveIrmTest is Test {
     function testFirstBorrowRateUtilizationZero() public {
         Market memory market;
 
-        assertEq(irm.borrowRate(marketParams, market), INITIAL_RATE_AT_TARGET / 4, "avgBorrowRate");
+        assertApproxEqRel(
+            irm.borrowRate(marketParams, market), INITIAL_RATE_AT_TARGET / 4, 0.0001 ether, "avgBorrowRate"
+        );
         assertEq(irm.rateAtTarget(marketParams.id()), INITIAL_RATE_AT_TARGET, "rateAtTarget");
     }
 
@@ -222,9 +224,11 @@ contract AdaptativeCurveIrmTest is Test {
     function _curve(uint256 rateAtTarget, int256 err) internal pure returns (uint256) {
         // Safe "unchecked" cast because err >= -1 (in WAD).
         if (err < 0) {
-            return uint256((WAD_INT - WAD_INT.wDivDown(CURVE_STEEPNESS)).wMulDown(err) + WAD_INT).wMulDown(rateAtTarget);
+            return uint256(
+                (WAD_INT - WAD_INT.wDivDown(CURVE_STEEPNESS)).wMulDown(int256(rateAtTarget)).wMulDown(err) + int256(rateAtTarget)
+            );
         } else {
-            return uint256((CURVE_STEEPNESS - WAD_INT).wMulDown(err) + WAD_INT).wMulDown(rateAtTarget);
+            return uint256((CURVE_STEEPNESS - WAD_INT).wMulDown(int256(rateAtTarget)).wMulDown(err) + int256(rateAtTarget));
         }
     }
 
