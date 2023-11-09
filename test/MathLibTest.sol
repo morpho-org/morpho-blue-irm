@@ -32,7 +32,7 @@ contract MathLibTest is Test {
     }
 
     function testWExpTooLarge(int256 x) public {
-        x = bound(x, MathLib.UPPER_LIMIT, type(int256).max);
-        assertEq(MathLib.wExp(x), MathLib.CAPPED_VALUE);
+        x = bound(x, MathLib.WEXP_UPPER_BOUND, type(int256).max);
+        assertEq(MathLib.wExp(x), MathLib.WEXP_UPPER_VALUE);
     }
 }
