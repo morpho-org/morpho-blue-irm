@@ -88,8 +88,8 @@ contract AdaptativeCurveIrm is IIrm {
 
     /// @inheritdoc IIrm
     function borrowRateView(MarketParams memory marketParams, Market memory market) external view returns (uint256) {
-        (int256 avgBorrowRate,) = _borrowRate(marketParams.id(), market);
-        return uint256(avgBorrowRate);
+        (uint256 avgBorrowRate,) = _borrowRate(marketParams.id(), market);
+        return avgBorrowRate;
     }
 
     /// @inheritdoc IIrm
@@ -98,18 +98,19 @@ contract AdaptativeCurveIrm is IIrm {
 
         Id id = marketParams.id();
 
-        (int256 avgBorrowRate, int256 endRateAtTarget) = _borrowRate(id, market);
+        (uint256 avgBorrowRate, uint256 endRateAtTarget) = _borrowRate(id, market);
 
-        rateAtTarget[id] = uint256(endRateAtTarget);
+        rateAtTarget[id] = endRateAtTarget;
 
-        emit BorrowRateUpdate(id, uint256(avgBorrowRate), uint256(endRateAtTarget));
+        emit BorrowRateUpdate(id, avgBorrowRate, endRateAtTarget);
 
-        return uint256(avgBorrowRate);
+        return avgBorrowRate;
     }
 
     /// @dev Returns avgBorrowRate and endRateAtTarget.
     /// @dev Assumes that the inputs `marketParams` and `id` match.
-    function _borrowRate(Id id, Market memory market) private view returns (int256, int256) {
+    function _borrowRate(Id id, Market memory market) private view returns (uint256, uint256) {
+        // Safe "unchecked" cast because the utilization is smaller than 1 (scaled by WAD).
         int256 utilization =
             int256(market.totalSupplyAssets > 0 ? market.totalBorrowAssets.wDivDown(market.totalSupplyAssets) : 0);
 
@@ -120,13 +121,14 @@ contract AdaptativeCurveIrm is IIrm {
 
         // First interaction.
         if (startRateAtTarget == 0) {
-            return (_curve(INITIAL_RATE_AT_TARGET, err), INITIAL_RATE_AT_TARGET);
+            return (uint256(_curve(INITIAL_RATE_AT_TARGET, err)), uint256(INITIAL_RATE_AT_TARGET));
         } else {
             // Note that the speed is assumed constant between two interactions, but in theory it increases because of
             // interests. So the rate will be slightly underestimated.
             int256 speed = ADJUSTMENT_SPEED.wMulDown(err);
 
             // market.lastUpdate != 0 because it is not the first interaction with this market.
+            // Safe "unchecked" cast because block.timestamp - market.lastUpdate <= block.timestamp.
             int256 elapsed = int256(block.timestamp - market.lastUpdate);
             int256 linearAdaptation = speed * elapsed;
             int256 adaptationMultiplier = MathLib.wExp(linearAdaptation);
@@ -150,7 +152,7 @@ contract AdaptativeCurveIrm is IIrm {
                 avgBorrowRate = (endBorrowRate - startBorrowRate).wDivDown(linearAdaptation);
             }
 
-            return (avgBorrowRate, endRateAtTarget);
+            return (uint256(avgBorrowRate), uint256(endRateAtTarget));
         }
     }
 
@@ -158,6 +160,7 @@ contract AdaptativeCurveIrm is IIrm {
     /// The formula of the curve is the following:
     /// r = ((1-1/C)*err + 1) * rateAtTarget if err < 0
     ///     ((C-1)*err + 1) * rateAtTarget else.
+    /// The result is non negative.
     function _curve(int256 _rateAtTarget, int256 err) private view returns (int256) {
         int256 steeringCoeff =
             (err < 0 ? WAD - WAD.wDivDown(CURVE_STEEPNESS) : CURVE_STEEPNESS - WAD).wMulDown(_rateAtTarget);
