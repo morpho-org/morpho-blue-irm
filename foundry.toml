@@ -4,8 +4,8 @@ out = "out"
 test = "test"
 libs = ["lib"]
 
-[profile.default.fuzz]
-runs = 4096
+[profile.default.invariant]
+fail_on_revert = true
 
 [profile.default.fmt]
 wrap_comments = true
@@ -19,6 +19,14 @@ script = "/dev/null"
 
 [profile.test]
 via-ir = false
+
+[profile.test.fuzz]
+runs = 8192
+
+[profile.test.invariant]
+runs = 32
+depth = 1024
+fail_on_revert = true
 
 
 # See more config options https://github.com/foundry-rs/foundry/blob/master/crates/config/README.md#all-options
