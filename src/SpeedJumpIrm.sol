@@ -5,7 +5,7 @@ import {IIrm} from "../lib/morpho-blue/src/interfaces/IIrm.sol";
 
 import {UtilsLib} from "./libraries/UtilsLib.sol";
 import {ErrorsLib} from "./libraries/ErrorsLib.sol";
-import {MathLib, WAD_INT} from "./libraries/MathLib.sol";
+import {MathLib, WAD_INT, LN2_INT} from "./libraries/MathLib.sol";
 import {MarketParamsLib} from "../lib/morpho-blue/src/libraries/MarketParamsLib.sol";
 import {Id, MarketParams, Market} from "../lib/morpho-blue/src/interfaces/IMorpho.sol";
 import {WAD, MathLib as MorphoMathLib} from "../lib/morpho-blue/src/libraries/MathLib.sol";
@@ -29,7 +29,7 @@ contract AdaptativeCurveIrm is IIrm {
     /* CONSTANTS */
 
     /// @notice Maximum rate at target per second (scaled by WAD) (1B% APR).
-    uint256 public constant MAX_RATE_AT_TARGET = uint256(1e7 ether) / 365 days;
+    uint256 public constant MAX_RATE_AT_TARGET = uint256(0.01e9 ether) / 365 days;
     /// @notice Mininimum rate at target per second (scaled by WAD) (0.1% APR).
     uint256 public constant MIN_RATE_AT_TARGET = uint256(0.001 ether) / 365 days;
     /// @notice Address of Morpho.
@@ -149,7 +149,7 @@ contract AdaptativeCurveIrm is IIrm {
             // And avgBorrowRate ~ startBorrowRate = endBorrowRate for linearVariation around zero.
             // Also, when it is the first interaction (rateAtTarget = 0).
             uint256 avgBorrowRate;
-            if (linearVariation == 0) {
+            if ((linearVariation < LN2_INT / 2) && (linearVariation > -LN2_INT / 2)) {
                 avgBorrowRate = endBorrowRate;
             } else {
                 uint256 startBorrowRate = _curve(startRateAtTarget, err);

@@ -5,6 +5,7 @@ import {ErrorsLib} from "./ErrorsLib.sol";
 import {WAD} from "../../lib/morpho-blue/src/libraries/MathLib.sol";
 
 int256 constant WAD_INT = int256(WAD);
+int256 constant LN2_INT = 0.693147180559945309 ether;
 
 /// @title MathLib
 /// @author Morpho Labs
@@ -14,9 +15,6 @@ library MathLib {
     using MathLib for uint128;
     using MathLib for uint256;
     using {wDivDown} for int256;
-
-    /// @dev ln(2).
-    int256 private constant LN2_INT = 0.693147180559945309 ether;
 
     /// @dev Returns an approximation of exp.
     function wExp(int256 x) internal pure returns (uint256) {

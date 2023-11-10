@@ -211,7 +211,7 @@ contract AdaptativeCurveIrmTest is Test {
         uint256 newBorrowRate = _curve(newRateAtTarget, err);
 
         uint256 avgBorrowRate;
-        if (linearVariation == 0 || rateAtTarget == 0) {
+        if ((linearVariation < LN2_INT / 2 && linearVariation > -LN2_INT / 2) || rateAtTarget == 0) {
             avgBorrowRate = newBorrowRate;
         } else {
             // Safe "unchecked" cast to uint256 because linearVariation < 0 <=> newBorrowRate <= borrowRateAfterJump.
