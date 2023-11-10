@@ -16,7 +16,7 @@ contract MathLibTest is Test {
     function testWExp(int256 x) public {
         // Bound between ln(1e-9) ~ -27 and ln(max / 1e18 / 1e18) ~ 94, to be able to use `assertApproxEqRel`.
         x = bound(x, -27 ether, 94 ether);
-        assertApproxEqRel(MathLib.wExp(x), uint256(wadExp(x)), 0.01 ether);
+        assertApproxEqRel(MathLib.wExp(x), wadExp(x), 0.01 ether);
     }
 
     function testWExpSmall(int256 x) public {

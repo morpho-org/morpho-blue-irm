@@ -19,7 +19,7 @@ library MathLib {
     int256 private constant LN2_INT = 0.693147180559945309 ether;
 
     /// @dev Returns an approximation of exp.
-    function wExp(int256 x) internal pure returns (uint256) {
+    function wExp(int256 x) internal pure returns (int256) {
         unchecked {
             // Revert if x > ln(2^256-1) ~ 177.
             require(x <= 177.44567822334599921 ether, ErrorsLib.WEXP_OVERFLOW);
@@ -35,8 +35,8 @@ library MathLib {
             int256 r = x - q * LN2_INT;
 
             // Compute e^r with a 2nd-order Taylor polynomial.
-            // Safe unchecked because |r| < 1e18, and the sum is positive.
-            uint256 expR = uint256(WAD_INT + r + (r * r) / WAD_INT / 2);
+            // Safe unchecked because |r| < 1e18.
+            int256 expR = WAD_INT + r + (r * r) / WAD_INT / 2;
 
             // Return e^x = 2^q * e^r.
             if (q >= 0) return expR << uint256(q);
