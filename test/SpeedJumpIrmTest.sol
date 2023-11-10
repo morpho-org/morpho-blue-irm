@@ -194,10 +194,10 @@ contract AdaptativeCurveIrmTest is Test {
         uint256 rateAtTarget = irm.rateAtTarget(id);
         int256 speed = ADJUSTMENT_SPEED.wMulDown(_err(market));
         uint256 elapsed = (rateAtTarget > 0) ? block.timestamp - market.lastUpdate : 0;
-        int256 linearVariation = speed * int256(elapsed);
-        uint256 variationMultiplier = MathLib.wExp(linearVariation);
+        int256 linearAdaptation = speed * int256(elapsed);
+        uint256 adaptationMultiplier = MathLib.wExp(linearAdaptation);
         return (rateAtTarget > 0)
-            ? rateAtTarget.wMulDown(variationMultiplier).bound(irm.MIN_RATE_AT_TARGET(), irm.MAX_RATE_AT_TARGET())
+            ? rateAtTarget.wMulDown(adaptationMultiplier).bound(irm.MIN_RATE_AT_TARGET(), irm.MAX_RATE_AT_TARGET())
             : INITIAL_RATE_AT_TARGET;
     }
 
@@ -206,17 +206,17 @@ contract AdaptativeCurveIrmTest is Test {
         int256 err = _err(market);
         int256 speed = ADJUSTMENT_SPEED.wMulDown(err);
         uint256 elapsed = (rateAtTarget > 0) ? block.timestamp - market.lastUpdate : 0;
-        int256 linearVariation = speed * int256(elapsed);
-        uint256 newRateAtTarget = _expectedRateAtTarget(id, market);
-        uint256 newBorrowRate = _curve(newRateAtTarget, err);
+        int256 linearAdaptation = speed * int256(elapsed);
+        uint256 endRateAtTarget = _expectedRateAtTarget(id, market);
+        uint256 newBorrowRate = _curve(endRateAtTarget, err);
 
         uint256 avgBorrowRate;
-        if (linearVariation == 0 || rateAtTarget == 0) {
+        if (linearAdaptation == 0 || rateAtTarget == 0) {
             avgBorrowRate = newBorrowRate;
         } else {
-            // Safe "unchecked" cast to uint256 because linearVariation < 0 <=> newBorrowRate <= borrowRateAfterJump.
+            // Safe "unchecked" cast to uint256 because linearAdaptation < 0 <=> newBorrowRate <= borrowRateAfterJump.
             avgBorrowRate =
-                uint256((int256(newBorrowRate) - int256(_curve(rateAtTarget, err))).wDivDown(linearVariation));
+                uint256((int256(newBorrowRate) - int256(_curve(rateAtTarget, err))).wDivDown(linearAdaptation));
         }
         return avgBorrowRate;
     }

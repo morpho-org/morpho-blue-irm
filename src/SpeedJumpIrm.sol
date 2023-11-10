@@ -45,7 +45,7 @@ contract AdaptativeCurveIrm is IIrm {
     /// @notice Target utilization (scaled by WAD).
     /// @dev Verified to be strictly between 0 and 1 at construction.
     int256 public immutable TARGET_UTILIZATION;
-    /// @notice Initial rate at target (scaled by WAD).
+    /// @notice Initial rate at target per second (scaled by WAD).
     uint256 public immutable INITIAL_RATE_AT_TARGET;
 
     /* STORAGE */
@@ -102,16 +102,16 @@ contract AdaptativeCurveIrm is IIrm {
 
         Id id = marketParams.id();
 
-        (uint256 avgBorrowRate, uint256 newRateAtTarget) = _borrowRate(id, market);
+        (uint256 avgBorrowRate, uint256 endRateAtTarget) = _borrowRate(id, market);
 
-        rateAtTarget[id] = newRateAtTarget;
+        rateAtTarget[id] = endRateAtTarget;
 
-        emit BorrowRateUpdate(id, avgBorrowRate, newRateAtTarget);
+        emit BorrowRateUpdate(id, avgBorrowRate, endRateAtTarget);
 
         return avgBorrowRate;
     }
 
-    /// @dev Returns avgBorrowRate and newRateAtTarget.
+    /// @dev Returns avgBorrowRate and endRateAtTarget.
     /// @dev Assumes that the inputs `marketParams` and `id` match.
     function _borrowRate(Id id, Market memory market) private view returns (uint256, uint256) {
         // Safe "unchecked" cast because the utilization is smaller than 1 (scaled by WAD).
@@ -134,28 +134,28 @@ contract AdaptativeCurveIrm is IIrm {
             // market.lastUpdate != 0 because it is not the first interaction with this market.
             uint256 elapsed = block.timestamp - market.lastUpdate;
             // Safe "unchecked" cast because elapsed <= block.timestamp.
-            int256 linearVariation = speed * int256(elapsed);
-            uint256 variationMultiplier = MathLib.wExp(linearVariation);
+            int256 linearAdaptation = speed * int256(elapsed);
+            uint256 adaptationMultiplier = MathLib.wExp(linearAdaptation);
             // endRateAtTarget is bounded between MIN_RATE_AT_TARGET and MAX_RATE_AT_TARGET.
             uint256 endRateAtTarget =
-                startRateAtTarget.wMulDown(variationMultiplier).bound(MIN_RATE_AT_TARGET, MAX_RATE_AT_TARGET);
+                startRateAtTarget.wMulDown(adaptationMultiplier).bound(MIN_RATE_AT_TARGET, MAX_RATE_AT_TARGET);
             uint256 endBorrowRate = _curve(endRateAtTarget, err);
 
             // Then we compute the average rate over the period.
             // Note that startBorrowRate is defined in the computations below.
             // avgBorrowRate = 1 / elapsed * ∫ startBorrowRate * exp(speed * t) dt between 0 and elapsed
-            //               = startBorrowRate * (exp(linearVariation) - 1) / linearVariation
-            //               = (endBorrowRate - startBorrowRate) / linearVariation
-            // And avgBorrowRate ~ startBorrowRate = endBorrowRate for linearVariation around zero.
+            //               = startBorrowRate * (exp(linearAdaptation) - 1) / linearAdaptation
+            //               = (endBorrowRate - startBorrowRate) / linearAdaptation
+            // And for linearAdaptation around zero: avgBorrowRate ~ startBorrowRate = endBorrowRate.
             // Also, when it is the first interaction (rateAtTarget = 0).
             uint256 avgBorrowRate;
-            if (linearVariation == 0) {
+            if (linearAdaptation == 0) {
                 avgBorrowRate = endBorrowRate;
             } else {
                 uint256 startBorrowRate = _curve(startRateAtTarget, err);
-                // Safe "unchecked" cast to uint256 because linearVariation < 0 <=> variationMultiplier <= 1.
+                // Safe "unchecked" cast to uint256 because linearAdaptation < 0 <=> adaptationMultiplier <= 1.
                 //                                                              <=> endBorrowRate <= startBorrowRate.
-                avgBorrowRate = uint256((int256(endBorrowRate) - int256(startBorrowRate)).wDivDown(linearVariation));
+                avgBorrowRate = uint256((int256(endBorrowRate) - int256(startBorrowRate)).wDivDown(linearAdaptation));
             }
 
             return (avgBorrowRate, endRateAtTarget);
