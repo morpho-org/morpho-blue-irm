@@ -6,6 +6,7 @@ import {IIrm} from "../lib/morpho-blue/src/interfaces/IIrm.sol";
 import {UtilsLib} from "./libraries/UtilsLib.sol";
 import {ErrorsLib} from "./libraries/ErrorsLib.sol";
 import {MathLib, WAD_INT as WAD} from "./libraries/MathLib.sol";
+import {AdaptativeCurveIrmLib} from "./libraries/AdaptativeCurveIrmLib.sol";
 import {MarketParamsLib} from "../lib/morpho-blue/src/libraries/MarketParamsLib.sol";
 import {Id, MarketParams, Market} from "../lib/morpho-blue/src/interfaces/IMorpho.sol";
 import {MathLib as MorphoMathLib} from "../lib/morpho-blue/src/libraries/MathLib.sol";
@@ -27,19 +28,15 @@ contract AdaptativeCurveIrm is IIrm {
 
     /* CONSTANTS */
 
-    /// @notice Maximum rate at target per second (scaled by WAD) (1B% APR).
-    int256 public constant MAX_RATE_AT_TARGET = int256(0.01e9 ether) / 365 days;
-    /// @notice Mininimum rate at target per second (scaled by WAD) (0.1% APR).
-    int256 public constant MIN_RATE_AT_TARGET = int256(0.001 ether) / 365 days;
     /// @notice Address of Morpho.
     address public immutable MORPHO;
     /// @notice Curve steepness (scaled by WAD).
-    /// @dev Verified to be greater than 1 at construction.
+    /// @dev Verified to be inside the expected range at construction.
     int256 public immutable CURVE_STEEPNESS;
     /// @notice Adjustment speed (scaled by WAD).
     /// @dev The speed is per second, so the rate moves at a speed of ADJUSTMENT_SPEED * err each second (while being
-    /// continuously compounded). A typical value for the ADJUSTMENT_SPEED would be 10 ethers / 365 days.
-    /// @dev Verified to be non-negative at construction.
+    /// continuously compounded). A typical value for the ADJUSTMENT_SPEED would be 10 ether / 365 days.
+    /// @dev Verified to be inside the expected range at construction.
     int256 public immutable ADJUSTMENT_SPEED;
     /// @notice Target utilization (scaled by WAD).
     /// @dev Verified to be strictly between 0 and 1 at construction.
@@ -71,11 +68,13 @@ contract AdaptativeCurveIrm is IIrm {
     ) {
         require(morpho != address(0), ErrorsLib.ZERO_ADDRESS);
         require(curveSteepness >= WAD, ErrorsLib.INPUT_TOO_SMALL);
+        require(curveSteepness <= AdaptativeCurveIrmLib.MAX_CURVE_STEEPNESS, ErrorsLib.INPUT_TOO_LARGE);
         require(adjustmentSpeed >= 0, ErrorsLib.INPUT_TOO_SMALL);
+        require(adjustmentSpeed <= AdaptativeCurveIrmLib.MAX_ADJUSTMENT_SPEED, ErrorsLib.INPUT_TOO_LARGE);
         require(targetUtilization < WAD, ErrorsLib.INPUT_TOO_LARGE);
         require(targetUtilization > 0, ErrorsLib.ZERO_INPUT);
-        require(initialRateAtTarget >= MIN_RATE_AT_TARGET, ErrorsLib.INPUT_TOO_SMALL);
-        require(initialRateAtTarget <= MAX_RATE_AT_TARGET, ErrorsLib.INPUT_TOO_LARGE);
+        require(initialRateAtTarget >= AdaptativeCurveIrmLib.MIN_RATE_AT_TARGET, ErrorsLib.INPUT_TOO_SMALL);
+        require(initialRateAtTarget <= AdaptativeCurveIrmLib.MAX_RATE_AT_TARGET, ErrorsLib.INPUT_TOO_LARGE);
 
         MORPHO = morpho;
         CURVE_STEEPNESS = curveSteepness;
@@ -134,8 +133,9 @@ contract AdaptativeCurveIrm is IIrm {
             int256 linearAdaptation = speed * elapsed;
             int256 adaptationMultiplier = MathLib.wExp(linearAdaptation);
             // endRateAtTarget is bounded between MIN_RATE_AT_TARGET and MAX_RATE_AT_TARGET.
-            int256 endRateAtTarget =
-                startRateAtTarget.wMulDown(adaptationMultiplier).bound(MIN_RATE_AT_TARGET, MAX_RATE_AT_TARGET);
+            int256 endRateAtTarget = startRateAtTarget.wMulDown(adaptationMultiplier).bound(
+                AdaptativeCurveIrmLib.MIN_RATE_AT_TARGET, AdaptativeCurveIrmLib.MAX_RATE_AT_TARGET
+            );
             int256 endBorrowRate = _curve(endRateAtTarget, err);
 
             // Then we compute the average rate over the period.

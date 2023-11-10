@@ -216,8 +216,8 @@ contract AdaptativeCurveIrmTest is Test {
         assertApproxEqRel(irm.rateAtTarget(marketParams.id()), expectedRateAtTarget, 0.001 ether, "rateAtTarget");
     }
 
-    function testWExpWMulDownMaxRate() public view {
-        MathLib.wExp(MathLib.WEXP_UPPER_BOUND).wMulDown(irm.MAX_RATE_AT_TARGET());
+    function testWExpWMulDownMaxRate() public pure {
+        MathLib.wExp(MathLib.WEXP_UPPER_BOUND).wMulDown(AdaptativeCurveIrmLib.MAX_RATE_AT_TARGET);
     }
 
     /* HANDLERS */
@@ -243,8 +243,14 @@ contract AdaptativeCurveIrmTest is Test {
         market.totalBorrowAssets = 9 ether;
         market.totalSupplyAssets = 10 ether;
 
-        assertGe(irm.borrowRateView(marketParams, market), uint256(irm.MIN_RATE_AT_TARGET().wDivDown(CURVE_STEEPNESS)));
-        assertGe(irm.borrowRate(marketParams, market), uint256(irm.MIN_RATE_AT_TARGET().wDivDown(CURVE_STEEPNESS)));
+        assertGe(
+            irm.borrowRateView(marketParams, market),
+            uint256(AdaptativeCurveIrmLib.MIN_RATE_AT_TARGET.wDivDown(CURVE_STEEPNESS))
+        );
+        assertGe(
+            irm.borrowRate(marketParams, market),
+            uint256(AdaptativeCurveIrmLib.MIN_RATE_AT_TARGET.wDivDown(CURVE_STEEPNESS))
+        );
     }
 
     function invariantLeMaxRateAtTarget() public {
@@ -252,8 +258,14 @@ contract AdaptativeCurveIrmTest is Test {
         market.totalBorrowAssets = 9 ether;
         market.totalSupplyAssets = 10 ether;
 
-        assertLe(irm.borrowRateView(marketParams, market), uint256(irm.MAX_RATE_AT_TARGET().wMulDown(CURVE_STEEPNESS)));
-        assertLe(irm.borrowRate(marketParams, market), uint256(irm.MAX_RATE_AT_TARGET().wMulDown(CURVE_STEEPNESS)));
+        assertLe(
+            irm.borrowRateView(marketParams, market),
+            uint256(AdaptativeCurveIrmLib.MAX_RATE_AT_TARGET.wMulDown(CURVE_STEEPNESS))
+        );
+        assertLe(
+            irm.borrowRate(marketParams, market),
+            uint256(AdaptativeCurveIrmLib.MAX_RATE_AT_TARGET.wMulDown(CURVE_STEEPNESS))
+        );
     }
 
     function _expectedRateAtTarget(Id id, Market memory market) internal view returns (int256) {
@@ -263,7 +275,9 @@ contract AdaptativeCurveIrmTest is Test {
         int256 linearAdaptation = speed * int256(elapsed);
         int256 adaptationMultiplier = MathLib.wExp(linearAdaptation);
         return (rateAtTarget > 0)
-            ? rateAtTarget.wMulDown(adaptationMultiplier).bound(irm.MIN_RATE_AT_TARGET(), irm.MAX_RATE_AT_TARGET())
+            ? rateAtTarget.wMulDown(adaptationMultiplier).bound(
+                AdaptativeCurveIrmLib.MIN_RATE_AT_TARGET, AdaptativeCurveIrmLib.MAX_RATE_AT_TARGET
+            )
             : INITIAL_RATE_AT_TARGET;
     }
 
