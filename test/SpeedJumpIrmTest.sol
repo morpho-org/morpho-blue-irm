@@ -170,6 +170,10 @@ contract AdaptativeCurveIrmTest is Test {
         assertApproxEqRel(irm.rateAtTarget(marketParams.id()), expectedRateAtTarget, 0.001 ether, "rateAtTarget");
     }
 
+    function testWExpWMulDownMaxRate() public view {
+        MathLib.wExp(MathLib.WEXP_UPPER_BOUND).wMulDown(irm.MAX_RATE_AT_TARGET());
+    }
+
     function invariantMinRateAtTarget() public {
         Market memory market;
         market.totalBorrowAssets = 9 ether;

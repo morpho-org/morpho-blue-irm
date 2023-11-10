@@ -15,31 +15,31 @@ library MathLib {
     using {wDivDown} for int256;
 
     /// @dev ln(2).
-    int256 internal constant LN2_INT = 0.693147180559945309 ether;
+    int256 internal constant LN_2_INT = 0.693147180559945309 ether;
 
-    /// @dev Above this limit `wExp` would overflow. Instead, we return an upper value.
-    int256 internal constant WEXP_UPPER_BOUND = 135.999582271169154765 ether;
+    /// @dev ln(1e-18).
+    int256 internal constant LN_WEI_INT = -41.446531673892822312 ether;
+
+    /// @dev Above this bound, `wExp` is clipped to avoid overflows.
+    int256 internal constant WEXP_UPPER_BOUND = 93.859467695000409276 ether;
 
     /// @dev The value of wExp(WEXP_UPPER_BOUND).
-    uint256 internal constant WEXP_UPPER_VALUE =
-        115792089237316195323137357242501015631897353894317901381819.896896488577433600 ether;
+    uint256 internal constant WEXP_UPPER_VALUE = 57896044618658097668566176065831614062208.180255716851497386 ether;
 
     /// @dev Returns an approximation of exp.
     function wExp(int256 x) internal pure returns (uint256) {
         unchecked {
-            // Return an upper value to avoid overflows.
+            // x < ln(1e-18) => exp(x) < 1e-18 so it is rounded to zero.
+            if (x < LN_WEI_INT) return 0;
             if (x >= WEXP_UPPER_BOUND) return WEXP_UPPER_VALUE;
-
-            // Return zero if x < -(2**255-1) + (ln(2)/2).
-            if (x < type(int256).min + LN2_INT / 2) return 0;
 
             // Decompose x as x = q * ln(2) + r with q an integer and -ln(2)/2 <= r <= ln(2)/2.
             // q = x / ln(2) rounded half toward zero.
-            int256 roundingAdjustment = (x < 0) ? -(LN2_INT / 2) : (LN2_INT / 2);
+            int256 roundingAdjustment = (x < 0) ? -(LN_2_INT / 2) : (LN_2_INT / 2);
             // Safe unchecked because x is bounded.
-            int256 q = (x + roundingAdjustment) / LN2_INT;
-            // Safe unchecked because |q * LN2_INT| <= |x|.
-            int256 r = x - q * LN2_INT;
+            int256 q = (x + roundingAdjustment) / LN_2_INT;
+            // Safe unchecked because |q * LN_2_INT| <= |x|.
+            int256 r = x - q * LN_2_INT;
 
             // Compute e^r with a 2nd-order Taylor polynomial.
             // Safe unchecked because |r| < 1, expR < 2 and the sum is positive.

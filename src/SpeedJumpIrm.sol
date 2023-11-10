@@ -29,7 +29,7 @@ contract AdaptativeCurveIrm is IIrm {
     /* CONSTANTS */
 
     /// @notice Maximum rate at target per second (scaled by WAD) (1B% APR).
-    uint256 public constant MAX_RATE_AT_TARGET = uint256(1e7 ether) / 365 days;
+    uint256 public constant MAX_RATE_AT_TARGET = uint256(0.01e9 ether) / 365 days;
     /// @notice Mininimum rate at target per second (scaled by WAD) (0.1% APR).
     uint256 public constant MIN_RATE_AT_TARGET = uint256(0.001 ether) / 365 days;
     /// @notice Address of Morpho.
@@ -39,7 +39,7 @@ contract AdaptativeCurveIrm is IIrm {
     uint256 public immutable CURVE_STEEPNESS;
     /// @notice Adjustment speed (scaled by WAD).
     /// @dev The speed is per second, so the rate moves at a speed of ADJUSTMENT_SPEED * err each second (while being
-    /// continuously compounded). A typical value for the ADJUSTMENT_SPEED would be 10 ethers / 365 days.
+    /// continuously compounded). A typical value for the ADJUSTMENT_SPEED would be 10 ether / 365 days.
     uint256 public immutable ADJUSTMENT_SPEED;
     /// @notice Target utilization (scaled by WAD).
     /// @dev Verified to be strictly between 0 and 1 at construction.
@@ -132,6 +132,8 @@ contract AdaptativeCurveIrm is IIrm {
             uint256 elapsed = block.timestamp - market.lastUpdate;
             // Safe "unchecked" cast because elapsed <= block.timestamp.
             int256 linearVariation = speed * int256(elapsed);
+            /// variationMultiplier may be capped to WEXP_UPPER_VALUE to prevent overflows, which would under-estimate
+            /// the end rate. In this case, any user can accrue interest on Morpho to update the rate.
             uint256 variationMultiplier = MathLib.wExp(linearVariation);
             // endRateAtTarget is bounded between MIN_RATE_AT_TARGET and MAX_RATE_AT_TARGET.
             uint256 endRateAtTarget =
