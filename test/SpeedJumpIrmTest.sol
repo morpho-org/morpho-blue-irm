@@ -217,7 +217,7 @@ contract AdaptativeCurveIrmTest is Test {
     }
 
     function testWExpWMulDownMaxRate() public pure {
-        MathLib.wExp(MathLib.WEXP_UPPER_BOUND).wMulDown(AdaptativeCurveIrmLib.MAX_RATE_AT_TARGET);
+        MathLib.wExp(MathLib.WEXP_UPPER_BOUND).wMulDown(ConstantsLib.MAX_RATE_AT_TARGET);
     }
 
     /* HANDLERS */
@@ -244,12 +244,10 @@ contract AdaptativeCurveIrmTest is Test {
         market.totalSupplyAssets = 10 ether;
 
         assertGe(
-            irm.borrowRateView(marketParams, market),
-            uint256(AdaptativeCurveIrmLib.MIN_RATE_AT_TARGET.wDivDown(CURVE_STEEPNESS))
+            irm.borrowRateView(marketParams, market), uint256(ConstantsLib.MIN_RATE_AT_TARGET.wDivDown(CURVE_STEEPNESS))
         );
         assertGe(
-            irm.borrowRate(marketParams, market),
-            uint256(AdaptativeCurveIrmLib.MIN_RATE_AT_TARGET.wDivDown(CURVE_STEEPNESS))
+            irm.borrowRate(marketParams, market), uint256(ConstantsLib.MIN_RATE_AT_TARGET.wDivDown(CURVE_STEEPNESS))
         );
     }
 
@@ -259,12 +257,10 @@ contract AdaptativeCurveIrmTest is Test {
         market.totalSupplyAssets = 10 ether;
 
         assertLe(
-            irm.borrowRateView(marketParams, market),
-            uint256(AdaptativeCurveIrmLib.MAX_RATE_AT_TARGET.wMulDown(CURVE_STEEPNESS))
+            irm.borrowRateView(marketParams, market), uint256(ConstantsLib.MAX_RATE_AT_TARGET.wMulDown(CURVE_STEEPNESS))
         );
         assertLe(
-            irm.borrowRate(marketParams, market),
-            uint256(AdaptativeCurveIrmLib.MAX_RATE_AT_TARGET.wMulDown(CURVE_STEEPNESS))
+            irm.borrowRate(marketParams, market), uint256(ConstantsLib.MAX_RATE_AT_TARGET.wMulDown(CURVE_STEEPNESS))
         );
     }
 
@@ -276,7 +272,7 @@ contract AdaptativeCurveIrmTest is Test {
         int256 adaptationMultiplier = MathLib.wExp(linearAdaptation);
         return (rateAtTarget > 0)
             ? rateAtTarget.wMulDown(adaptationMultiplier).bound(
-                AdaptativeCurveIrmLib.MIN_RATE_AT_TARGET, AdaptativeCurveIrmLib.MAX_RATE_AT_TARGET
+                ConstantsLib.MIN_RATE_AT_TARGET, ConstantsLib.MAX_RATE_AT_TARGET
             )
             : INITIAL_RATE_AT_TARGET;
     }
