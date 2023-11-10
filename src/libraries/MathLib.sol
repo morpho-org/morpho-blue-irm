@@ -29,7 +29,7 @@ library MathLib {
     /// @dev Returns an approximation of exp.
     function wExp(int256 x) internal pure returns (uint256) {
         unchecked {
-            // x < ln(1e-18) => exp(x) < 1e-18 so it is rounded to zero.
+            // If x < ln(1e-18) then exp(x) < 1e-18 so it is rounded to zero.
             if (x < LN_WEI_INT) return 0;
             if (x >= WEXP_UPPER_BOUND) return WEXP_UPPER_VALUE;
 
@@ -38,11 +38,11 @@ library MathLib {
             int256 roundingAdjustment = (x < 0) ? -(LN_2_INT / 2) : (LN_2_INT / 2);
             // Safe unchecked because x is bounded.
             int256 q = (x + roundingAdjustment) / LN_2_INT;
-            // Safe unchecked because |q * LN_2_INT| <= |x|.
+            // Safe unchecked because |q * ln(2) - x| <= ln(2)/2.
             int256 r = x - q * LN_2_INT;
 
             // Compute e^r with a 2nd-order Taylor polynomial.
-            // Safe unchecked because |r| < 1, expR < 2 and the sum is positive.
+            // Safe unchecked because |r| < 1e18, and the sum is positive.
             uint256 expR = uint256(WAD_INT + r + (r * r) / WAD_INT / 2);
 
             // Return e^x = 2^q * e^r.
@@ -51,9 +51,8 @@ library MathLib {
         }
     }
 
-    function wMulDown(uint256 a, int256 b) internal pure returns (int256) {
-        require(a <= uint256(type(int256).max));
-        return int256(a) * b / WAD_INT;
+    function wMulDown(int256 a, int256 b) internal pure returns (int256) {
+        return a * b / WAD_INT;
     }
 
     function wDivDown(int256 a, int256 b) internal pure returns (int256) {
