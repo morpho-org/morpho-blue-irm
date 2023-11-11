@@ -52,7 +52,7 @@ contract AdaptativeCurveIrm is IIrm {
 
     /// @notice Rate at target utilization.
     /// @dev Tells the height of the curve.
-    mapping(Id => uint256) public rateAtTarget;
+    mapping(Id => int256) public rateAtTarget;
 
     /* CONSTRUCTOR */
 
@@ -98,18 +98,19 @@ contract AdaptativeCurveIrm is IIrm {
 
         Id id = marketParams.id();
 
-        (uint256 avgBorrowRate, uint256 endRateAtTarget) = _borrowRate(id, market);
+        (uint256 avgBorrowRate, int256 endRateAtTarget) = _borrowRate(id, market);
 
         rateAtTarget[id] = endRateAtTarget;
 
-        emit BorrowRateUpdate(id, avgBorrowRate, endRateAtTarget);
+        // Safe "unchecked" because endRateAtTarget >= 0.
+        emit BorrowRateUpdate(id, avgBorrowRate, uint256(endRateAtTarget));
 
         return avgBorrowRate;
     }
 
     /// @dev Returns avgBorrowRate and endRateAtTarget.
     /// @dev Assumes that the inputs `marketParams` and `id` match.
-    function _borrowRate(Id id, Market memory market) private view returns (uint256, uint256) {
+    function _borrowRate(Id id, Market memory market) private view returns (uint256, int256) {
         // Safe "unchecked" cast because the utilization is smaller than 1 (scaled by WAD).
         int256 utilization =
             int256(market.totalSupplyAssets > 0 ? market.totalBorrowAssets.wDivDown(market.totalSupplyAssets) : 0);
@@ -117,11 +118,11 @@ contract AdaptativeCurveIrm is IIrm {
         int256 errNormFactor = utilization > TARGET_UTILIZATION ? WAD - TARGET_UTILIZATION : TARGET_UTILIZATION;
         int256 err = (utilization - TARGET_UTILIZATION).wDivDown(errNormFactor);
 
-        int256 startRateAtTarget = int256(rateAtTarget[id]);
+        int256 startRateAtTarget = rateAtTarget[id];
 
         // First interaction.
         if (startRateAtTarget == 0) {
-            return (uint256(_curve(INITIAL_RATE_AT_TARGET, err)), uint256(INITIAL_RATE_AT_TARGET));
+            return (uint256(_curve(INITIAL_RATE_AT_TARGET, err)), INITIAL_RATE_AT_TARGET);
         } else {
             // Note that the speed is assumed constant between two interactions, but in theory it increases because of
             // interests. So the rate will be slightly underestimated.
@@ -153,11 +154,10 @@ contract AdaptativeCurveIrm is IIrm {
                 avgBorrowRate = (endBorrowRate - startBorrowRate).wDivDown(linearAdaptation);
             }
 
-            // endRateAtTarget is non negative because endRateAtTarget >= MIN_RATE_AT_TARGET.
             // avgBorrowRate is non negative because:
-            // - endBorrowRate >= 0.
+            // - endBorrowRate >= 0 because endRateAtTarget >= MIN_RATE_AT_TARGET.
             // - linearAdaptation < 0 <=> adaptationMultiplier <= 1 <=> endBorrowRate <= startBorrowRate.
-            return (uint256(avgBorrowRate), uint256(endRateAtTarget));
+            return (uint256(avgBorrowRate), endRateAtTarget);
         }
     }
 
