@@ -129,8 +129,7 @@ contract AdaptativeCurveIrm is IIrm {
             int256 speed = ADJUSTMENT_SPEED.wMulDown(err);
 
             // market.lastUpdate != 0 because it is not the first interaction with this market.
-            // Safe "unchecked" cast because block.timestamp - market.lastUpdate <= block.timestamp.
-            // And it is assumed that block.timestamp <= type(int256).max.
+            // Safe "unchecked" cast because block.timestamp - market.lastUpdate <= block.timestamp <= type(int256).max.
             int256 elapsed = int256(block.timestamp - market.lastUpdate);
             int256 linearAdaptation = speed * elapsed;
             int256 adaptationMultiplier = MathLib.wExp(linearAdaptation);
@@ -166,7 +165,7 @@ contract AdaptativeCurveIrm is IIrm {
     /// r = ((1-1/C)*err + 1) * rateAtTarget if err < 0
     ///     ((C-1)*err + 1) * rateAtTarget else.
     function _curve(int256 _rateAtTarget, int256 err) private view returns (int256) {
-        /// Non negative because 1 - 1/C >=0 0, C - 1 >= 0 , rateAtTarget >= 0.
+        /// Non negative because 1 - 1/C >= 0, C - 1 >= 0, rateAtTarget >= 0.
         int256 steeringCoeff =
             (err < 0 ? WAD - WAD.wDivDown(CURVE_STEEPNESS) : CURVE_STEEPNESS - WAD).wMulDown(_rateAtTarget);
         /// Non negative because if err < 0, steeringCoeff <= _rateAtTarget.
