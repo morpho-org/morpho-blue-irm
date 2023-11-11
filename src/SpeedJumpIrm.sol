@@ -160,10 +160,11 @@ contract AdaptativeCurveIrm is IIrm {
     /// The formula of the curve is the following:
     /// r = ((1-1/C)*err + 1) * rateAtTarget if err < 0
     ///     ((C-1)*err + 1) * rateAtTarget else.
-    /// The result is non negative.
     function _curve(int256 _rateAtTarget, int256 err) private view returns (int256) {
+        /// Non negative because 1 - 1/C > 0, C - 1 > 0, rateAtTarget > 0.
         int256 steeringCoeff =
             (err < 0 ? WAD - WAD.wDivDown(CURVE_STEEPNESS) : CURVE_STEEPNESS - WAD).wMulDown(_rateAtTarget);
+        /// Non negative because if err < 0, steeringCoeff < _rateAtTarget.
         return steeringCoeff.wMulDown(err) + _rateAtTarget;
     }
 }
