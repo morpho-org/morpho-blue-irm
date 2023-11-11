@@ -30,6 +30,48 @@ contract AdaptativeCurveIrmTest is Test {
         vm.warp(90 days);
     }
 
+    function testBoundImprovesError(uint256 startRateAtTarget, uint256 adaptationMultiplier) public {
+        // Assume that the start rate at target is in the bounds.
+        startRateAtTarget = bound(startRateAtTarget, irm.MIN_RATE_AT_TARGET(), irm.MAX_RATE_AT_TARGET());
+        adaptationMultiplier = bound(adaptationMultiplier, 1, type(uint64).max);
+        uint256 unboundedEndRateAtTarget = startRateAtTarget.wMulDown(adaptationMultiplier);
+        uint256 endRateAtTarget = unboundedEndRateAtTarget.bound(irm.MIN_RATE_AT_TARGET(), irm.MAX_RATE_AT_TARGET());
+
+        assertLe(_diff(endRateAtTarget, startRateAtTarget), _diff(unboundedEndRateAtTarget, startRateAtTarget));
+    }
+
+    function testCurveAtMostMultipliesErrors(int256 err, uint256 startRateAtTarget, uint256 endRateAtTarget) public {
+        // Assume that rates are in the bounds.
+        startRateAtTarget = bound(startRateAtTarget, irm.MIN_RATE_AT_TARGET(), irm.MAX_RATE_AT_TARGET());
+        endRateAtTarget = bound(endRateAtTarget, irm.MIN_RATE_AT_TARGET(), irm.MAX_RATE_AT_TARGET());
+        // Assume that the error is smaller than WAD in absolute value.
+        err = bound(err, -1e18, 1e18);
+
+        uint256 startBorrowRate = _curve(startRateAtTarget, err);
+        uint256 endBorrowRate = _curve(endRateAtTarget, err);
+        uint256 coeff = uint256(CURVE_STEEPNESS / 1e18);
+
+        // Sanity check: does not pass if coeff is decreased by one.
+        assertLe(_diff(startBorrowRate, endBorrowRate), coeff * _diff(startRateAtTarget, endRateAtTarget));
+    }
+
+    function testLinearThresholdEnsuresMaxErrorOfOneBasisPoint(uint256 linearAdaptation, uint256 roundingError)
+        public
+    {
+        // Assume that the linearAdaptation is not smaller than the threshold.
+        linearAdaptation = bound(linearAdaptation, uint256(irm.LINEAR_ADAPTATION_THRESHOLD()), type(uint64).max);
+        // Assume that the initial rounding error is in the theoretical bounds.
+        uint256 maxRoundingError = 1e18 + irm.MAX_RATE_AT_TARGET() * 3 / 2;
+        roundingError = bound(roundingError, 0, maxRoundingError);
+
+        uint256 oneBasisPoint = uint256(0.0001 ether) / 365 days;
+
+        uint256 coeff = uint256(CURVE_STEEPNESS / 1e18);
+
+        // Sanity check: does not pass if linearAdaptation is divided by 10.
+        assertLe((coeff * roundingError) / linearAdaptation, oneBasisPoint);
+    }
+
     function testDeployment() public {
         vm.expectRevert(bytes(ErrorsLib.ZERO_ADDRESS));
         new AdaptativeCurveIrm(address(0), 0, 0, 0, 0);
@@ -188,6 +230,10 @@ contract AdaptativeCurveIrmTest is Test {
         assertLt(
             irm.borrowRate(marketParams, market), uint256(int256(irm.MAX_RATE_AT_TARGET()).wMulDown(CURVE_STEEPNESS))
         );
+    }
+
+    function _diff(uint256 a, uint256 b) internal pure returns (uint256) {
+        return a < b ? b - a : a - b;
     }
 
     function _expectedRateAtTarget(Id id, Market memory market) internal view returns (uint256) {
