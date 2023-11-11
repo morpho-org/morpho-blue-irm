@@ -3,6 +3,7 @@ pragma solidity ^0.8.0;
 
 import "../src/SpeedJumpIrm.sol";
 import "../lib/forge-std/src/Test.sol";
+import {MathLib as Taylor} from "../lib/morpho-blue/src/libraries/MathLib.sol";
 import {BaseTest,IrmMock,IMorpho,MorphoLib} from "../lib/morpho-blue/test/forge/BaseTest.sol";
 
 contract IntegrationAdaptativeCurveIrmTest is BaseTest {
@@ -108,5 +109,52 @@ contract IntegrationAdaptativeCurveIrmTest is BaseTest {
         console.log(unicode"stepΔ/leapΔ          %s%",stepBorrowIncrease*100/leapBorrowIncrease);
     }
 
+    // Compare stepped accrual (1 accrual per period over duration) vs. leap accrual (1 accrual at end of duration)
+    function testCompareTaylor() public {
+        // Setup
+        uint duration = 9 weeks;
+        uint period = 1000 seconds;
+        duration = duration-(duration%period); // exact loop iterations for step market
 
+        uint init = 10 ether; // init amount
+        uint rate = 2 ether / uint256(365 days); // 1%
+
+        uint step;
+        uint leap;
+
+        // Leap
+
+        leap = init + Taylor.wMulDown(init, Taylor.wTaylorCompounded(rate, duration));
+        console.log("leap",leap);
+
+        // Step
+
+        step = init + Taylor.wMulDown(init, Taylor.wTaylorCompounded(rate, period));
+
+        for (uint i=0;i<duration/period;i++) {
+            uint interest = Taylor.wMulDown(step, Taylor.wTaylorCompounded(rate, period));
+            // console2.log("interest",interest);
+            step += interest;
+        }
+
+        console.log("initial      ",rate);
+        console.log("step final   ",step);
+        console.log("leap final   ",leap);
+        console.log();
+
+        uint stepIncrease = step-init;
+        uint leapIncrease = leap-init;
+
+        console.log("step increase",stepIncrease);
+        console.log("leap increase",leapIncrease);
+        console.log();
+
+        console.log();
+        console.log("block.number        ",block.number);
+        console.log("block.timestamp     ",block.timestamp);
+
+        console.log(unicode"stepΔ/leapΔ          %s%",stepIncrease*100/leapIncrease);
+
+        assertTrue(false);
+    }
 }
