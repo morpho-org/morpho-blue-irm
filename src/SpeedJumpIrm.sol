@@ -152,6 +152,10 @@ contract AdaptativeCurveIrm is IIrm {
                 avgBorrowRate = (endBorrowRate - startBorrowRate).wDivDown(linearAdaptation);
             }
 
+            // endRateAtTarget is non negative because endRateAtTarget >= MIN_RATE_AT_TARGET.
+            // avgBorrowRate is non negative because:
+            // - endBorrowRate >= 0.
+            // - linearAdaptation < 0 <=> adaptationMultiplier <= 1 <=> endBorrowRate <= startBorrowRate.
             return (uint256(avgBorrowRate), uint256(endRateAtTarget));
         }
     }
@@ -161,10 +165,10 @@ contract AdaptativeCurveIrm is IIrm {
     /// r = ((1-1/C)*err + 1) * rateAtTarget if err < 0
     ///     ((C-1)*err + 1) * rateAtTarget else.
     function _curve(int256 _rateAtTarget, int256 err) private view returns (int256) {
-        /// Non negative because 1 - 1/C > 0, C - 1 > 0, rateAtTarget > 0.
+        /// Non negative because 1 - 1/C >=0 0, C - 1 >= 0 , rateAtTarget >= 0.
         int256 steeringCoeff =
             (err < 0 ? WAD - WAD.wDivDown(CURVE_STEEPNESS) : CURVE_STEEPNESS - WAD).wMulDown(_rateAtTarget);
-        /// Non negative because if err < 0, steeringCoeff < _rateAtTarget.
+        /// Non negative because if err < 0, steeringCoeff <= _rateAtTarget.
         return steeringCoeff.wMulDown(err) + _rateAtTarget;
     }
 }
