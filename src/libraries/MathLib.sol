@@ -20,11 +20,12 @@ library MathLib {
     /// @dev ln(1e-18).
     int256 internal constant LN_WEI_INT = -41.446531673892822312 ether;
 
-    /// @dev Above this bound, `wExp` is clipped to avoid overflows.
+    /// @dev Above this bound, `wExp` is clipped to avoid overflowing when multiplied with 1 ether.
+    /// @dev This upper bound corresponds to: ln(type(uint256).max / 1e36) - ln(2) (scaled by WAD, floored).
     int256 internal constant WEXP_UPPER_BOUND = 93.859467695000409276 ether;
 
-    /// @dev The value of wExp(WEXP_UPPER_BOUND).
-    uint256 internal constant WEXP_UPPER_VALUE = 57896044618658097668566176065831614062208.180255716851497386 ether;
+    /// @dev The value of wExp(`WEXP_UPPER_BOUND`).
+    uint256 internal constant WEXP_UPPER_VALUE = 57716089161559221271663333261689707872312.488815486643994624 ether;
 
     /// @dev Returns an approximation of exp.
     function wExp(int256 x) internal pure returns (uint256) {
