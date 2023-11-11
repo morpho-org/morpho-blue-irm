@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: UNLICENSED
+// SPDX-License-Identifier: MIT
 pragma solidity 0.8.19;
 
 import {IIrm} from "../lib/morpho-blue/src/interfaces/IIrm.sol";
@@ -19,7 +19,7 @@ struct MarketIrm {
 
 /// @title SpeedJumpIrm
 /// @author Morpho Labs
-/// @custom:contact security@morpho.xyz
+/// @custom:contact security@morpho.org
 /// @notice Interest rate model.
 contract SpeedJumpIrm is IIrm {
     using MathLib for int256;
