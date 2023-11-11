@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.8.0;
 
-library AdaptativeCurveIrmLib {
+library ConstantsLib {
     /// @notice Maximum rate at target per second (scaled by WAD) (1B% APR).
     int256 internal constant MAX_RATE_AT_TARGET = int256(0.01e9 ether) / 365 days;
 

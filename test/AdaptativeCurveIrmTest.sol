@@ -1,12 +1,11 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-import "../src/SpeedJumpIrm.sol";
+import "../src/AdaptativeCurveIrm.sol";
 
 import "../lib/forge-std/src/Test.sol";
 
 contract AdaptativeCurveIrmTest is Test {
-    using MathLib for int256;
     using MathLib for int256;
     using MathLib for uint256;
     using UtilsLib for int256;
@@ -217,7 +216,7 @@ contract AdaptativeCurveIrmTest is Test {
     }
 
     function testWExpWMulDownMaxRate() public pure {
-        MathLib.wExp(MathLib.WEXP_UPPER_BOUND).wMulDown(ConstantsLib.MAX_RATE_AT_TARGET);
+        ExpLib.wExp(ExpLib.WEXP_UPPER_BOUND).wMulDown(ConstantsLib.MAX_RATE_AT_TARGET);
     }
 
     /* HANDLERS */
@@ -269,7 +268,7 @@ contract AdaptativeCurveIrmTest is Test {
         int256 speed = ADJUSTMENT_SPEED.wMulDown(_err(market));
         uint256 elapsed = (rateAtTarget > 0) ? block.timestamp - market.lastUpdate : 0;
         int256 linearAdaptation = speed * int256(elapsed);
-        int256 adaptationMultiplier = MathLib.wExp(linearAdaptation);
+        int256 adaptationMultiplier = ExpLib.wExp(linearAdaptation);
         return (rateAtTarget > 0)
             ? rateAtTarget.wMulDown(adaptationMultiplier).bound(
                 ConstantsLib.MIN_RATE_AT_TARGET, ConstantsLib.MAX_RATE_AT_TARGET

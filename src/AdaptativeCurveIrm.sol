@@ -6,7 +6,8 @@ import {IIrm} from "../lib/morpho-blue/src/interfaces/IIrm.sol";
 import {UtilsLib} from "./libraries/UtilsLib.sol";
 import {ErrorsLib} from "./libraries/ErrorsLib.sol";
 import {MathLib, WAD_INT as WAD} from "./libraries/MathLib.sol";
-import {AdaptativeCurveIrmLib as ConstantsLib} from "./libraries/AdaptativeCurveIrmLib.sol";
+import {ExpLib} from "./libraries/adaptative-curve/ExpLib.sol";
+import {ConstantsLib} from "./libraries/adaptative-curve/ConstantsLib.sol";
 import {MarketParamsLib} from "../lib/morpho-blue/src/libraries/MarketParamsLib.sol";
 import {Id, MarketParams, Market} from "../lib/morpho-blue/src/interfaces/IMorpho.sol";
 import {MathLib as MorphoMathLib} from "../lib/morpho-blue/src/libraries/MathLib.sol";
@@ -135,7 +136,7 @@ contract AdaptativeCurveIrm is IIrm {
             // Safe "unchecked" cast because block.timestamp - market.lastUpdate <= block.timestamp <= type(int256).max.
             int256 elapsed = int256(block.timestamp - market.lastUpdate);
             int256 linearAdaptation = speed * elapsed;
-            int256 adaptationMultiplier = MathLib.wExp(linearAdaptation);
+            int256 adaptationMultiplier = ExpLib.wExp(linearAdaptation);
             // endRateAtTarget is bounded between MIN_RATE_AT_TARGET and MAX_RATE_AT_TARGET.
             int256 endRateAtTarget = startRateAtTarget.wMulDown(adaptationMultiplier).bound(
                 ConstantsLib.MIN_RATE_AT_TARGET, ConstantsLib.MAX_RATE_AT_TARGET
