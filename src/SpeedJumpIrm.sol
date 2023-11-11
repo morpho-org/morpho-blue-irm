@@ -129,6 +129,7 @@ contract AdaptativeCurveIrm is IIrm {
 
             // market.lastUpdate != 0 because it is not the first interaction with this market.
             // Safe "unchecked" cast because block.timestamp - market.lastUpdate <= block.timestamp.
+            // And it is assumed that block.timestamp <= type(int256).max.
             int256 elapsed = int256(block.timestamp - market.lastUpdate);
             int256 linearAdaptation = speed * elapsed;
             int256 adaptationMultiplier = MathLib.wExp(linearAdaptation);
