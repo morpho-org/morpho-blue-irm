@@ -137,9 +137,9 @@ contract AdaptativeCurveIrm is IIrm {
             int256 linearAdaptation = speed * int256(elapsed);
             uint256 adaptationMultiplier = MathLib.wExp(linearAdaptation);
             // endRateAtTarget is bounded between MIN_RATE_AT_TARGET and MAX_RATE_AT_TARGET.
-            uint256 endRateAtTarget =
-                startRateAtTarget.wMulDown(adaptationMultiplier).bound(MIN_RATE_AT_TARGET, MAX_RATE_AT_TARGET);
-            uint256 endBorrowRate = _curve(endRateAtTarget, err);
+            uint256 unboundedEndRateAtTarget = startRateAtTarget.wMulDown(adaptationMultiplier);
+            uint256 endRateAtTarget = unboundedEndRateAtTarget.bound(MIN_RATE_AT_TARGET, MAX_RATE_AT_TARGET);
+            uint256 endBorrowRate = _curve(unboundedEndRateAtTarget, err);
 
             // Then we compute the average rate over the period.
             // Note that startBorrowRate is defined in the computations below.
@@ -158,7 +158,7 @@ contract AdaptativeCurveIrm is IIrm {
                 avgBorrowRate = uint256((int256(endBorrowRate) - int256(startBorrowRate)).wDivDown(linearAdaptation));
             }
 
-            return (avgBorrowRate, endRateAtTarget);
+            return (avgBorrowRate.bound(MIN_RATE_AT_TARGET, MAX_RATE_AT_TARGET), endRateAtTarget);
         }
     }
 
@@ -168,10 +168,10 @@ contract AdaptativeCurveIrm is IIrm {
     ///     ((C-1)*err + 1) * rateAtTarget else.
     function _curve(uint256 _rateAtTarget, int256 err) private view returns (uint256) {
         // Safe "unchecked" cast of _rateAtTarget because _rateAtTarget <= MAX_RATE_AT_TARGET.
-        int256 steeringCoeff = (err < 0 ? WAD_INT - WAD_INT.wDivDown(CURVE_STEEPNESS) : CURVE_STEEPNESS - WAD_INT)
-            .wMulDown(int256(_rateAtTarget));
+        int256 coeff = err < 0 ? WAD_INT - WAD_INT.wDivDown(CURVE_STEEPNESS) : CURVE_STEEPNESS - WAD_INT;
+
         // Safe "unchecked" cast of _rateAtTarget because _rateAtTarget <= MAX_RATE_AT_TARGET.
         // Safe "unchecked" cast of the result because r >= 0.
-        return uint256(steeringCoeff.wMulDown(err) + int256(_rateAtTarget));
+        return uint256(coeff.wMulDown(err) + WAD_INT).wMulDown(_rateAtTarget);
     }
 }

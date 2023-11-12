@@ -190,15 +190,49 @@ contract AdaptativeCurveIrmTest is Test {
         );
     }
 
+    function testNotUnbounded(uint256 startRateAtTarget, uint256 elapsed) public {
+        startRateAtTarget = bound(startRateAtTarget, irm.MIN_RATE_AT_TARGET(), irm.MAX_RATE_AT_TARGET());
+        elapsed = bound(elapsed, 0, 365 days);
+
+        int256 err = 1 ether;
+        int256 speed = ADJUSTMENT_SPEED.wMulDown(err);
+        uint256 adaptationMultiplier = MathLib.wExp(speed * int256(elapsed));
+
+        uint256 endRateAtTarget =
+            startRateAtTarget.wMulDown(adaptationMultiplier).bound(irm.MIN_RATE_AT_TARGET(), irm.MAX_RATE_AT_TARGET());
+        uint256 endBorrowRate = _curve(endRateAtTarget, err);
+        uint256 startBorrowRate = _curve(startRateAtTarget, err);
+
+        assertApproxEqAbs(startBorrowRate.wMulDown(adaptationMultiplier), endBorrowRate, 1e3);
+    }
+
+    function testUnbounded(uint256 startRateAtTarget, uint256 elapsed) public {
+        startRateAtTarget = bound(startRateAtTarget, irm.MIN_RATE_AT_TARGET(), irm.MAX_RATE_AT_TARGET());
+        elapsed = bound(elapsed, 0, 2 days);
+
+        int256 err = 1 ether;
+        int256 speed = ADJUSTMENT_SPEED.wMulDown(err);
+        uint256 adaptationMultiplier = MathLib.wExp(speed * int256(elapsed));
+
+        uint256 unboundedEndRateAtTarget = startRateAtTarget.wMulDown(adaptationMultiplier);
+        //uint256 endRateAtTarget = unboundedEndRateAtTarget.bound(irm.MIN_RATE_AT_TARGET(), irm.MAX_RATE_AT_TARGET());
+        uint256 endBorrowRate = _curve(unboundedEndRateAtTarget, err);
+        uint256 startBorrowRate = _curve(startRateAtTarget, err);
+
+        assertApproxEqAbs(startBorrowRate.wMulDown(adaptationMultiplier), endBorrowRate, 1e3);
+    }
+
     function _expectedRateAtTarget(Id id, Market memory market) internal view returns (uint256) {
+        return _expectedUnboundedRateAtTarget(id, market).bound(irm.MIN_RATE_AT_TARGET(), irm.MAX_RATE_AT_TARGET());
+    }
+
+    function _expectedUnboundedRateAtTarget(Id id, Market memory market) internal view returns (uint256) {
         uint256 rateAtTarget = irm.rateAtTarget(id);
         int256 speed = ADJUSTMENT_SPEED.wMulDown(_err(market));
         uint256 elapsed = (rateAtTarget > 0) ? block.timestamp - market.lastUpdate : 0;
         int256 linearAdaptation = speed * int256(elapsed);
         uint256 adaptationMultiplier = MathLib.wExp(linearAdaptation);
-        return (rateAtTarget > 0)
-            ? rateAtTarget.wMulDown(adaptationMultiplier).bound(irm.MIN_RATE_AT_TARGET(), irm.MAX_RATE_AT_TARGET())
-            : INITIAL_RATE_AT_TARGET;
+        return (rateAtTarget > 0) ? rateAtTarget.wMulDown(adaptationMultiplier) : INITIAL_RATE_AT_TARGET;
     }
 
     function _expectedAvgRate(Id id, Market memory market) internal view returns (uint256) {
@@ -207,8 +241,8 @@ contract AdaptativeCurveIrmTest is Test {
         int256 speed = ADJUSTMENT_SPEED.wMulDown(err);
         uint256 elapsed = (rateAtTarget > 0) ? block.timestamp - market.lastUpdate : 0;
         int256 linearAdaptation = speed * int256(elapsed);
-        uint256 endRateAtTarget = _expectedRateAtTarget(id, market);
-        uint256 newBorrowRate = _curve(endRateAtTarget, err);
+        uint256 unboundedEndRateAtTarget = _expectedUnboundedRateAtTarget(id, market);
+        uint256 newBorrowRate = _curve(unboundedEndRateAtTarget, err);
 
         uint256 avgBorrowRate;
         if (linearAdaptation == 0 || rateAtTarget == 0) {
@@ -218,19 +252,15 @@ contract AdaptativeCurveIrmTest is Test {
             avgBorrowRate =
                 uint256((int256(newBorrowRate) - int256(_curve(rateAtTarget, err))).wDivDown(linearAdaptation));
         }
-        return avgBorrowRate;
+        return avgBorrowRate.bound(irm.MIN_RATE_AT_TARGET(), irm.MAX_RATE_AT_TARGET());
     }
 
     function _curve(uint256 rateAtTarget, int256 err) internal pure returns (uint256) {
         // Safe "unchecked" cast because err >= -1 (in WAD).
         if (err < 0) {
-            return uint256(
-                (WAD_INT - WAD_INT.wDivDown(CURVE_STEEPNESS)).wMulDown(int256(rateAtTarget)).wMulDown(err)
-                    + int256(rateAtTarget)
-            );
+            return uint256((WAD_INT - WAD_INT.wDivDown(CURVE_STEEPNESS)).wMulDown(err) + WAD_INT).wMulDown(rateAtTarget);
         } else {
-            return
-                uint256((CURVE_STEEPNESS - WAD_INT).wMulDown(int256(rateAtTarget)).wMulDown(err) + int256(rateAtTarget));
+            return uint256((CURVE_STEEPNESS - WAD_INT).wMulDown(err) + WAD_INT).wMulDown(rateAtTarget);
         }
     }
 
