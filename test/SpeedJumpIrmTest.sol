@@ -37,7 +37,7 @@ contract AdaptativeCurveIrmTest is Test {
         uint256 unboundedEndRateAtTarget = startRateAtTarget.wMulDown(adaptationMultiplier);
         uint256 endRateAtTarget = unboundedEndRateAtTarget.bound(irm.MIN_RATE_AT_TARGET(), irm.MAX_RATE_AT_TARGET());
 
-        assertLe(_diff(endRateAtTarget, startRateAtTarget), _diff(unboundedEndRateAtTarget, startRateAtTarget));
+        assertLe(_distance(endRateAtTarget, startRateAtTarget), _distance(unboundedEndRateAtTarget, startRateAtTarget));
     }
 
     function testCurveAtMostMultipliesErrors(int256 err, uint256 startRateAtTarget, uint256 endRateAtTarget) public {
@@ -52,7 +52,7 @@ contract AdaptativeCurveIrmTest is Test {
         uint256 coeff = uint256(CURVE_STEEPNESS / 1e18);
 
         // Sanity check: does not pass if coeff is decreased by one.
-        assertLe(_diff(startBorrowRate, endBorrowRate), coeff * _diff(startRateAtTarget, endRateAtTarget));
+        assertLe(_distance(startBorrowRate, endBorrowRate), coeff * _distance(startRateAtTarget, endRateAtTarget));
     }
 
     function testLinearAdaptationThresholdEnsuresMaxError1Bps(uint256 linearAdaptation, uint256 roundingError) public {
@@ -230,7 +230,7 @@ contract AdaptativeCurveIrmTest is Test {
         );
     }
 
-    function _diff(uint256 a, uint256 b) internal pure returns (uint256) {
+    function _distance(uint256 a, uint256 b) internal pure returns (uint256) {
         return a < b ? b - a : a - b;
     }
 
