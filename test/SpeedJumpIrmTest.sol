@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: UNLICENSED
+// SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
 import "../src/SpeedJumpIrm.sol";
@@ -17,6 +17,7 @@ contract AdaptativeCurveIrmTest is Test {
     event BorrowRateUpdate(Id indexed id, uint256 avgBorrowRate, uint256 rateAtTarget);
 
     uint256 internal constant CURVE_STEEPNESS = 4 ether;
+    int256 internal constant CURVE_STEEPNESS_INT = 4 ether;
     int256 internal constant ADJUSTMENT_SPEED = 50 ether / int256(365 days);
     int256 internal constant TARGET_UTILIZATION = 0.9 ether;
     uint256 internal constant INITIAL_RATE_AT_TARGET = 0.01 ether / uint256(365 days);
@@ -253,14 +254,9 @@ contract AdaptativeCurveIrmTest is Test {
     function _curve(uint256 rateAtTarget, int256 err) internal pure returns (uint256) {
         // Safe "unchecked" cast because err >= -1 (in WAD).
         if (err < 0) {
-            return uint256(
-                (WAD_INT - WAD_INT.wDivDown(int256(CURVE_STEEPNESS))).wMulDown(int256(rateAtTarget)).wMulDown(err)
-                    + int256(rateAtTarget)
-            );
+            return uint256((WAD_INT - WAD_INT.wDivDown(CURVE_STEEPNESS_INT)).wMulDown(err) + WAD_INT).wMulDown(rateAtTarget);
         } else {
-            return uint256(
-                (int256(CURVE_STEEPNESS) - WAD_INT).wMulDown(int256(rateAtTarget)).wMulDown(err) + int256(rateAtTarget)
-            );
+            return uint256((CURVE_STEEPNESS_INT - WAD_INT).wMulDown(err) + WAD_INT).wMulDown(rateAtTarget);
         }
     }
 
