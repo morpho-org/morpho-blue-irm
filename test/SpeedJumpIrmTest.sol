@@ -252,7 +252,7 @@ contract AdaptativeCurveIrmTest is Test {
             avgBorrowRate =
                 uint256((int256(newBorrowRate) - int256(_curve(rateAtTarget, err))).wDivDown(linearAdaptation));
         }
-        return avgBorrowRate.bound(irm.MIN_RATE_AT_TARGET(), irm.MAX_RATE_AT_TARGET());
+        return avgBorrowRate;
     }
 
     function _curve(uint256 rateAtTarget, int256 err) internal pure returns (uint256) {
