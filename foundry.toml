@@ -4,6 +4,9 @@ out = "out"
 test = "test"
 libs = ["lib"]
 
+[profile.default.fuzz]
+runs = 4096
+
 [profile.default.invariant]
 fail_on_revert = true
 
@@ -21,7 +24,7 @@ script = "/dev/null"
 via-ir = false
 
 [profile.test.fuzz]
-runs = 8192
+runs = 16384
 
 [profile.test.invariant]
 runs = 32

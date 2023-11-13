@@ -185,9 +185,12 @@ contract AdaptativeCurveIrmTest is Test {
 
     /* HANDLERS */
 
-    function handleBorrowRate(uint256 totalSupplyAssets, uint256 totalBorrowAssets) external {
+    function handleBorrowRate(uint256 totalSupplyAssets, uint256 totalBorrowAssets, uint256 elapsed) external {
+        elapsed = bound(elapsed, 0, type(uint48).max);
         totalSupplyAssets = bound(totalSupplyAssets, 0, type(uint128).max);
         totalBorrowAssets = bound(totalBorrowAssets, 0, totalSupplyAssets);
+
+        vm.warp(block.timestamp + elapsed);
 
         Market memory market;
         market.totalBorrowAssets = uint128(totalSupplyAssets);
@@ -203,8 +206,8 @@ contract AdaptativeCurveIrmTest is Test {
         market.totalBorrowAssets = 9 ether;
         market.totalSupplyAssets = 10 ether;
 
-        assertGe(irm.borrowRateView(marketParams, market), irm.MIN_RATE_AT_TARGET());
-        assertGe(irm.borrowRate(marketParams, market), irm.MIN_RATE_AT_TARGET());
+        assertGe(irm.borrowRateView(marketParams, market), irm.MIN_RATE_AT_TARGET().wDivDown(CURVE_STEEPNESS));
+        assertGe(irm.borrowRate(marketParams, market), irm.MIN_RATE_AT_TARGET().wDivDown(CURVE_STEEPNESS));
     }
 
     function invariantLeMaxRateAtTarget() public {
@@ -212,8 +215,8 @@ contract AdaptativeCurveIrmTest is Test {
         market.totalBorrowAssets = 9 ether;
         market.totalSupplyAssets = 10 ether;
 
-        assertLe(irm.borrowRateView(marketParams, market), irm.MAX_RATE_AT_TARGET());
-        assertLe(irm.borrowRate(marketParams, market), irm.MAX_RATE_AT_TARGET());
+        assertLe(irm.borrowRateView(marketParams, market), irm.MAX_RATE_AT_TARGET().wMulDown(CURVE_STEEPNESS));
+        assertLe(irm.borrowRate(marketParams, market), irm.MAX_RATE_AT_TARGET().wMulDown(CURVE_STEEPNESS));
     }
 
     function _expectedRateAtTarget(Id id, Market memory market) internal view returns (uint256) {
