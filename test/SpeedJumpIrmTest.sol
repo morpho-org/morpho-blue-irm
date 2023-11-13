@@ -224,9 +224,9 @@ contract AdaptativeCurveIrmTest is Test {
     function _curve(int256 rateAtTarget, int256 err) internal pure returns (uint256) {
         // Safe "unchecked" cast because err >= -1 (in WAD).
         if (err < 0) {
-            return uint256((WAD - WAD.wDivDown(CURVE_STEEPNESS)).wMulDown(rateAtTarget).wMulDown(err) + rateAtTarget);
+            return uint256(((WAD - WAD.wDivDown(CURVE_STEEPNESS)).wMulDown(err) + WAD).wMulDown(rateAtTarget));
         } else {
-            return uint256((CURVE_STEEPNESS - WAD).wMulDown(rateAtTarget).wMulDown(err) + rateAtTarget);
+            return uint256(((CURVE_STEEPNESS - WAD).wMulDown(err) + WAD).wMulDown(rateAtTarget));
         }
     }
 
