@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: UNLICENSED
+// SPDX-License-Identifier: MIT
 pragma solidity 0.8.19;
 
 import {IIrm} from "../lib/morpho-blue/src/interfaces/IIrm.sol";
@@ -12,7 +12,7 @@ import {MathLib as MorphoMathLib} from "../lib/morpho-blue/src/libraries/MathLib
 
 /// @title AdaptativeCurveIrm
 /// @author Morpho Labs
-/// @custom:contact security@morpho.xyz
+/// @custom:contact security@morpho.org
 contract AdaptativeCurveIrm is IIrm {
     using MathLib for int256;
     using UtilsLib for int256;
