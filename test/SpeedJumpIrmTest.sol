@@ -55,9 +55,7 @@ contract AdaptativeCurveIrmTest is Test {
         assertLe(_diff(startBorrowRate, endBorrowRate), coeff * _diff(startRateAtTarget, endRateAtTarget));
     }
 
-    function testLinearThresholdEnsuresMaxErrorOfOneBasisPoint(uint256 linearAdaptation, uint256 roundingError)
-        public
-    {
+    function testLinearAdaptationThresholdEnsuresMaxError1Bps(uint256 linearAdaptation, uint256 roundingError) public {
         // Assume that the linearAdaptation is not smaller than the threshold.
         linearAdaptation = bound(linearAdaptation, uint256(irm.LINEAR_ADAPTATION_THRESHOLD()), type(uint64).max);
         // Assume that the initial rounding error is in the theoretical bounds.

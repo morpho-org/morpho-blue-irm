@@ -32,8 +32,8 @@ contract AdaptativeCurveIrm is IIrm {
     uint256 public constant MAX_RATE_AT_TARGET = uint256(1e7 ether) / 365 days;
     /// @notice Mininimum rate at target per second (scaled by WAD) (0.1% APR).
     uint256 public constant MIN_RATE_AT_TARGET = uint256(0.001 ether) / 365 days;
-    /// @notice Threshold of the linear adaptation in absolute value under which it considered to small to safely use as
-    /// a denominator.
+    /// @notice Threshold of the linear adaptation in absolute value under which it is considered too small to safely
+    /// use as a denominator.
     int256 public constant LINEAR_ADAPTATION_THRESHOLD = 1e-5 ether;
     /// @notice Address of Morpho.
     address public immutable MORPHO;
@@ -152,7 +152,7 @@ contract AdaptativeCurveIrm is IIrm {
             // And for linearAdaptation around zero: avgBorrowRate ~ startBorrowRate ~ endBorrowRate.
             // Also, when it is the first interaction (rateAtTarget = 0).
             uint256 avgBorrowRate;
-            if (linearAdaptation < LINEAR_ADAPTATION_THRESHOLD && linearAdaptation > -LINEAR_ADAPTATION_THRESHOLD) {
+            if (linearAdaptation > -LINEAR_ADAPTATION_THRESHOLD && linearAdaptation < LINEAR_ADAPTATION_THRESHOLD) {
                 avgBorrowRate = endBorrowRate;
             } else {
                 uint256 startBorrowRate = _curve(startRateAtTarget, err);
