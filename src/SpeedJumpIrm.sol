@@ -147,7 +147,6 @@ contract AdaptativeCurveIrm is IIrm {
             //               = startBorrowRate * (exp(linearAdaptation) - 1) / linearAdaptation
             //               = (endBorrowRate - startBorrowRate) / linearAdaptation
             // And for linearAdaptation around zero: avgBorrowRate ~ startBorrowRate ~ endBorrowRate.
-            // Also, when it is the first interaction (rateAtTarget = 0).
             int256 avgBorrowRate;
             if (linearAdaptation > -LINEAR_ADAPTATION_THRESHOLD && linearAdaptation < LINEAR_ADAPTATION_THRESHOLD) {
                 avgBorrowRate = endBorrowRate;
