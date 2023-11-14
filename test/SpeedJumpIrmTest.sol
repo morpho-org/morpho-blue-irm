@@ -71,13 +71,13 @@ contract AdaptativeCurveIrmTest is Test {
         market.totalSupplyAssets = 1 ether;
         market.lastUpdate = uint128(block.timestamp - 30 days);
 
-        // (exp(50/365*30) ~= 61.
+        // (exp((50/365)*30) ~= 61.
         assertApproxEqRel(
             irm.borrowRateView(marketParams, market),
             (INITIAL_RATE_AT_TARGET * 4).wMulDown((61 ether - 1 ether) * WAD / (uint256(ADJUSTMENT_SPEED) * 30 days)),
             0.1 ether
         );
-        // The average value of exp(50/365*30) between 0 and 30 is approx. 14.58.
+        // The average value of exp((50/365)*30) between 0 and 30 is approx. 14.58.
         assertApproxEqRel(
             irm.borrowRateView(marketParams, market), (INITIAL_RATE_AT_TARGET * 4).wMulDown(14.58 ether), 0.1 ether
         );
@@ -94,7 +94,7 @@ contract AdaptativeCurveIrmTest is Test {
         market.totalSupplyAssets = 1 ether;
         market.lastUpdate = uint128(block.timestamp - 30 days);
 
-        // (exp(-50/365*30) ~= 0.016.
+        // (exp((-50/365)*30) ~= 0.016.
         assertApproxEqRel(
             irm.borrowRateView(marketParams, market),
             (INITIAL_RATE_AT_TARGET / 4).wMulDown(
@@ -102,7 +102,7 @@ contract AdaptativeCurveIrmTest is Test {
             ),
             0.1 ether
         );
-        // The average value of exp(-50/365*30) between 0 and 30 is approx. 0.239.
+        // The average value of exp((-50/365*30)) between 0 and 30 is approx. 0.239.
         assertApproxEqRel(
             irm.borrowRateView(marketParams, market), (INITIAL_RATE_AT_TARGET / 4).wMulDown(0.23 ether), 0.1 ether
         );
