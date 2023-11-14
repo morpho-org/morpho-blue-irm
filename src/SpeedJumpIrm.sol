@@ -125,7 +125,7 @@ contract AdaptativeCurveIrm is IIrm {
 
         // First interaction.
         if (startRateAtTarget == 0) {
-            return (_curve(INITIAL_RATE_AT_TARGET, err), INITIAL_RATE_AT_TARGET);
+            return (0, INITIAL_RATE_AT_TARGET);
         } else {
             // Note that the speed is assumed constant between two interactions, but in theory it increases because of
             // interests. So the rate will be slightly underestimated.
@@ -147,7 +147,6 @@ contract AdaptativeCurveIrm is IIrm {
             //               = startBorrowRate * (exp(linearAdaptation) - 1) / linearAdaptation
             //               = (endBorrowRate - startBorrowRate) / linearAdaptation
             // And for linearAdaptation around zero: avgBorrowRate ~ startBorrowRate = endBorrowRate.
-            // Also, when it is the first interaction (rateAtTarget = 0).
             uint256 avgBorrowRate;
             if (linearAdaptation == 0) {
                 avgBorrowRate = endBorrowRate;

@@ -46,9 +46,7 @@ contract AdaptativeCurveIrmTest is Test {
     function testFirstBorrowRateUtilizationZero() public {
         Market memory market;
 
-        assertApproxEqRel(
-            irm.borrowRate(marketParams, market), INITIAL_RATE_AT_TARGET / 4, 0.0001 ether, "avgBorrowRate"
-        );
+        assertEq(irm.borrowRate(marketParams, market), 0, "avgBorrowRate");
         assertEq(irm.rateAtTarget(marketParams.id()), INITIAL_RATE_AT_TARGET, "rateAtTarget");
     }
 
@@ -57,7 +55,7 @@ contract AdaptativeCurveIrmTest is Test {
         market.totalBorrowAssets = 1 ether;
         market.totalSupplyAssets = 1 ether;
 
-        assertEq(irm.borrowRate(marketParams, market), INITIAL_RATE_AT_TARGET * 4, "avgBorrowRate");
+        assertEq(irm.borrowRate(marketParams, market), 0, "avgBorrowRate");
         assertEq(irm.rateAtTarget(marketParams.id()), INITIAL_RATE_AT_TARGET, "rateAtTarget");
     }
 
@@ -66,7 +64,7 @@ contract AdaptativeCurveIrmTest is Test {
         market.totalBorrowAssets = 0.9 ether;
         market.totalSupplyAssets = 1 ether;
 
-        assertEq(irm.borrowRate(marketParams, market), INITIAL_RATE_AT_TARGET, "avgBorrowRate");
+        assertEq(irm.borrowRate(marketParams, market), 0, "avgBorrowRate");
         assertEq(irm.rateAtTarget(marketParams.id()), INITIAL_RATE_AT_TARGET, "rateAtTarget");
     }
 
@@ -92,7 +90,7 @@ contract AdaptativeCurveIrmTest is Test {
         uint256 avgBorrowRate = irm.borrowRate(marketParams, market);
         uint256 rateAtTarget = irm.rateAtTarget(marketParams.id());
 
-        assertEq(avgBorrowRate, _curve(INITIAL_RATE_AT_TARGET, _err(market)), "avgBorrowRate");
+        assertEq(avgBorrowRate, 0, "avgBorrowRate");
         assertEq(rateAtTarget, INITIAL_RATE_AT_TARGET, "rateAtTarget");
     }
 
@@ -101,11 +99,7 @@ contract AdaptativeCurveIrmTest is Test {
         vm.assume(market.totalSupplyAssets >= market.totalBorrowAssets);
 
         vm.expectEmit(true, true, true, true, address(irm));
-        emit BorrowRateUpdate(
-            marketParams.id(),
-            _curve(INITIAL_RATE_AT_TARGET, _err(market)),
-            _expectedRateAtTarget(marketParams.id(), market)
-        );
+        emit BorrowRateUpdate(marketParams.id(), 0, _expectedRateAtTarget(marketParams.id(), market));
         irm.borrowRate(marketParams, market);
     }
 
@@ -116,7 +110,7 @@ contract AdaptativeCurveIrmTest is Test {
         uint256 avgBorrowRate = irm.borrowRateView(marketParams, market);
         uint256 rateAtTarget = irm.rateAtTarget(marketParams.id());
 
-        assertEq(avgBorrowRate, _curve(INITIAL_RATE_AT_TARGET, _err(market)), "avgBorrowRate");
+        assertEq(avgBorrowRate, 0, "avgBorrowRate");
         assertEq(rateAtTarget, 0, "prevBorrowRate");
     }
 
@@ -207,8 +201,13 @@ contract AdaptativeCurveIrmTest is Test {
         market.totalBorrowAssets = 9 ether;
         market.totalSupplyAssets = 10 ether;
 
-        assertGe(irm.borrowRateView(marketParams, market), irm.MIN_RATE_AT_TARGET().wDivDown(CURVE_STEEPNESS));
-        assertGe(irm.borrowRate(marketParams, market), irm.MIN_RATE_AT_TARGET().wDivDown(CURVE_STEEPNESS));
+        if (irm.rateAtTarget(marketParams.id()) == 0) {
+            assertEq(irm.borrowRateView(marketParams, market), 0);
+            assertEq(irm.borrowRate(marketParams, market), 0);
+        } else {
+            assertGe(irm.borrowRateView(marketParams, market), irm.MIN_RATE_AT_TARGET().wDivDown(CURVE_STEEPNESS));
+            assertGe(irm.borrowRate(marketParams, market), irm.MIN_RATE_AT_TARGET().wDivDown(CURVE_STEEPNESS));
+        }
     }
 
     function invariantLeMaxRateAtTarget() public {
