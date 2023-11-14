@@ -22,10 +22,10 @@ library MathLib {
 
     /// @dev Above this bound, `wExp` is clipped to avoid overflowing when multiplied with 1 ether.
     /// @dev This upper bound corresponds to: ln(type(int256).max / 1e36) (scaled by WAD, floored).
-    int256 internal constant WEXP_UPPER_BOUND = 94.552614875560354586 ether;
+    int256 internal constant WEXP_UPPER_BOUND = 93.859467695000404319 ether;
 
     /// @dev The value of wExp(`WEXP_UPPER_BOUND`).
-    int256 internal constant WEXP_UPPER_VALUE = 115432178323118442717551238386899909037872.77663603861225472 ether;
+    int256 internal constant WEXP_UPPER_VALUE = 57716089161558943862588783571184261698504.523000224082296832 ether;
 
     /// @dev Returns an approximation of exp.
     function wExp(int256 x) internal pure returns (int256) {
