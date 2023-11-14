@@ -19,7 +19,7 @@ contract MathLibTest is Test {
         // Bounded to have sub-1% relative error.
         x = bound(x, LN_GWEI_INT, MathLib.WEXP_UPPER_BOUND);
 
-        assertApproxEqRel(MathLib.wExp(x), uint256(wadExp(x)), 0.01 ether);
+        assertApproxEqRel(MathLib.wExp(x), wadExp(x), 0.01 ether);
     }
 
     function testWExpSmall(int256 x) public {
@@ -46,5 +46,17 @@ contract MathLibTest is Test {
 
     function testWExpContinuousUpperBound() public {
         assertApproxEqRel(MathLib.wExp(MathLib.WEXP_UPPER_BOUND - 1), MathLib.WEXP_UPPER_VALUE, 1e-10 ether);
+    }
+
+    function testWExpPositive(int256 x) public {
+        x = bound(x, 0, type(int256).max);
+
+        assertGe(MathLib.wExp(x), 1e18);
+    }
+
+    function testWExpNegative(int256 x) public {
+        x = bound(x, type(int256).min, 0);
+
+        assertLe(MathLib.wExp(x), 1e18);
     }
 }

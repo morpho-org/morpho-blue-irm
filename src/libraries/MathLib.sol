@@ -21,14 +21,14 @@ library MathLib {
     int256 internal constant LN_WEI_INT = -41.446531673892822312 ether;
 
     /// @dev Above this bound, `wExp` is clipped to avoid overflowing when multiplied with 1 ether.
-    /// @dev This upper bound corresponds to: ln(type(uint256).max / 1e36) (scaled by WAD, floored).
-    int256 internal constant WEXP_UPPER_BOUND = 94.552614875560354586 ether;
+    /// @dev This upper bound corresponds to: ln(type(int256).max / 1e36) (scaled by WAD, floored).
+    int256 internal constant WEXP_UPPER_BOUND = 93.859467695000404319 ether;
 
     /// @dev The value of wExp(`WEXP_UPPER_BOUND`).
-    uint256 internal constant WEXP_UPPER_VALUE = 115432178323118442717551238386899909037872.77663603861225472 ether;
+    int256 internal constant WEXP_UPPER_VALUE = 57716089161558943862588783571184261698504.523000224082296832 ether;
 
     /// @dev Returns an approximation of exp.
-    function wExp(int256 x) internal pure returns (uint256) {
+    function wExp(int256 x) internal pure returns (int256) {
         unchecked {
             // If x < ln(1e-18) then exp(x) < 1e-18 so it is rounded to zero.
             if (x < LN_WEI_INT) return 0;
@@ -44,8 +44,8 @@ library MathLib {
             int256 r = x - q * LN_2_INT;
 
             // Compute e^r with a 2nd-order Taylor polynomial.
-            // Safe unchecked because |r| < 1e18, and the sum is positive.
-            uint256 expR = uint256(WAD_INT + r + (r * r) / WAD_INT / 2);
+            // Safe unchecked because |r| < 1e18.
+            int256 expR = WAD_INT + r + (r * r) / WAD_INT / 2;
 
             // Return e^x = 2^q * e^r.
             if (q >= 0) return expR << uint256(q);
