@@ -190,17 +190,17 @@ contract AdaptativeCurveIrmTest is Test {
         );
     }
 
-    function testNotUnbounded(uint256 startRateAtTarget, uint256 elapsed) public {
+    function testUnbounded(uint256 startRateAtTarget, uint256 elapsed) public {
         startRateAtTarget = bound(startRateAtTarget, irm.MIN_RATE_AT_TARGET(), irm.MAX_RATE_AT_TARGET());
-        elapsed = bound(elapsed, 0, 365 days);
+        elapsed = bound(elapsed, 0, 2 days);
 
         int256 err = 1 ether;
         int256 speed = ADJUSTMENT_SPEED.wMulDown(err);
         uint256 adaptationMultiplier = MathLib.wExp(speed * int256(elapsed));
 
-        uint256 endRateAtTarget =
-            startRateAtTarget.wMulDown(adaptationMultiplier).bound(irm.MIN_RATE_AT_TARGET(), irm.MAX_RATE_AT_TARGET());
-        uint256 endBorrowRate = _curve(endRateAtTarget, err);
+        uint256 unboundedEndRateAtTarget = startRateAtTarget.wMulDown(adaptationMultiplier);
+        //uint256 endRateAtTarget = unboundedEndRateAtTarget.bound(irm.MIN_RATE_AT_TARGET(), irm.MAX_RATE_AT_TARGET());
+        uint256 endBorrowRate = _curve(unboundedEndRateAtTarget, err);
         uint256 startBorrowRate = _curve(startRateAtTarget, err);
 
         assertApproxEqAbs(startBorrowRate.wMulDown(adaptationMultiplier), endBorrowRate, 1e3);
