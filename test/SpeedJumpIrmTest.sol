@@ -81,6 +81,8 @@ contract AdaptativeCurveIrmTest is Test {
         assertApproxEqRel(
             irm.borrowRateView(marketParams, market), (INITIAL_RATE_AT_TARGET * 4).wMulDown(14.58 ether), 0.1 ether
         );
+        // Expected rate: 58%.
+        assertApproxEqRel(irm.borrowRateView(marketParams, market), uint256(0.58 ether) / 365 days, 0.1 ether);
     }
 
     function testRateAfterUtilizationZero() public {
@@ -104,6 +106,8 @@ contract AdaptativeCurveIrmTest is Test {
         assertApproxEqRel(
             irm.borrowRateView(marketParams, market), (INITIAL_RATE_AT_TARGET / 4).wMulDown(0.23 ether), 0.1 ether
         );
+        // Expected rate: 0.057%.
+        assertApproxEqRel(irm.borrowRateView(marketParams, market), uint256(0.00057 ether) / 365 days, 0.1 ether);
     }
 
     function testFirstBorrowRate(Market memory market) public {
