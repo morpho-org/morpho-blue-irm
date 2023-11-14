@@ -40,7 +40,7 @@ contract AdaptativeCurveIrmTest is Test {
     function testBoundImprovesError(int256 startRateAtTarget, int256 adaptationMultiplier) public {
         // Assume that the start rate at target is in the bounds.
         startRateAtTarget = bound(startRateAtTarget, irm.MIN_RATE_AT_TARGET(), irm.MAX_RATE_AT_TARGET());
-        adaptationMultiplier = bound(adaptationMultiplier, 1, type(int64).max);
+        adaptationMultiplier = bound(adaptationMultiplier, 1, MathLib.WEXP_UPPER_VALUE);
         int256 unboundedEndRateAtTarget = startRateAtTarget.wMulDown(adaptationMultiplier);
         int256 endRateAtTarget = unboundedEndRateAtTarget.bound(irm.MIN_RATE_AT_TARGET(), irm.MAX_RATE_AT_TARGET());
 
@@ -57,26 +57,24 @@ contract AdaptativeCurveIrmTest is Test {
         int256 startBorrowRate = _curve(startRateAtTarget, err);
         int256 endBorrowRate = _curve(endRateAtTarget, err);
 
-        // Sanity check: does not pass if coeff is decreased by one.
+        // Sanity check: does not pass if the CURVE_STEEPNESS is decreased by one ether.
         assertLe(
             _distance(startBorrowRate, endBorrowRate),
             _distance(startRateAtTarget, endRateAtTarget).wMulDown(CURVE_STEEPNESS)
         );
     }
 
-    function testLinearAdaptationThresholdEnsuresMaxError1Bps(uint256 linearAdaptation, uint256 roundingError) public {
+    function testLinearAdaptationThresholdEnsuresMaxError1Bps(int256 linearAdaptation, int256 roundingError) public {
         // Assume that the linearAdaptation is not smaller than the threshold.
-        linearAdaptation = bound(linearAdaptation, uint256(irm.LINEAR_ADAPTATION_THRESHOLD()), type(uint64).max);
+        linearAdaptation = bound(linearAdaptation, irm.LINEAR_ADAPTATION_THRESHOLD(), type(int64).max);
         // Assume that the initial rounding error is in the theoretical bounds.
-        uint256 maxRoundingError = 1e18 + uint256(irm.MAX_RATE_AT_TARGET()) * 3 / 2;
+        int256 maxRoundingError = 1e18 + irm.MAX_RATE_AT_TARGET() * 3 / 2;
         roundingError = bound(roundingError, 0, maxRoundingError);
 
-        uint256 oneBasisPoint = uint256(0.0001 ether) / 365 days;
-
-        uint256 coeff = uint256(CURVE_STEEPNESS / 1e18);
+        int256 oneBasisPoint = int256(0.0001 ether) / 365 days;
 
         // Sanity check: does not pass if linearAdaptation is divided by 10.
-        assertLe((coeff * roundingError) / linearAdaptation, oneBasisPoint);
+        assertLe(roundingError.wMulDown(CURVE_STEEPNESS) / linearAdaptation, oneBasisPoint);
     }
 
     function testDeployment() public {
