@@ -39,4 +39,12 @@ contract MathLibTest is Test {
 
         assertEq(MathLib.wExp(x), MathLib.WEXP_UPPER_VALUE);
     }
+
+    function testWExpDoesNotLeadToOverflow() public {
+        assertGt(MathLib.WEXP_UPPER_VALUE * 1e18, 0);
+    }
+
+    function testWExpContinuousUpperBound() public {
+        assertApproxEqRel(MathLib.wExp(MathLib.WEXP_UPPER_BOUND - 1), MathLib.WEXP_UPPER_VALUE, 1e-10 ether);
+    }
 }
