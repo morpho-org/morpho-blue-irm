@@ -16,7 +16,8 @@ contract AdaptativeCurveIrmTest is Test {
 
     event BorrowRateUpdate(Id indexed id, uint256 avgBorrowRate, uint256 rateAtTarget);
 
-    int256 internal constant CURVE_STEEPNESS = 4 ether;
+    uint256 internal constant CURVE_STEEPNESS = 4 ether;
+    int256 internal constant CURVE_STEEPNESS_INT = 4 ether;
     int256 internal constant ADJUSTMENT_SPEED = 50 ether / int256(365 days);
     int256 internal constant TARGET_UTILIZATION = 0.9 ether;
     uint256 internal constant INITIAL_RATE_AT_TARGET = 0.01 ether / uint256(365 days);
@@ -26,9 +27,16 @@ contract AdaptativeCurveIrmTest is Test {
 
     function setUp() public {
         irm =
-        new AdaptativeCurveIrm(address(this), uint256(CURVE_STEEPNESS), uint256(ADJUSTMENT_SPEED), uint256(TARGET_UTILIZATION), INITIAL_RATE_AT_TARGET);
+        new AdaptativeCurveIrm(address(this), CURVE_STEEPNESS, uint256(ADJUSTMENT_SPEED), uint256(TARGET_UTILIZATION), INITIAL_RATE_AT_TARGET);
         vm.warp(90 days);
+
+        bytes4[] memory selectors = new bytes4[](1);
+        selectors[0] = AdaptativeCurveIrmTest.handleBorrowRate.selector;
+        targetSelector(FuzzSelector({addr: address(this), selectors: selectors}));
+        targetContract(address(this));
     }
+
+    /* TESTS */
 
     function testDeployment() public {
         vm.expectRevert(bytes(ErrorsLib.ZERO_ADDRESS));
@@ -172,22 +180,44 @@ contract AdaptativeCurveIrmTest is Test {
         assertApproxEqRel(irm.rateAtTarget(marketParams.id()), expectedRateAtTarget, 0.001 ether, "rateAtTarget");
     }
 
-    function invariantMinRateAtTarget() public {
-        Market memory market;
-        market.totalBorrowAssets = 9 ether;
-        market.totalSupplyAssets = 10 ether;
-        assertGt(
-            irm.borrowRate(marketParams, market), uint256(int256(irm.MIN_RATE_AT_TARGET()).wDivDown(CURVE_STEEPNESS))
-        );
+    function testWExpWMulDownMaxRate() public view {
+        MathLib.wExp(MathLib.WEXP_UPPER_BOUND).wMulDown(irm.MAX_RATE_AT_TARGET());
     }
 
-    function invariantMaxRateAtTarget() public {
+    /* HANDLERS */
+
+    function handleBorrowRate(uint256 totalSupplyAssets, uint256 totalBorrowAssets, uint256 elapsed) external {
+        elapsed = bound(elapsed, 0, type(uint48).max);
+        totalSupplyAssets = bound(totalSupplyAssets, 0, type(uint128).max);
+        totalBorrowAssets = bound(totalBorrowAssets, 0, totalSupplyAssets);
+
+        vm.warp(block.timestamp + elapsed);
+
+        Market memory market;
+        market.totalBorrowAssets = uint128(totalSupplyAssets);
+        market.totalSupplyAssets = uint128(totalBorrowAssets);
+
+        irm.borrowRate(marketParams, market);
+    }
+
+    /* INVARIANTS */
+
+    function invariantGeMinRateAtTarget() public {
         Market memory market;
         market.totalBorrowAssets = 9 ether;
         market.totalSupplyAssets = 10 ether;
-        assertLt(
-            irm.borrowRate(marketParams, market), uint256(int256(irm.MAX_RATE_AT_TARGET()).wMulDown(CURVE_STEEPNESS))
-        );
+
+        assertGe(irm.borrowRateView(marketParams, market), irm.MIN_RATE_AT_TARGET().wDivDown(CURVE_STEEPNESS));
+        assertGe(irm.borrowRate(marketParams, market), irm.MIN_RATE_AT_TARGET().wDivDown(CURVE_STEEPNESS));
+    }
+
+    function invariantLeMaxRateAtTarget() public {
+        Market memory market;
+        market.totalBorrowAssets = 9 ether;
+        market.totalSupplyAssets = 10 ether;
+
+        assertLe(irm.borrowRateView(marketParams, market), irm.MAX_RATE_AT_TARGET().wMulDown(CURVE_STEEPNESS));
+        assertLe(irm.borrowRate(marketParams, market), irm.MAX_RATE_AT_TARGET().wMulDown(CURVE_STEEPNESS));
     }
 
     function _expectedRateAtTarget(Id id, Market memory market) internal view returns (uint256) {
@@ -224,9 +254,11 @@ contract AdaptativeCurveIrmTest is Test {
     function _curve(uint256 rateAtTarget, int256 err) internal pure returns (uint256) {
         // Safe "unchecked" cast because err >= -1 (in WAD).
         if (err < 0) {
-            return uint256((WAD_INT - WAD_INT.wDivDown(CURVE_STEEPNESS)).wMulDown(err) + WAD_INT).wMulDown(rateAtTarget);
+            return uint256((WAD_INT - WAD_INT.wDivDown(CURVE_STEEPNESS_INT)).wMulDown(err) + WAD_INT).wMulDown(
+                rateAtTarget
+            );
         } else {
-            return uint256((CURVE_STEEPNESS - WAD_INT).wMulDown(err) + WAD_INT).wMulDown(rateAtTarget);
+            return uint256((CURVE_STEEPNESS_INT - WAD_INT).wMulDown(err) + WAD_INT).wMulDown(rateAtTarget);
         }
     }
 
