@@ -19,7 +19,7 @@ library ExpLib {
     int256 internal constant WEXP_UPPER_BOUND = 93.859467695000404319 ether;
 
     /// @dev The value of wExp(`WEXP_UPPER_BOUND`).
-    int256 internal constant WEXP_UPPER_VALUE = 57716089161558943862588783571184261698504.523000224082296832 ether;
+    int256 internal constant WEXP_UPPER_VALUE = 57716089161558943949701069502944508345128.422502756744429568 ether;
 
     /// @dev Returns an approximation of exp.
     function wExp(int256 x) internal pure returns (int256) {

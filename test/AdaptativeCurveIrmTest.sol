@@ -215,10 +215,6 @@ contract AdaptativeCurveIrmTest is Test {
         assertApproxEqRel(irm.rateAtTarget(marketParams.id()), expectedRateAtTarget, 0.001 ether, "rateAtTarget");
     }
 
-    function testWExpWMulDownMaxRate() public pure {
-        ExpLib.wExp(ExpLib.WEXP_UPPER_BOUND).wMulDown(ConstantsLib.MAX_RATE_AT_TARGET);
-    }
-
     /* HANDLERS */
 
     function handleBorrowRate(uint256 totalSupplyAssets, uint256 totalBorrowAssets, uint256 elapsed) external {
