@@ -37,7 +37,7 @@ contract AdaptativeCurveIrmTest is Test {
 
     /* TESTS */
 
-    function testBoundImprovesError(int256 startRateAtTarget, int256 adaptationMultiplier) public {
+    function testBoundImprovesRoundingError(int256 startRateAtTarget, int256 adaptationMultiplier) public {
         // Assume that the start rate at target is in the bounds.
         startRateAtTarget = bound(startRateAtTarget, irm.MIN_RATE_AT_TARGET(), irm.MAX_RATE_AT_TARGET());
         adaptationMultiplier = bound(adaptationMultiplier, 1, MathLib.WEXP_UPPER_VALUE);
@@ -47,7 +47,9 @@ contract AdaptativeCurveIrmTest is Test {
         assertLe(_distance(endRateAtTarget, startRateAtTarget), _distance(unboundedEndRateAtTarget, startRateAtTarget));
     }
 
-    function testCurveAtMostMultipliesErrors(int256 err, int256 startRateAtTarget, int256 endRateAtTarget) public {
+    function testCurveAtMostMultipliesRoundingErrors(int256 err, int256 startRateAtTarget, int256 endRateAtTarget)
+        public
+    {
         // Assume that rates are in the bounds.
         startRateAtTarget = bound(startRateAtTarget, irm.MIN_RATE_AT_TARGET(), irm.MAX_RATE_AT_TARGET());
         endRateAtTarget = bound(endRateAtTarget, irm.MIN_RATE_AT_TARGET(), irm.MAX_RATE_AT_TARGET());
@@ -64,7 +66,9 @@ contract AdaptativeCurveIrmTest is Test {
         );
     }
 
-    function testLinearAdaptationThresholdEnsuresMaxError1Bps(int256 linearAdaptation, int256 roundingError) public {
+    function testLinearAdaptationThresholdEnsuresMaxRoundingError1Bps(int256 linearAdaptation, int256 roundingError)
+        public
+    {
         // Assume that the linearAdaptation is not smaller than the threshold.
         linearAdaptation = bound(linearAdaptation, irm.LINEAR_ADAPTATION_THRESHOLD(), type(int64).max);
         // Assume that the initial rounding error is in the theoretical bounds.
