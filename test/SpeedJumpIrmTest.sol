@@ -72,7 +72,7 @@ contract AdaptativeCurveIrmTest is Test {
     function testRateAfterUtilizationOne() public {
         vm.warp(365 days * 2);
         Market memory market;
-        assertApproxEqRel(irm.borrowRate(marketParams, market), INITIAL_RATE_AT_TARGET / 4, 0.001 ether);
+        assertApproxEqRel(irm.borrowRate(marketParams, market), uint256(INITIAL_RATE_AT_TARGET / 4), 0.001 ether);
 
         market.totalBorrowAssets = 1 ether;
         market.totalSupplyAssets = 1 ether;
@@ -81,12 +81,14 @@ contract AdaptativeCurveIrmTest is Test {
         // (exp((50/365)*30) ~= 61.
         assertApproxEqRel(
             irm.borrowRateView(marketParams, market),
-            (INITIAL_RATE_AT_TARGET * 4).wMulDown((61 ether - 1 ether) * WAD / (uint256(ADJUSTMENT_SPEED) * 30 days)),
+            uint256((INITIAL_RATE_AT_TARGET * 4).wMulDown((61 ether - 1 ether) * WAD / (ADJUSTMENT_SPEED * 30 days))),
             0.1 ether
         );
         // The average value of exp((50/365)*30) between 0 and 30 is approx. 14.58.
         assertApproxEqRel(
-            irm.borrowRateView(marketParams, market), (INITIAL_RATE_AT_TARGET * 4).wMulDown(14.58 ether), 0.1 ether
+            irm.borrowRateView(marketParams, market),
+            uint256((INITIAL_RATE_AT_TARGET * 4).wMulDown(14.58 ether)),
+            0.1 ether
         );
         // Expected rate: 58%.
         assertApproxEqRel(irm.borrowRateView(marketParams, market), uint256(0.58 ether) / 365 days, 0.1 ether);
@@ -95,7 +97,7 @@ contract AdaptativeCurveIrmTest is Test {
     function testRateAfterUtilizationZero() public {
         vm.warp(365 days * 2);
         Market memory market;
-        assertApproxEqRel(irm.borrowRate(marketParams, market), INITIAL_RATE_AT_TARGET / 4, 0.001 ether);
+        assertApproxEqRel(irm.borrowRate(marketParams, market), uint256(INITIAL_RATE_AT_TARGET / 4), 0.001 ether);
 
         market.totalBorrowAssets = 0 ether;
         market.totalSupplyAssets = 1 ether;
@@ -104,14 +106,16 @@ contract AdaptativeCurveIrmTest is Test {
         // (exp((-50/365)*30) ~= 0.016.
         assertApproxEqRel(
             irm.borrowRateView(marketParams, market),
-            (INITIAL_RATE_AT_TARGET / 4).wMulDown(
-                uint256((int256(0.016 ether) - 1 ether) * WAD_INT / (-ADJUSTMENT_SPEED * int256(30 days)))
+            uint256(
+                (INITIAL_RATE_AT_TARGET / 4).wMulDown((0.016 ether - 1 ether) * WAD / (-ADJUSTMENT_SPEED * 30 days))
             ),
             0.1 ether
         );
         // The average value of exp((-50/365*30)) between 0 and 30 is approx. 0.239.
         assertApproxEqRel(
-            irm.borrowRateView(marketParams, market), (INITIAL_RATE_AT_TARGET / 4).wMulDown(0.23 ether), 0.1 ether
+            irm.borrowRateView(marketParams, market),
+            uint256((INITIAL_RATE_AT_TARGET / 4).wMulDown(0.23 ether)),
+            0.1 ether
         );
         // Expected rate: 0.057%.
         assertApproxEqRel(irm.borrowRateView(marketParams, market), uint256(0.00057 ether) / 365 days, 0.1 ether);
