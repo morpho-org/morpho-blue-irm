@@ -28,7 +28,14 @@ contract AdaptativeCurveIrmTest is Test {
         irm =
         new AdaptativeCurveIrm(address(this), CURVE_STEEPNESS, ADJUSTMENT_SPEED, TARGET_UTILIZATION, INITIAL_RATE_AT_TARGET);
         vm.warp(90 days);
+
+        bytes4[] memory selectors = new bytes4[](1);
+        selectors[0] = AdaptativeCurveIrmTest.handleBorrowRate.selector;
+        targetSelector(FuzzSelector({addr: address(this), selectors: selectors}));
+        targetContract(address(this));
     }
+
+    /* TESTS */
 
     function testDeployment() public {
         vm.expectRevert(bytes(ErrorsLib.ZERO_ADDRESS));
@@ -172,22 +179,44 @@ contract AdaptativeCurveIrmTest is Test {
         assertApproxEqRel(irm.rateAtTarget(marketParams.id()), expectedRateAtTarget, 0.001 ether, "rateAtTarget");
     }
 
-    function invariantMinRateAtTarget() public {
-        Market memory market;
-        market.totalBorrowAssets = 9 ether;
-        market.totalSupplyAssets = 10 ether;
-        assertGt(
-            irm.borrowRate(marketParams, market), uint256(int256(irm.MIN_RATE_AT_TARGET()).wDivDown(CURVE_STEEPNESS))
-        );
+    function testWExpWMulDownMaxRate() public view {
+        MathLib.wExp(MathLib.WEXP_UPPER_BOUND).wMulDown(irm.MAX_RATE_AT_TARGET());
     }
 
-    function invariantMaxRateAtTarget() public {
+    /* HANDLERS */
+
+    function handleBorrowRate(uint256 totalSupplyAssets, uint256 totalBorrowAssets, uint256 elapsed) external {
+        elapsed = bound(elapsed, 0, type(uint48).max);
+        totalSupplyAssets = bound(totalSupplyAssets, 0, type(uint128).max);
+        totalBorrowAssets = bound(totalBorrowAssets, 0, totalSupplyAssets);
+
+        vm.warp(block.timestamp + elapsed);
+
+        Market memory market;
+        market.totalBorrowAssets = uint128(totalSupplyAssets);
+        market.totalSupplyAssets = uint128(totalBorrowAssets);
+
+        irm.borrowRate(marketParams, market);
+    }
+
+    /* INVARIANTS */
+
+    function invariantGeMinRateAtTarget() public {
         Market memory market;
         market.totalBorrowAssets = 9 ether;
         market.totalSupplyAssets = 10 ether;
-        assertLt(
-            irm.borrowRate(marketParams, market), uint256(int256(irm.MAX_RATE_AT_TARGET()).wMulDown(CURVE_STEEPNESS))
-        );
+
+        assertGe(irm.borrowRateView(marketParams, market), uint256(irm.MIN_RATE_AT_TARGET().wDivDown(CURVE_STEEPNESS)));
+        assertGe(irm.borrowRate(marketParams, market), uint256(irm.MIN_RATE_AT_TARGET().wDivDown(CURVE_STEEPNESS)));
+    }
+
+    function invariantLeMaxRateAtTarget() public {
+        Market memory market;
+        market.totalBorrowAssets = 9 ether;
+        market.totalSupplyAssets = 10 ether;
+
+        assertLe(irm.borrowRateView(marketParams, market), uint256(irm.MAX_RATE_AT_TARGET().wMulDown(CURVE_STEEPNESS)));
+        assertLe(irm.borrowRate(marketParams, market), uint256(irm.MAX_RATE_AT_TARGET().wMulDown(CURVE_STEEPNESS)));
     }
 
     function _expectedRateAtTarget(Id id, Market memory market) internal view returns (int256) {
@@ -224,7 +253,9 @@ contract AdaptativeCurveIrmTest is Test {
     function _curve(int256 rateAtTarget, int256 err) internal pure returns (uint256) {
         // Safe "unchecked" cast because err >= -1 (in WAD).
         if (err < 0) {
-            return uint256(((WAD - WAD.wDivDown(CURVE_STEEPNESS)).wMulDown(err) + WAD).wMulDown(rateAtTarget));
+            return uint256(((WAD - WAD.wDivDown(CURVE_STEEPNESS)).wMulDown(err) + WAD).wMulDown(
+                rateAtTarget
+            ));
         } else {
             return uint256(((CURVE_STEEPNESS - WAD).wMulDown(err) + WAD).wMulDown(rateAtTarget));
         }

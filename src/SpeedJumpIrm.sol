@@ -28,7 +28,7 @@ contract AdaptativeCurveIrm is IIrm {
     /* CONSTANTS */
 
     /// @notice Maximum rate at target per second (scaled by WAD) (1B% APR).
-    int256 public constant MAX_RATE_AT_TARGET = int256(1e7 ether) / 365 days;
+    int256 public constant MAX_RATE_AT_TARGET = int256(0.01e9 ether) / 365 days;
     /// @notice Mininimum rate at target per second (scaled by WAD) (0.1% APR).
     int256 public constant MIN_RATE_AT_TARGET = int256(0.001 ether) / 365 days;
     /// @notice Address of Morpho.
