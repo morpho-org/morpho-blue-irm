@@ -121,6 +121,31 @@ contract AdaptativeCurveIrmTest is Test {
         assertApproxEqRel(irm.borrowRateView(marketParams, market), uint256(0.00181 ether) / 365 days, 0.1 ether);
     }
 
+    function testRateAfter21DaysPingEveryMinute() public {
+        int256 initialRateAtTarget = int256(10 ether) / 365 days; // 1000%
+
+        irm =
+        new AdaptativeCurveIrm(address(this), CURVE_STEEPNESS, ADJUSTMENT_SPEED, TARGET_UTILIZATION, initialRateAtTarget);
+
+        Market memory market;
+        market.totalSupplyAssets = 10 ether;
+        market.totalBorrowAssets = 9 ether;
+        assertEq(irm.borrowRate(marketParams, market), uint256(initialRateAtTarget));
+        assertEq(irm.rateAtTarget(marketParams.id()), initialRateAtTarget);
+
+        for (uint256 i; i < 21 days / 1 minutes; ++i) {
+            market.lastUpdate = uint128(block.timestamp);
+            vm.warp(block.timestamp + 1 minutes);
+
+            uint256 avgBorrowRate = irm.borrowRate(marketParams, market);
+            uint256 interest = market.totalBorrowAssets.wMulDown(avgBorrowRate.wTaylorCompounded(1 minutes));
+            market.totalSupplyAssets += uint128(interest);
+            market.totalBorrowAssets += uint128(interest);
+        }
+
+        assertApproxEqRel(irm.rateAtTarget(marketParams.id()), initialRateAtTarget, 0.1 ether);
+    }
+
     function testFirstBorrowRate(Market memory market) public {
         vm.assume(market.totalBorrowAssets > 0);
         vm.assume(market.totalSupplyAssets >= market.totalBorrowAssets);
