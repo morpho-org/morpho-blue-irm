@@ -141,13 +141,12 @@ contract AdaptativeCurveIrm is IIrm {
             // Then we compute the average rate over the period, with a Riemann sum.
             // We omit the multiplication by the rectangle length because we would divide everything by the total length
             // at the end, because we want to compute the average and not the integral.
-            int256 averageRateAtTarget;
+            int256 sum;
             int256 step = linearAdaptation / N_STEPS;
             for (int256 k = 1; k <= N_STEPS; k++) {
-                averageRateAtTarget += startRateAtTarget.wMulDown(MathLib.wExp(step * k)).bound(
-                    MIN_RATE_AT_TARGET, MAX_RATE_AT_TARGET
-                ) / N_STEPS;
+                sum += startRateAtTarget.wMulDown(MathLib.wExp(step * k)).bound(MIN_RATE_AT_TARGET, MAX_RATE_AT_TARGET);
             }
+            int256 averageRateAtTarget = sum / N_STEPS;
 
             // avgBorrowRate is non negative because averageRateAtTarget is non negative.
             return (uint256(_curve(averageRateAtTarget, err)), endRateAtTarget);
