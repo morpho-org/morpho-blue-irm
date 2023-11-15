@@ -10,6 +10,8 @@ import {MarketParamsLib} from "../lib/morpho-blue/src/libraries/MarketParamsLib.
 import {Id, MarketParams, Market} from "../lib/morpho-blue/src/interfaces/IMorpho.sol";
 import {MathLib as MorphoMathLib} from "../lib/morpho-blue/src/libraries/MathLib.sol";
 
+int256 constant numberOfSteps = 4;
+
 /// @title AdaptativeCurveIrm
 /// @author Morpho Labs
 /// @custom:contact security@morpho.org
@@ -120,8 +122,8 @@ contract AdaptativeCurveIrm is IIrm {
 
         int256 startRateAtTarget = rateAtTarget[id];
 
-        // First interaction.
         if (startRateAtTarget == 0) {
+            // First interaction.
             return (uint256(_curve(INITIAL_RATE_AT_TARGET, err)), INITIAL_RATE_AT_TARGET);
         } else {
             // Note that the speed is assumed constant between two interactions, but in theory it increases because of
@@ -132,26 +134,19 @@ contract AdaptativeCurveIrm is IIrm {
             // Safe "unchecked" cast because block.timestamp - market.lastUpdate <= block.timestamp <= type(int256).max.
             int256 elapsed = int256(block.timestamp - market.lastUpdate);
             int256 linearAdaptation = speed * elapsed;
-            int256 adaptationMultiplier = MathLib.wExp(linearAdaptation);
             // endRateAtTarget is bounded between MIN_RATE_AT_TARGET and MAX_RATE_AT_TARGET.
             int256 endRateAtTarget =
-                startRateAtTarget.wMulDown(adaptationMultiplier).bound(MIN_RATE_AT_TARGET, MAX_RATE_AT_TARGET);
-            int256 endBorrowRate = _curve(endRateAtTarget, err);
+                startRateAtTarget.wMulDown(MathLib.wExp(linearAdaptation)).bound(MIN_RATE_AT_TARGET, MAX_RATE_AT_TARGET);
 
-            // Then we compute the average rate over the period.
-            // Note that startBorrowRate is defined in the computations below.
-            // avgBorrowRate = 1 / elapsed * ∫ startBorrowRate * exp(speed * t) dt between 0 and elapsed
-            //               = startBorrowRate * (exp(linearAdaptation) - 1) / linearAdaptation
-            //               = (endBorrowRate - startBorrowRate) / linearAdaptation
-            // And for linearAdaptation around zero: avgBorrowRate ~ startBorrowRate = endBorrowRate.
-            // Also, when it is the first interaction (rateAtTarget = 0).
-            int256 avgBorrowRate;
-            if (linearAdaptation == 0) {
-                avgBorrowRate = endBorrowRate;
-            } else {
-                int256 startBorrowRate = _curve(startRateAtTarget, err);
-                avgBorrowRate = (endBorrowRate - startBorrowRate).wDivDown(linearAdaptation);
+            // Then we compute the average rate over the period, with a Riemann sum.
+            int256 averageRateAtTarget;
+            int256 step = linearAdaptation / numberOfSteps;
+            for (int256 k = 1; k <= numberOfSteps; k++) {
+                averageRateAtTarget += startRateAtTarget.wMulDown(MathLib.wExp(step * k)).bound(
+                    MIN_RATE_AT_TARGET, MAX_RATE_AT_TARGET
+                ) / numberOfSteps;
             }
+            int256 avgBorrowRate = _curve(averageRateAtTarget, err);
 
             // avgBorrowRate is non negative because:
             // - endBorrowRate >= 0 because endRateAtTarget >= MIN_RATE_AT_TARGET.
