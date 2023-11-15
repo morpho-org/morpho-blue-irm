@@ -10,6 +10,8 @@ import {MarketParamsLib} from "../lib/morpho-blue/src/libraries/MarketParamsLib.
 import {Id, MarketParams, Market} from "../lib/morpho-blue/src/interfaces/IMorpho.sol";
 import {MathLib as MorphoMathLib} from "../lib/morpho-blue/src/libraries/MathLib.sol";
 
+/// @dev Number of steps used in the Riemann sum.
+/// @dev 4 steps allows to have a relative error below 30% for 15 days at err=1 or err=-1.
 int256 constant N_STEPS = 4;
 
 /// @title AdaptativeCurveIrm
