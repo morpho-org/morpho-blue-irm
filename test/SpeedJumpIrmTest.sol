@@ -114,7 +114,7 @@ contract AdaptativeCurveIrmTest is Test {
         // The average value of exp((-50/365*x)) between 0 and 5 is approx. 0.7240.
         assertApproxEqRel(
             irm.borrowRateView(marketParams, market),
-            uint256((INITIAL_RATE_AT_TARGET / 4).wMulDown(0.7240 ether)),
+            uint256((INITIAL_RATE_AT_TARGET / 4).wMulDown(0.724 ether)),
             0.1 ether
         );
         // Expected rate: 0.181%.

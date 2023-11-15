@@ -10,7 +10,7 @@ import {MarketParamsLib} from "../lib/morpho-blue/src/libraries/MarketParamsLib.
 import {Id, MarketParams, Market} from "../lib/morpho-blue/src/interfaces/IMorpho.sol";
 import {MathLib as MorphoMathLib} from "../lib/morpho-blue/src/libraries/MathLib.sol";
 
-int256 constant numberOfSteps = 4;
+int256 constant N_STEPS = 4;
 
 /// @title AdaptativeCurveIrm
 /// @author Morpho Labs
@@ -129,29 +129,26 @@ contract AdaptativeCurveIrm is IIrm {
             // Note that the speed is assumed constant between two interactions, but in theory it increases because of
             // interests. So the rate will be slightly underestimated.
             int256 speed = ADJUSTMENT_SPEED.wMulDown(err);
-
             // market.lastUpdate != 0 because it is not the first interaction with this market.
             // Safe "unchecked" cast because block.timestamp - market.lastUpdate <= block.timestamp <= type(int256).max.
             int256 elapsed = int256(block.timestamp - market.lastUpdate);
             int256 linearAdaptation = speed * elapsed;
+
             // endRateAtTarget is bounded between MIN_RATE_AT_TARGET and MAX_RATE_AT_TARGET.
             int256 endRateAtTarget =
                 startRateAtTarget.wMulDown(MathLib.wExp(linearAdaptation)).bound(MIN_RATE_AT_TARGET, MAX_RATE_AT_TARGET);
 
             // Then we compute the average rate over the period, with a Riemann sum.
             int256 averageRateAtTarget;
-            int256 step = linearAdaptation / numberOfSteps;
-            for (int256 k = 1; k <= numberOfSteps; k++) {
+            int256 step = linearAdaptation / N_STEPS;
+            for (int256 k = 1; k <= N_STEPS; k++) {
                 averageRateAtTarget += startRateAtTarget.wMulDown(MathLib.wExp(step * k)).bound(
                     MIN_RATE_AT_TARGET, MAX_RATE_AT_TARGET
-                ) / numberOfSteps;
+                ) / N_STEPS;
             }
-            int256 avgBorrowRate = _curve(averageRateAtTarget, err);
 
-            // avgBorrowRate is non negative because:
-            // - endBorrowRate >= 0 because endRateAtTarget >= MIN_RATE_AT_TARGET.
-            // - linearAdaptation < 0 <=> adaptationMultiplier <= 1 <=> endBorrowRate <= startBorrowRate.
-            return (uint256(avgBorrowRate), endRateAtTarget);
+            // avgBorrowRate is non negative because averageRateAtTarget is non negative.
+            return (uint256(_curve(averageRateAtTarget, err)), endRateAtTarget);
         }
     }
 
