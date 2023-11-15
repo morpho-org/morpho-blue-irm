@@ -52,17 +52,18 @@ contract IntegrationAdaptativeCurveIrmTest is BaseTest {
         uint256 duration = 1000 weeks;
         uint256 period = 1000 seconds;
         uint256 borrow = morpho.totalBorrowAssets(id);
-        uint256 refBorrow = borrow;
+        uint256 refRate = INITIAL_RATE_AT_TARGET;
         uint256 refI;
         for (uint256 i = 0; i < duration / period; i++) {
             _forward(period);
             morpho.accrueInterest(marketParams);
-            uint256 newBorrow = morpho.totalBorrowAssets(id);
-            borrow = newBorrow;
-            if (borrow > 2 * refBorrow) {
+            uint256 nextStepBorrow = morpho.totalBorrowAssets(id);
+            uint256 rate = (nextStepBorrow - borrow) / 1000;
+            borrow = nextStepBorrow;
+            if (rate > 2 * refRate) {
                 // `(i - refI) * 1000` is the time elapsed to double the rate
                 console.log(((i - refI) * 1000 * 100) / (1 days));
-                refBorrow = borrow;
+                refRate = rate;
                 refI = i;
             }
         }
