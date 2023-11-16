@@ -12,10 +12,14 @@ import {MarketParamsLib} from "../lib/morpho-blue/src/libraries/MarketParamsLib.
 import {Id, MarketParams, Market} from "../lib/morpho-blue/src/interfaces/IMorpho.sol";
 import {MathLib as MorphoMathLib} from "../lib/morpho-blue/src/libraries/MathLib.sol";
 
-/// @title AdaptativeCurveIrm
+/// @dev Number of steps used in the Riemann sum.
+/// @dev 4 steps allows to have a relative error below 30% for 15 days at err=1 or err=-1.
+int256 constant N_STEPS = 4;
+
+/// @title AdaptiveCurveIrm
 /// @author Morpho Labs
 /// @custom:contact security@morpho.org
-contract AdaptativeCurveIrm is IIrm {
+contract AdaptiveCurveIrm is IIrm {
     using MathLib for int256;
     using UtilsLib for int256;
     using MorphoMathLib for uint128;
@@ -92,8 +96,8 @@ contract AdaptativeCurveIrm is IIrm {
 
     /// @inheritdoc IIrm
     function borrowRateView(MarketParams memory marketParams, Market memory market) external view returns (uint256) {
-        (uint256 avgBorrowRate,) = _borrowRate(marketParams.id(), market);
-        return avgBorrowRate;
+        (uint256 avgRate,) = _borrowRate(marketParams.id(), market);
+        return avgRate;
     }
 
     /// @inheritdoc IIrm
@@ -102,17 +106,17 @@ contract AdaptativeCurveIrm is IIrm {
 
         Id id = marketParams.id();
 
-        (uint256 avgBorrowRate, int256 endRateAtTarget) = _borrowRate(id, market);
+        (uint256 avgRate, int256 endRateAtTarget) = _borrowRate(id, market);
 
         rateAtTarget[id] = endRateAtTarget;
 
-        // Safe "unchecked" because endRateAtTarget >= 0.
-        emit BorrowRateUpdate(id, avgBorrowRate, uint256(endRateAtTarget));
+        // Safe "unchecked" cast because endRateAtTarget >= 0.
+        emit BorrowRateUpdate(id, avgRate, uint256(endRateAtTarget));
 
-        return avgBorrowRate;
+        return avgRate;
     }
 
-    /// @dev Returns avgBorrowRate and endRateAtTarget.
+    /// @dev Returns avgRate and endRateAtTarget.
     /// @dev Assumes that the inputs `marketParams` and `id` match.
     function _borrowRate(Id id, Market memory market) private view returns (uint256, int256) {
         // Safe "unchecked" cast because the utilization is smaller than 1 (scaled by WAD).
@@ -124,44 +128,47 @@ contract AdaptativeCurveIrm is IIrm {
 
         int256 startRateAtTarget = rateAtTarget[id];
 
-        // First interaction.
         if (startRateAtTarget == 0) {
+            // First interaction.
+            // Safe "unchecked" cast because INITIAL_RATE_AT_TARGET >= 0.
             return (uint256(_curve(INITIAL_RATE_AT_TARGET, err)), INITIAL_RATE_AT_TARGET);
         } else {
             // Note that the speed is assumed constant between two interactions, but in theory it increases because of
             // interests. So the rate will be slightly underestimated.
             int256 speed = ADJUSTMENT_SPEED.wMulDown(err);
-
             // market.lastUpdate != 0 because it is not the first interaction with this market.
             // Safe "unchecked" cast because block.timestamp - market.lastUpdate <= block.timestamp <= type(int256).max.
             int256 elapsed = int256(block.timestamp - market.lastUpdate);
             int256 linearAdaptation = speed * elapsed;
-            int256 adaptationMultiplier = ExpLib.wExp(linearAdaptation);
-            // endRateAtTarget is bounded between MIN_RATE_AT_TARGET and MAX_RATE_AT_TARGET.
-            int256 endRateAtTarget = startRateAtTarget.wMulDown(adaptationMultiplier).bound(
-                ConstantsLib.MIN_RATE_AT_TARGET, ConstantsLib.MAX_RATE_AT_TARGET
-            );
-            int256 endBorrowRate = _curve(endRateAtTarget, err);
 
-            // Then we compute the average rate over the period.
-            // Note that startBorrowRate is defined in the computations below.
-            // avgBorrowRate = 1 / elapsed * ∫ startBorrowRate * exp(speed * t) dt between 0 and elapsed
-            //               = startBorrowRate * (exp(linearAdaptation) - 1) / linearAdaptation
-            //               = (endBorrowRate - startBorrowRate) / linearAdaptation
-            // And for linearAdaptation around zero: avgBorrowRate ~ startBorrowRate = endBorrowRate.
-            // Also, when it is the first interaction (rateAtTarget = 0).
-            int256 avgBorrowRate;
             if (linearAdaptation == 0) {
-                avgBorrowRate = endBorrowRate;
+                // If linearAdaptation == 0, avgRateAtTarget = endRateAtTarget = startRateAtTarget;
+                return (uint256(_curve(startRateAtTarget, err)), startRateAtTarget);
             } else {
-                int256 startBorrowRate = _curve(startRateAtTarget, err);
-                avgBorrowRate = (endBorrowRate - startBorrowRate).wDivDown(linearAdaptation);
-            }
+                // Formula of the average rate that should be returned to Morpho Blue:
+                // avg = 1/T ∫_0^T curve(startRateAtTarget * exp(speed * x), err) dx
+                // The integral is approximated with a Riemann sum (steps of length T/N). To underestimate the rate, a
+                // left Riemann (a=0, b=N-1) is done when the rate goes up (err>0) and a right Riemann (a=1, b=N) is
+                // done when the rate goes down (err<0).
+                // avg ~= 1/T Σ_i=a^b curve(startRateAtTarget * exp(speed * T/N * i), err) * T / N
+                //     ~= Σ_i=a^b curve(startRateAtTarget * exp(linearAdaptation/N * i), err) / N
+                // curve is linear in startRateAtTarget, so:
+                //     ~= curve(Σ_i=a^b startRateAtTarget * exp(linearAdaptation/N * i), err) / N
+                //     ~= curve(Σ_i=a^b startRateAtTarget * exp(linearAdaptation/N * i) / N, err)
+                int256 sumRateAtTarget;
+                int256 step = linearAdaptation / N_STEPS;
+                // Compute the terms 1 to N_STEPS - 1.
+                for (int256 k = 1; k < N_STEPS; k++) {
+                    sumRateAtTarget += _newRateAtTarget(startRateAtTarget, step * k);
+                }
+                int256 endRateAtTarget = _newRateAtTarget(startRateAtTarget, linearAdaptation);
+                // Add the term 0 for a left Riemann or the term N_STEPS for a right Riemann.
+                sumRateAtTarget += err < 0 ? endRateAtTarget : startRateAtTarget;
+                int256 avgRateAtTarget = sumRateAtTarget / N_STEPS;
 
-            // avgBorrowRate is non negative because:
-            // - endBorrowRate >= 0 because endRateAtTarget >= MIN_RATE_AT_TARGET.
-            // - linearAdaptation < 0 <=> adaptationMultiplier <= 1 <=> endBorrowRate <= startBorrowRate.
-            return (uint256(avgBorrowRate), endRateAtTarget);
+                // Safe "unchecked" cast because avgRateAtTarget >= 0.
+                return (uint256(_curve(avgRateAtTarget, err)), endRateAtTarget);
+            }
         }
     }
 
@@ -172,7 +179,16 @@ contract AdaptativeCurveIrm is IIrm {
     function _curve(int256 _rateAtTarget, int256 err) private view returns (int256) {
         // Non negative because 1 - 1/C >= 0, C - 1 >= 0.
         int256 coeff = err < 0 ? WAD - WAD.wDivDown(CURVE_STEEPNESS) : CURVE_STEEPNESS - WAD;
-        // Non negative because if err < 0, coeff <= 1.
+        // Non negative if _rateAtTarget >= 0 because if err < 0, coeff <= 1.
         return (coeff.wMulDown(err) + WAD).wMulDown(int256(_rateAtTarget));
+    }
+
+    /// @dev Returns the new rate at target, for a given `startRateAtTarget` and a given `linearAdaptation`.
+    /// The formula is: max(min(startRateAtTarget * exp(linearAdaptation), maxRateAtTarget), minRateAtTarget).
+    function _newRateAtTarget(int256 startRateAtTarget, int256 linearAdaptation) private pure returns (int256) {
+        // Non negative because MIN_RATE_AT_TARGET > 0.
+        return startRateAtTarget.wMulDown(ExpLib.wExp(linearAdaptation)).bound(
+            ConstantsLib.MIN_RATE_AT_TARGET, ConstantsLib.MAX_RATE_AT_TARGET
+        );
     }
 }
