@@ -106,7 +106,7 @@ contract AdaptativeCurveIrm is IIrm {
 
         rateAtTarget[id] = endRateAtTarget;
 
-        // Safe "unchecked" because endRateAtTarget >= 0.
+        // Safe "unchecked" cast because endRateAtTarget >= 0.
         emit BorrowRateUpdate(id, avgRate, uint256(endRateAtTarget));
 
         return avgRate;
