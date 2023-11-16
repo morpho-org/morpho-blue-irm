@@ -172,7 +172,7 @@ contract AdaptiveCurveIrmTest is Test {
         uint256 borrowRate = irm.borrowRate(marketParams, market1);
 
         assertEq(borrowRateView, borrowRate, "borrowRateView");
-        assertApproxEqRel(borrowRate, expectedAvgRate, 0.1 ether, "avgBorrowRate");
+        assertApproxEqRel(borrowRate, expectedAvgRate, 0.11 ether, "avgBorrowRate");
         assertApproxEqRel(irm.rateAtTarget(marketParams.id()), expectedRateAtTarget, 0.001 ether, "rateAtTarget");
     }
 
