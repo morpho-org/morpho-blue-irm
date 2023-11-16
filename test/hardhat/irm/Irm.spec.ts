@@ -99,7 +99,7 @@ describe("irm", () => {
     const irmAddress = await irm.getAddress();
 
     updateMarket({
-      borrowableToken: borrowableAddress,
+      loanToken: borrowableAddress,
       collateralToken: collateralAddress,
       oracle: oracleAddress,
       irm: irmAddress,
