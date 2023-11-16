@@ -148,7 +148,7 @@ contract AdaptiveCurveIrm is IIrm {
                 // Where f(x) = startRateAtTarget*exp(speed*x)
                 // avg ~= Σ_i=1^N [curve(f((i-1) * T/N), err) + curve(f(i * T/N), err)] / (2 * N)
                 // As curve is linear in its first argument:
-                // avg ~= curve(Σ_i=1^N [f((i-1) * T/N) + f(i * T/N)] / (2 * N), err)
+                // avg ~= curve([Σ_i=1^N [f((i-1) * T/N) + f(i * T/N)] / (2 * N), err)
                 // avg ~= curve([(f(0) + f(T))/2 + Σ_i=1^(N-1) f(i * T/N)] / N, err)
                 // avg ~= curve([(startRateAtTarget + endRateAtTarget)/2 + Σ_i=1^(N-1) f(i * T/N)] / N, err)
                 // With N = 2:
