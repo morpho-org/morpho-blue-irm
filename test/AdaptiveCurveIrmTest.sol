@@ -1,12 +1,11 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-import "../src/SpeedJumpIrm.sol";
+import "../src/AdaptiveCurveIrm.sol";
 
 import "../lib/forge-std/src/Test.sol";
 
 contract AdaptiveCurveIrmTest is Test {
-    using MathLib for int256;
     using MathLib for int256;
     using MathLib for uint256;
     using UtilsLib for int256;
@@ -312,10 +311,6 @@ contract AdaptiveCurveIrmTest is Test {
         assertApproxEqRel(irm.rateAtTarget(marketParams.id()), expectedRateAtTarget, 0.001 ether, "rateAtTarget");
     }
 
-    function testWExpWMulDownMaxRate() public view {
-        MathLib.wExp(MathLib.WEXP_UPPER_BOUND).wMulDown(irm.MAX_RATE_AT_TARGET());
-    }
-
     /* HANDLERS */
 
     function handleBorrowRate(uint256 totalSupplyAssets, uint256 totalBorrowAssets, uint256 elapsed) external {
@@ -339,8 +334,12 @@ contract AdaptiveCurveIrmTest is Test {
         market.totalBorrowAssets = 9 ether;
         market.totalSupplyAssets = 10 ether;
 
-        assertGe(irm.borrowRateView(marketParams, market), uint256(irm.MIN_RATE_AT_TARGET().wDivDown(CURVE_STEEPNESS)));
-        assertGe(irm.borrowRate(marketParams, market), uint256(irm.MIN_RATE_AT_TARGET().wDivDown(CURVE_STEEPNESS)));
+        assertGe(
+            irm.borrowRateView(marketParams, market), uint256(ConstantsLib.MIN_RATE_AT_TARGET.wDivDown(CURVE_STEEPNESS))
+        );
+        assertGe(
+            irm.borrowRate(marketParams, market), uint256(ConstantsLib.MIN_RATE_AT_TARGET.wDivDown(CURVE_STEEPNESS))
+        );
     }
 
     function invariantLeMaxRateAtTarget() public {
@@ -348,8 +347,12 @@ contract AdaptiveCurveIrmTest is Test {
         market.totalBorrowAssets = 9 ether;
         market.totalSupplyAssets = 10 ether;
 
-        assertLe(irm.borrowRateView(marketParams, market), uint256(irm.MAX_RATE_AT_TARGET().wMulDown(CURVE_STEEPNESS)));
-        assertLe(irm.borrowRate(marketParams, market), uint256(irm.MAX_RATE_AT_TARGET().wMulDown(CURVE_STEEPNESS)));
+        assertLe(
+            irm.borrowRateView(marketParams, market), uint256(ConstantsLib.MAX_RATE_AT_TARGET.wMulDown(CURVE_STEEPNESS))
+        );
+        assertLe(
+            irm.borrowRate(marketParams, market), uint256(ConstantsLib.MAX_RATE_AT_TARGET.wMulDown(CURVE_STEEPNESS))
+        );
     }
 
     /* HELPERS */
@@ -359,9 +362,11 @@ contract AdaptiveCurveIrmTest is Test {
         int256 speed = ADJUSTMENT_SPEED.wMulDown(_err(market));
         uint256 elapsed = (rateAtTarget > 0) ? block.timestamp - market.lastUpdate : 0;
         int256 linearAdaptation = speed * int256(elapsed);
-        int256 adaptationMultiplier = MathLib.wExp(linearAdaptation);
+        int256 adaptationMultiplier = ExpLib.wExp(linearAdaptation);
         return (rateAtTarget > 0)
-            ? rateAtTarget.wMulDown(adaptationMultiplier).bound(irm.MIN_RATE_AT_TARGET(), irm.MAX_RATE_AT_TARGET())
+            ? rateAtTarget.wMulDown(adaptationMultiplier).bound(
+                ConstantsLib.MIN_RATE_AT_TARGET, ConstantsLib.MAX_RATE_AT_TARGET
+            )
             : INITIAL_RATE_AT_TARGET;
     }
 
