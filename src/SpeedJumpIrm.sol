@@ -137,11 +137,11 @@ contract AdaptativeCurveIrm is IIrm {
             int256 elapsed = int256(block.timestamp - market.lastUpdate);
             int256 linearAdaptation = speed * elapsed;
 
-            // We want to approximate an average of the rate over the period [0, T]:
+            // Formula of the average rate that should be returned to Morpho Blue:
             // avg = 1/T ∫_0^T curve(startRateAtTarget * exp(speed * x), err) dx
-            // We approximate the integral with a Riemann sum (steps of length T/N). We want to underestimate the rate,
-            // which means doing a left Riemann (a=0, b=N-1) when the rate goes up (err>0) and a right Riemann (a=1,
-            // b=N) when the rate goes down (err<0).
+            // The integral is approximated with a Riemann sum (steps of length T/N). To underestimate the rate, a left
+            // Riemann (a=0, b=N-1) is done when the rate goes up (err>0) and a right Riemann (a=1, b=N) is done when
+            // the rate goes down (err<0).
             // avg ~= 1/T Σ_i=a^b curve(startRateAtTarget * exp(speed * T/N * i), err) * T / N
             //     ~= Σ_i=a^b curve(startRateAtTarget * exp(linearVariation/N * i), err) / N
             // curve is linear in startRateAtTarget, so:
@@ -154,7 +154,7 @@ contract AdaptativeCurveIrm is IIrm {
                 sumRateAtTarget += _newRateAtTarget(startRateAtTarget, step * k);
             }
             int256 endRateAtTarget = _newRateAtTarget(startRateAtTarget, linearAdaptation);
-            // Add the term 0 of N_STEPS depending of if we do a left or right Riemann.
+            // Add the term 0 for a left Riemann or the term N_STEPS for a right Riemann.
             sumRateAtTarget += err < 0 ? endRateAtTarget : startRateAtTarget;
             int256 avgRateAtTarget = sumRateAtTarget / N_STEPS;
 
