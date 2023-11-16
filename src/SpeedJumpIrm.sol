@@ -126,7 +126,7 @@ contract AdaptativeCurveIrm is IIrm {
 
         if (startRateAtTarget == 0) {
             // First interaction.
-            // Safe "unchecked cast" because INITIAL_RATE_AT_TARGET >= 0.
+            // Safe "unchecked" cast because INITIAL_RATE_AT_TARGET >= 0.
             return (uint256(_curve(INITIAL_RATE_AT_TARGET, err)), INITIAL_RATE_AT_TARGET);
         } else {
             // Note that the speed is assumed constant between two interactions, but in theory it increases because of
@@ -139,23 +139,26 @@ contract AdaptativeCurveIrm is IIrm {
 
             // We want to approximate an average of the rate over the period [0, T]:
             // avg = 1/T ∫_0^T curve(startRateAtTarget * exp(speed * x), err) dx
-            // We approximate the integral with a Riemann sum (steps of length T/N):
-            // avg ~= 1/T Σ_i=1^N curve(startRateAtTarget * exp(speed * T/N * i), err) * T / N
-            //     ~= Σ_i=1^N curve(startRateAtTarget * exp(linearVariation/N * i), err) / N
+            // We approximate the integral with a Riemann sum (steps of length T/N). We want to underestimate the rate,
+            // which means doing a left Riemann (a=0, b=N-1) when the rate goes up (err>0) and a right Riemann (a=1,
+            // b=N) when the rate goes down (err<0).
+            // avg ~= 1/T Σ_i=a^b curve(startRateAtTarget * exp(speed * T/N * i), err) * T / N
+            //     ~= Σ_i=a^b curve(startRateAtTarget * exp(linearVariation/N * i), err) / N
             // curve is linear in startRateAtTarget, so:
-            //     ~= curve(Σ_i=1^N startRateAtTarget * exp(linearVariation/N * i), err) / N
-            //     ~= curve(Σ_i=1^N startRateAtTarget * exp(linearVariation/N * i) / N, err)
+            //     ~= curve(Σ_i=a^b startRateAtTarget * exp(linearVariation/N * i), err) / N
+            //     ~= curve(Σ_i=a^b startRateAtTarget * exp(linearVariation/N * i) / N, err)
             int256 sumRateAtTarget;
             int256 step = linearAdaptation / N_STEPS;
-            // Stops after N_STEPS - 1, the last one is done with endRateAtTarget.
+            // Compute the terms 1 to N_STEPS - 1.
             for (int256 k = 1; k < N_STEPS; k++) {
                 sumRateAtTarget += _newRateAtTarget(startRateAtTarget, step * k);
             }
             int256 endRateAtTarget = _newRateAtTarget(startRateAtTarget, linearAdaptation);
-            sumRateAtTarget += endRateAtTarget;
+            // Add the term 0 of N_STEPS depending of if we do a left or right Riemann.
+            sumRateAtTarget += err < 0 ? endRateAtTarget : startRateAtTarget;
             int256 avgRateAtTarget = sumRateAtTarget / N_STEPS;
 
-            // Safe "unchecked cast" because avgRateAtTarget >= 0.
+            // Safe "unchecked" cast because avgRateAtTarget >= 0.
             return (uint256(_curve(avgRateAtTarget, err)), endRateAtTarget);
         }
     }
@@ -172,7 +175,7 @@ contract AdaptativeCurveIrm is IIrm {
     }
 
     /// @dev Returns the new rate at target, for a given `startRateAtTarget` and a given `linearAdaptation`.
-    /// The formula is the following: newRAT = max(min(startRAT * exp(linearAdaptation), MAX_RAT), MIN_RAT).
+    /// The formula is: max(min(startRateAtTarget * exp(linearAdaptation), maxRateAtTarget), minRateAtTarget).
     function _newRateAtTarget(int256 startRateAtTarget, int256 linearAdaptation) private pure returns (int256) {
         // Non negative because MIN_RATE_AT_TARGET > 0.
         return startRateAtTarget.wMulDown(MathLib.wExp(linearAdaptation)).bound(MIN_RATE_AT_TARGET, MAX_RATE_AT_TARGET);
