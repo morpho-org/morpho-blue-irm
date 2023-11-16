@@ -143,10 +143,10 @@ contract AdaptiveCurveIrm is IIrm {
             // Riemann (a=0, b=N-1) is done when the rate goes up (err>0) and a right Riemann (a=1, b=N) is done when
             // the rate goes down (err<0).
             // avg ~= 1/T Σ_i=a^b curve(startRateAtTarget * exp(speed * T/N * i), err) * T / N
-            //     ~= Σ_i=a^b curve(startRateAtTarget * exp(linearVariation/N * i), err) / N
+            //     ~= Σ_i=a^b curve(startRateAtTarget * exp(linearAdaptation/N * i), err) / N
             // curve is linear in startRateAtTarget, so:
-            //     ~= curve(Σ_i=a^b startRateAtTarget * exp(linearVariation/N * i), err) / N
-            //     ~= curve(Σ_i=a^b startRateAtTarget * exp(linearVariation/N * i) / N, err)
+            //     ~= curve(Σ_i=a^b startRateAtTarget * exp(linearAdaptation/N * i), err) / N
+            //     ~= curve(Σ_i=a^b startRateAtTarget * exp(linearAdaptation/N * i) / N, err)
             int256 sumRateAtTarget;
             int256 step = linearAdaptation / N_STEPS;
             // Compute the terms 1 to N_STEPS - 1.
