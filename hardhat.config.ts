@@ -11,7 +11,6 @@ import "@nomicfoundation/hardhat-foundry";
 import "@nomicfoundation/hardhat-network-helpers";
 import "@typechain/hardhat";
 
-import blueConfig from "./lib/morpho-blue/hardhat.config";
 
 dotenv.config();
 
@@ -23,12 +22,22 @@ const config: HardhatUserConfig = {
       gasPrice: 0,
       initialBaseFeePerGas: 0,
       allowBlocksWithSameTimestamp: true,
-      accounts: {
-        count: 201, // must be odd
-      },
     },
   },
-  solidity: blueConfig.solidity,
+  solidity: {
+    compilers: [
+      {
+        version: "0.8.19",
+        settings: {
+          optimizer: {
+            enabled: true,
+            runs: 200,
+          },
+          viaIR: true,
+        },
+      },
+    ],
+  },
   mocha: {
     timeout: 3000000,
   },

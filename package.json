@@ -1,16 +1,15 @@
 {
-  "name": "morpho-blue-periphery",
-  "description": "Morpho Blue Periphery Contracts",
+  "name": "morpho-blue-irm",
+  "description": "Morpho Blue IRM Contracts",
   "license": "GPL-2.0-or-later",
-  "version": "1.0.0",
+  "version": "0.0.0",
   "main": "lib/index.js",
   "bin": "lib/cli.js",
   "files": [
     "lib/**/*"
   ],
   "scripts": {
-    "prepare": "husky install",
-    "postinstall": "forge install",
+    "prepare": "husky install && forge install",
     "build:forge": "FOUNDRY_PROFILE=build forge build",
     "build:hardhat": "npx hardhat compile",
     "test:forge": "FOUNDRY_PROFILE=test forge test",
@@ -25,7 +24,7 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/morpho-labs/morpho-blue-periphery.git"
+    "url": "git+https://github.com/morpho-org/morpho-blue-irm.git"
   },
   "author": {
     "name": "Morpho Labs",
@@ -33,9 +32,9 @@
     "url": "https://github.com/morpho-labs"
   },
   "bugs": {
-    "url": "https://github.com/morpho-labs/morpho-blue-periphery/issues"
+    "url": "https://github.com/morpho-org/morpho-blue-irm/issues"
   },
-  "homepage": "https://github.com/morpho-labs/morpho-blue-periphery#readme",
+  "homepage": "https://github.com/morpho-org/morpho-blue-irm#readme",
   "dependencies": {
     "ethers": "^6.7.1",
     "ethers-maths": "^4.0.2",
