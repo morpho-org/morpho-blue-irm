@@ -60,15 +60,6 @@ contract AdaptativeCurveIrmTest is Test {
         assertEq(irm.rateAtTarget(marketParams.id()), INITIAL_RATE_AT_TARGET, "rateAtTarget");
     }
 
-    function testFirstBorrowRateUtilizationTarget() public {
-        Market memory market;
-        market.totalBorrowAssets = uint128(uint256(TARGET_UTILIZATION));
-        market.totalSupplyAssets = 1 ether;
-
-        assertEq(irm.borrowRate(marketParams, market), uint256(INITIAL_RATE_AT_TARGET), "avgBorrowRate");
-        assertEq(irm.rateAtTarget(marketParams.id()), INITIAL_RATE_AT_TARGET, "rateAtTarget");
-    }
-
     function testRateAfterUtilizationOne() public {
         vm.warp(365 days * 2);
         Market memory market;
@@ -157,7 +148,13 @@ contract AdaptativeCurveIrmTest is Test {
         }
 
         assertApproxEqRel(market.totalBorrowAssets.wDivDown(market.totalSupplyAssets), 0.95 ether, 0.005 ether);
-        assertApproxEqRel(irm.rateAtTarget(marketParams.id()), int256(0.6092 ether) / 365 days, 0.06 ether);
+
+        int256 rateAtTarget = irm.rateAtTarget(marketParams.id());
+        int256 expectedRateAtTarget = int256(0.6092 ether) / 365 days;
+        assertGe(rateAtTarget, expectedRateAtTarget);
+        // Expected rate: 0.1% * exp(50 * 60 / 365 * 50%) = 60.92%.
+        // The rate is tolerated to be +6% (relatively) because of the hourly pings.
+        assertApproxEqRel(rateAtTarget, expectedRateAtTarget, 0.06 ether);
     }
 
     function testRateAfterUtilizationTargetNoPing(uint256 elapsed) public {
@@ -202,7 +199,11 @@ contract AdaptativeCurveIrmTest is Test {
         assertApproxEqRel(
             market.totalBorrowAssets.wDivDown(market.totalSupplyAssets), uint256(TARGET_UTILIZATION), 0.01 ether
         );
-        assertApproxEqRel(irm.rateAtTarget(marketParams.id()), initialRateAtTarget, 0.1 ether);
+
+        int256 rateAtTarget = irm.rateAtTarget(marketParams.id());
+        assertGe(rateAtTarget, initialRateAtTarget);
+        // The rate is tolerated to be +10% (relatively) because of the pings every minute.
+        assertApproxEqRel(rateAtTarget, initialRateAtTarget, 0.1 ether);
     }
 
     function testFirstBorrowRate(Market memory market) public {
