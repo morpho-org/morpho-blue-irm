@@ -1,15 +1,15 @@
 {
   "compilerOptions": {
-    "target": "esnext",
+    "target": "es2020",
+    "module": "nodenext",
+    "moduleResolution": "nodenext",
+    "outDir": "dist",
+    "baseUrl": ".",
     "strict": true,
     "esModuleInterop": true,
-    "rootDir": ".",
-    "baseUrl": ".",
-    "outDir": "dist",
-    "moduleResolution": "node",
     "resolveJsonModule": true,
     "declaration": true
   },
-  "include": ["src", "types", "test/hardhat"],
-  "files": ["./hardhat.config.ts"]
+  "include": ["types", "test/hardhat"],
+  "files": ["hardhat.config.ts"]
 }

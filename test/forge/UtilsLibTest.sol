@@ -1,9 +1,9 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-import "../src/libraries/UtilsLib.sol";
+import "../../src/libraries/UtilsLib.sol";
 
-import "../lib/forge-std/src/Test.sol";
+import "../../lib/forge-std/src/Test.sol";
 
 contract UtilsTest is Test {
     using UtilsLib for int256;

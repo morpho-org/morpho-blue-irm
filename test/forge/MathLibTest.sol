@@ -1,12 +1,12 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-import {MathLib} from "../src/libraries/MathLib.sol";
-import {ErrorsLib} from "../src/libraries/ErrorsLib.sol";
-import {wadExp} from "../lib/solmate/src/utils/SignedWadMath.sol";
+import {MathLib} from "../../src/libraries/MathLib.sol";
+import {ErrorsLib} from "../../src/libraries/ErrorsLib.sol";
+import {wadExp} from "../../lib/solmate/src/utils/SignedWadMath.sol";
 
-import {AdaptativeCurveIrm} from "../src/SpeedJumpIrm.sol";
-import "../lib/forge-std/src/Test.sol";
+import {AdaptativeCurveIrm} from "../../src/SpeedJumpIrm.sol";
+import "../../lib/forge-std/src/Test.sol";
 
 contract MathLibTest is Test {
     using MathLib for uint128;
