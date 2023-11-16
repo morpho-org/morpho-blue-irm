@@ -5,7 +5,7 @@ import {MathLib} from "../src/libraries/MathLib.sol";
 import {ErrorsLib} from "../src/libraries/ErrorsLib.sol";
 import {wadExp} from "../lib/solmate/src/utils/SignedWadMath.sol";
 
-import {AdaptativeCurveIrm} from "../src/SpeedJumpIrm.sol";
+import {AdaptiveCurveIrm} from "../src/SpeedJumpIrm.sol";
 import "../lib/forge-std/src/Test.sol";
 
 contract MathLibTest is Test {
