@@ -142,8 +142,7 @@ contract AdaptiveCurveIrm is IIrm {
                 return (uint256(_curve(startRateAtTarget, err)), startRateAtTarget);
             } else {
                 int256 endRateAtTarget = _newRateAtTarget(startRateAtTarget, linearAdaptation);
-                int256 midRateAtTarget = _newRateAtTarget(startRateAtTarget, linearAdaptation / 2);
-                int256 avgRateAtTarget = (startRateAtTarget + midRateAtTarget + midRateAtTarget + endRateAtTarget) / 4;
+                int256 avgRateAtTarget = (startRateAtTarget + endRateAtTarget) / 2;
 
                 // Safe "unchecked" cast because avgRateAtTarget >= 0.
                 return (uint256(_curve(avgRateAtTarget, err)), endRateAtTarget);
