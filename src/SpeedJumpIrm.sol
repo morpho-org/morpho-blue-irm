@@ -144,10 +144,8 @@ contract AdaptiveCurveIrm is IIrm {
                 // Formula of the average rate that should be returned to Morpho Blue:
                 // avg = 1/T ∫_0^T curve(startRateAtTarget * exp(speed * x), err) dx
                 // The integral is approximated with a Riemann sum (steps of length T/N). To underestimate the rate, a
-                // left
-                // Riemann (a=0, b=N-1) is done when the rate goes up (err>0) and a right Riemann (a=1, b=N) is done
-                // when
-                // the rate goes down (err<0).
+                // left Riemann (a=0, b=N-1) is done when the rate goes up (err>0) and a right Riemann (a=1, b=N) is
+                // done when the rate goes down (err<0).
                 // avg ~= 1/T Σ_i=a^b curve(startRateAtTarget * exp(speed * T/N * i), err) * T / N
                 //     ~= Σ_i=a^b curve(startRateAtTarget * exp(linearAdaptation/N * i), err) / N
                 // curve is linear in startRateAtTarget, so:
