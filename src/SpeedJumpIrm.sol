@@ -142,25 +142,21 @@ contract AdaptiveCurveIrm is IIrm {
                 endRateAtTarget = startRateAtTarget;
             } else {
                 // Formula of the average rate that should be returned to Morpho Blue:
-                // avg = 1/T ∫_0^T curve(startRateAtTarget * exp(speed * x), err) dx
+                // avg = 1/T * ∫_0^T curve(startRateAtTarget*exp(speed*x), err) dx
                 // The integral is approximated with the trapezoidal rule:
-                // avg ~= 1/T Σ_i=1^N (f((i-1) * T/N) + f(i * T/N)) / 2 * T/N
-                // Where f(x) = curve(startRateAtTarget * exp(speed * x), err).
-                // avg ~= 1/N * ( (f(0)+f(T))/2 + Σ_i=1^(N-1) f(i*T/N) )
-                // avg ~= 1/N * ( (f(startRateAtTarget)+f(endRateAtTarget))/2 + Σ_i=1^(N-1) curve(startRateAtTarget *
-                // exp(speed * i*T/N), err))
-                // As curve is linear in rateAtTarget:
-                // avg ~= 1/N * curve((startRateAtTarget+endRateAtTarget)/2 + Σ_i=1^(N-1) startRateAtTarget * exp(speed
-                // * i*T/N), err)
-                // avg ~= curve((startRateAtTarget+endRateAtTarget)/(2*N) + Σ_i=1^(N-1) startRateAtTarget * exp(speed *
-                // i*T/N) / N, err)
-                // With N=2:
-                // avg ~= curve((startRateAtTarget+endRateAtTarget)/4 + startRateAtTarget * exp(speed * T/2) / 2, err)
-                // avg ~= curve((startRateAtTarget + endRateAtTarget + 2 * startRateAtTarget * exp(speed * T/2)) / 4,
-                // err)
+                // avg ~= 1/T * Σ_i=1^N [curve(f((i-1) * T/N), err) + curve(f(i * T/N), err)] / 2 * T/N
+                // Where f(x) = startRateAtTarget*exp(speed*x)
+                // avg ~= Σ_i=1^N [curve(f((i-1) * T/N), err) + curve(f(i * T/N), err)] / (2 * N)
+                // As curve is linear in its first argument:
+                // avg ~= curve([Σ_i=1^N [f((i-1) * T/N) + f(i * T/N)] / (2 * N), err)
+                // avg ~= curve([(f(0) + f(T))/2 + Σ_i=1^(N-1) f(i * T/N)] / N, err)
+                // avg ~= curve([(startRateAtTarget + endRateAtTarget)/2 + Σ_i=1^(N-1) f(i * T/N)] / N, err)
+                // With N = 2:
+                // avg ~= curve([(startRateAtTarget + endRateAtTarget)/2 + startRateAtTarget*exp(speed*T/2)] / 2, err)
+                // avg ~= curve([startRateAtTarget + endRateAtTarget + 2*startRateAtTarget*exp(speed*T/2)] / 4, err)
                 endRateAtTarget = _newRateAtTarget(startRateAtTarget, linearAdaptation);
                 int256 midRateAtTarget = _newRateAtTarget(startRateAtTarget, linearAdaptation / 2);
-                avgRateAtTarget = (startRateAtTarget + 2 * midRateAtTarget + endRateAtTarget) / 4;
+                avgRateAtTarget = (startRateAtTarget + endRateAtTarget + 2 * midRateAtTarget) / 4;
             }
         }
 
