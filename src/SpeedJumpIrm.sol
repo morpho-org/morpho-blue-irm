@@ -148,15 +148,15 @@ contract AdaptativeCurveIrm is IIrm {
             // curve is linear in startRateAtTarget, so:
             //     ~= curve(Σ_i=1^N startRateAtTarget * exp(linearVariation/N * i), err) / N
             //     ~= curve(Σ_i=1^N startRateAtTarget * exp(linearVariation/N * i) / N, err)
-            int256 sum;
+            int256 sumRateAtTarget;
             int256 step = linearAdaptation / N_STEPS;
             for (int256 k = 1; k <= N_STEPS; k++) {
-                sum += startRateAtTarget.wMulDown(MathLib.wExp(step * k)).bound(MIN_RATE_AT_TARGET, MAX_RATE_AT_TARGET);
+                sumRateAtTarget += startRateAtTarget.wMulDown(MathLib.wExp(step * k)).bound(MIN_RATE_AT_TARGET, MAX_RATE_AT_TARGET);
             }
-            int256 averageRateAtTarget = sum / N_STEPS;
+            int256 avgRateAtTarget = sumRateAtTarget / N_STEPS;
 
-            // avgBorrowRate is non negative because averageRateAtTarget is non negative.
-            return (uint256(_curve(averageRateAtTarget, err)), endRateAtTarget);
+            // avgBorrowRate is non negative because avgRateAtTarget is non negative.
+            return (uint256(_curve(avgRateAtTarget, err)), endRateAtTarget);
         }
     }
 
