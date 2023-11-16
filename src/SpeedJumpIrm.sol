@@ -14,10 +14,10 @@ import {MathLib as MorphoMathLib} from "../lib/morpho-blue/src/libraries/MathLib
 /// @dev 4 steps allows to have a relative error below 30% for 15 days at err=1 or err=-1.
 int256 constant N_STEPS = 4;
 
-/// @title AdaptativeCurveIrm
+/// @title AdaptiveCurveIrm
 /// @author Morpho Labs
 /// @custom:contact security@morpho.org
-contract AdaptativeCurveIrm is IIrm {
+contract AdaptiveCurveIrm is IIrm {
     using MathLib for int256;
     using UtilsLib for int256;
     using MorphoMathLib for uint128;
