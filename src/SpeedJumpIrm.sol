@@ -126,6 +126,7 @@ contract AdaptativeCurveIrm is IIrm {
 
         if (startRateAtTarget == 0) {
             // First interaction.
+            // Safe "unchecked cast" because INITIAL_RATE_AT_TARGET >= 0.
             return (uint256(_curve(INITIAL_RATE_AT_TARGET, err)), INITIAL_RATE_AT_TARGET);
         } else {
             // Note that the speed is assumed constant between two interactions, but in theory it increases because of
@@ -154,7 +155,7 @@ contract AdaptativeCurveIrm is IIrm {
             sumRateAtTarget += endRateAtTarget;
             int256 avgRateAtTarget = sumRateAtTarget / N_STEPS;
 
-            // avgRate is non negative because avgRateAtTarget is non negative.
+            // Safe "unchecked cast" because avgRateAtTarget >= 0.
             return (uint256(_curve(avgRateAtTarget, err)), endRateAtTarget);
         }
     }
@@ -166,11 +167,14 @@ contract AdaptativeCurveIrm is IIrm {
     function _curve(int256 _rateAtTarget, int256 err) private view returns (int256) {
         // Non negative because 1 - 1/C >= 0, C - 1 >= 0.
         int256 coeff = err < 0 ? WAD - WAD.wDivDown(CURVE_STEEPNESS) : CURVE_STEEPNESS - WAD;
-        // Non negative because if err < 0, coeff <= 1.
+        // Non negative if _rateAtTarget >= 0 because if err < 0, coeff <= 1.
         return (coeff.wMulDown(err) + WAD).wMulDown(int256(_rateAtTarget));
     }
 
+    /// @dev Returns the new rate at target, for a given `startRateAtTarget` and a given `linearAdaptation`.
+    /// The formula is the following: newRAT = max(min(startRAT * exp(linearAdaptation), MAX_RAT), MIN_RAT).
     function _newRateAtTarget(int256 startRateAtTarget, int256 linearAdaptation) private pure returns (int256) {
+        // Non negative because MIN_RATE_AT_TARGET > 0.
         return startRateAtTarget.wMulDown(MathLib.wExp(linearAdaptation)).bound(MIN_RATE_AT_TARGET, MAX_RATE_AT_TARGET);
     }
 }
