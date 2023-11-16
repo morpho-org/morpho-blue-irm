@@ -137,16 +137,12 @@ contract AdaptiveCurveIrm is IIrm {
             int256 elapsed = int256(block.timestamp - market.lastUpdate);
             int256 linearAdaptation = speed * elapsed;
 
-            if (linearAdaptation == 0) {
-                // If linearAdaptation == 0, avgRateAtTarget = endRateAtTarget = startRateAtTarget;
-                return (uint256(_curve(startRateAtTarget, err)), startRateAtTarget);
-            } else {
-                int256 endRateAtTarget = _newRateAtTarget(startRateAtTarget, linearAdaptation);
-                int256 avgRateAtTarget = (startRateAtTarget + endRateAtTarget) / 2;
+            int256 endRateAtTarget =
+                startRateAtTarget.wMulDown(MathLib.wExp(linearAdaptation)).bound(MIN_RATE_AT_TARGET, MAX_RATE_AT_TARGET);
+            int256 avgRateAtTarget = (startRateAtTarget + endRateAtTarget) / 2;
 
-                // Safe "unchecked" cast because avgRateAtTarget >= 0.
-                return (uint256(_curve(avgRateAtTarget, err)), endRateAtTarget);
-            }
+            // Safe "unchecked" cast because avgRateAtTarget >= 0.
+            return (uint256(_curve(avgRateAtTarget, err)), endRateAtTarget);
         }
     }
 
@@ -159,12 +155,5 @@ contract AdaptiveCurveIrm is IIrm {
         int256 coeff = err < 0 ? WAD - WAD.wDivDown(CURVE_STEEPNESS) : CURVE_STEEPNESS - WAD;
         // Non negative if _rateAtTarget >= 0 because if err < 0, coeff <= 1.
         return (coeff.wMulDown(err) + WAD).wMulDown(int256(_rateAtTarget));
-    }
-
-    /// @dev Returns the new rate at target, for a given `startRateAtTarget` and a given `linearAdaptation`.
-    /// The formula is: max(min(startRateAtTarget * exp(linearAdaptation), maxRateAtTarget), minRateAtTarget).
-    function _newRateAtTarget(int256 startRateAtTarget, int256 linearAdaptation) private pure returns (int256) {
-        // Non negative because MIN_RATE_AT_TARGET > 0.
-        return startRateAtTarget.wMulDown(MathLib.wExp(linearAdaptation)).bound(MIN_RATE_AT_TARGET, MAX_RATE_AT_TARGET);
     }
 }
