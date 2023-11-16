@@ -10,10 +10,6 @@ import {MarketParamsLib} from "../lib/morpho-blue/src/libraries/MarketParamsLib.
 import {Id, MarketParams, Market} from "../lib/morpho-blue/src/interfaces/IMorpho.sol";
 import {MathLib as MorphoMathLib} from "../lib/morpho-blue/src/libraries/MathLib.sol";
 
-/// @dev Number of steps used in the Riemann sum.
-/// @dev 4 steps allows to have a relative error below 30% for 15 days at err=1 or err=-1.
-int256 constant N_STEPS = 4;
-
 /// @title AdaptiveCurveIrm
 /// @author Morpho Labs
 /// @custom:contact security@morpho.org
@@ -141,9 +137,22 @@ contract AdaptiveCurveIrm is IIrm {
                 // If linearAdaptation == 0, avgRateAtTarget = endRateAtTarget = startRateAtTarget;
                 return (uint256(_curve(startRateAtTarget, err)), startRateAtTarget);
             } else {
+                // Formula of the average rate that should be returned to Morpho Blue:
+                // avg = 1/T ∫_0^T curve(startRateAtTarget * exp(speed * x), err) dx
+                // The integral is approximated with the trapezoidal rule:
+                // avg ~= 1/T Σ_i=1^N (f((i-1) * T/N) + f(i * T/N)) / 2 * T/N
+                // Where f(x) = curve(startRateAtTarget * exp(speed * x), err).
+                // avg ~= 1/N * ( (f(0)+f(T))/2 + Σ_i=1^(N-1) f(i*T/N) )
+                // avg ~= 1/N * ( (f(startRateAtTarget)+f(endRateAtTarget))/2 + Σ_i=1^(N-1) curve(startRateAtTarget * exp(speed * i*T/N), err))
+                // As curve is linear in rateAtTarget:
+                // avg ~= 1/N * curve((startRateAtTarget+endRateAtTarget)/2 + Σ_i=1^(N-1) startRateAtTarget * exp(speed * i*T/N), err)
+                // avg ~= curve((startRateAtTarget+endRateAtTarget)/(2*N) + Σ_i=1^(N-1) startRateAtTarget * exp(speed * i*T/N) / N, err)
+                // With N=2:
+                // avg ~= curve((startRateAtTarget+endRateAtTarget)/4 + startRateAtTarget * exp(speed * T/2) / 2, err)
+                // avg ~= curve((startRateAtTarget + endRateAtTarget + 2 * startRateAtTarget * exp(speed * T/2)) / 4, err)
                 int256 endRateAtTarget = _newRateAtTarget(startRateAtTarget, linearAdaptation);
                 int256 midRateAtTarget = _newRateAtTarget(startRateAtTarget, linearAdaptation / 2);
-                int256 avgRateAtTarget = (startRateAtTarget + midRateAtTarget + midRateAtTarget + endRateAtTarget) / 4;
+                int256 avgRateAtTarget = (startRateAtTarget + 2 * midRateAtTarget + endRateAtTarget) / 4;
 
                 // Safe "unchecked" cast because avgRateAtTarget >= 0.
                 return (uint256(_curve(avgRateAtTarget, err)), endRateAtTarget);
