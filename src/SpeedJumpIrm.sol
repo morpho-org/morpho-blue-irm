@@ -159,7 +159,7 @@ contract AdaptiveCurveIrm is IIrm {
                 }
                 int256 endRateAtTarget = _newRateAtTarget(startRateAtTarget, linearAdaptation);
                 // Add the term 0 for a left Riemann or the term N_STEPS for a right Riemann.
-                sumRateAtTarget += err < 0 ? endRateAtTarget : startRateAtTarget;
+                sumRateAtTarget += (endRateAtTarget + startRateAtTarget) / 2;
                 int256 avgRateAtTarget = sumRateAtTarget / N_STEPS;
 
                 // Safe "unchecked" cast because avgRateAtTarget >= 0.
