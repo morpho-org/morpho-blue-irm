@@ -140,9 +140,14 @@ contract AdaptativeCurveIrm is IIrm {
             int256 endRateAtTarget =
                 startRateAtTarget.wMulDown(MathLib.wExp(linearAdaptation)).bound(MIN_RATE_AT_TARGET, MAX_RATE_AT_TARGET);
 
-            // Then we compute the average rate over the period, with a Riemann sum.
-            // We omit the multiplication by the rectangle length because we would divide everything by the total length
-            // at the end, because we want to compute the average and not the integral.
+            // We want to approximate an average of the rate over the period [0, T]:
+            // avg = 1/T ∫_0^T curve(startRateAtTarget * exp(speed * x), err) dx
+            // We approximate the integral with a Riemann sum (steps of length T/N):
+            // avg ~= 1/T Σ_i=1^N curve(startRateAtTarget * exp(speed * T/N * i), err) * T / N
+            //     ~= Σ_i=1^N curve(startRateAtTarget * exp(linearVariation/N * i), err) / N
+            // curve is linear in startRateAtTarget, so:
+            //     ~= curve(Σ_i=1^N startRateAtTarget * exp(linearVariation/N * i), err) / N
+            //     ~= curve(Σ_i=1^N startRateAtTarget * exp(linearVariation/N * i) / N, err)
             int256 sum;
             int256 step = linearAdaptation / N_STEPS;
             for (int256 k = 1; k <= N_STEPS; k++) {
