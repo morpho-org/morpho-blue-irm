@@ -92,8 +92,8 @@ contract AdaptativeCurveIrm is IIrm {
 
     /// @inheritdoc IIrm
     function borrowRateView(MarketParams memory marketParams, Market memory market) external view returns (uint256) {
-        (uint256 avgBorrowRate,) = _borrowRate(marketParams.id(), market);
-        return avgBorrowRate;
+        (uint256 avgRate,) = _borrowRate(marketParams.id(), market);
+        return avgRate;
     }
 
     /// @inheritdoc IIrm
@@ -102,14 +102,14 @@ contract AdaptativeCurveIrm is IIrm {
 
         Id id = marketParams.id();
 
-        (uint256 avgBorrowRate, int256 endRateAtTarget) = _borrowRate(id, market);
+        (uint256 avgRate, int256 endRateAtTarget) = _borrowRate(id, market);
 
         rateAtTarget[id] = endRateAtTarget;
 
         // Safe "unchecked" because endRateAtTarget >= 0.
-        emit BorrowRateUpdate(id, avgBorrowRate, uint256(endRateAtTarget));
+        emit BorrowRateUpdate(id, avgRate, uint256(endRateAtTarget));
 
-        return avgBorrowRate;
+        return avgRate;
     }
 
     /// @dev Returns avgRate and endRateAtTarget.
