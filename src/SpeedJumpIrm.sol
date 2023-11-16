@@ -124,10 +124,13 @@ contract AdaptiveCurveIrm is IIrm {
 
         int256 startRateAtTarget = rateAtTarget[id];
 
+        int256 avgRateAtTarget;
+        int256 endRateAtTarget;
+
         if (startRateAtTarget == 0) {
             // First interaction.
-            // Safe "unchecked" cast because INITIAL_RATE_AT_TARGET >= 0.
-            return (uint256(_curve(INITIAL_RATE_AT_TARGET, err)), INITIAL_RATE_AT_TARGET);
+            avgRateAtTarget = INITIAL_RATE_AT_TARGET;
+            endRateAtTarget = INITIAL_RATE_AT_TARGET;
         } else {
             // Note that the speed is assumed constant between two interactions, but in theory it increases because of
             // interests. So the rate will be slightly underestimated.
@@ -139,7 +142,8 @@ contract AdaptiveCurveIrm is IIrm {
 
             if (linearAdaptation == 0) {
                 // If linearAdaptation == 0, avgRateAtTarget = endRateAtTarget = startRateAtTarget;
-                return (uint256(_curve(startRateAtTarget, err)), startRateAtTarget);
+                avgRateAtTarget = startRateAtTarget;
+                endRateAtTarget = startRateAtTarget;
             } else {
                 // Formula of the average rate that should be returned to Morpho Blue:
                 // avg = 1/T ∫_0^T curve(startRateAtTarget * exp(speed * x), err) dx
@@ -157,15 +161,15 @@ contract AdaptiveCurveIrm is IIrm {
                 for (int256 k = 1; k < N_STEPS; k++) {
                     sumRateAtTarget += _newRateAtTarget(startRateAtTarget, step * k);
                 }
-                int256 endRateAtTarget = _newRateAtTarget(startRateAtTarget, linearAdaptation);
+                endRateAtTarget = _newRateAtTarget(startRateAtTarget, linearAdaptation);
                 // Add the term 0 for a left Riemann or the term N_STEPS for a right Riemann.
                 sumRateAtTarget += err < 0 ? endRateAtTarget : startRateAtTarget;
-                int256 avgRateAtTarget = sumRateAtTarget / N_STEPS;
-
-                // Safe "unchecked" cast because avgRateAtTarget >= 0.
-                return (uint256(_curve(avgRateAtTarget, err)), endRateAtTarget);
+                avgRateAtTarget = sumRateAtTarget / N_STEPS;
             }
         }
+
+        // Safe "unchecked" cast because avgRateAtTarget >= 0.
+        return (uint256(_curve(avgRateAtTarget, err)), endRateAtTarget);
     }
 
     /// @dev Returns the rate for a given `_rateAtTarget` and an `err`.
