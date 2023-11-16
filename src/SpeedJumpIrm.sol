@@ -112,7 +112,7 @@ contract AdaptativeCurveIrm is IIrm {
         return avgBorrowRate;
     }
 
-    /// @dev Returns avgBorrowRate and endRateAtTarget.
+    /// @dev Returns avgRate and endRateAtTarget.
     /// @dev Assumes that the inputs `marketParams` and `id` match.
     function _borrowRate(Id id, Market memory market) private view returns (uint256, int256) {
         // Safe "unchecked" cast because the utilization is smaller than 1 (scaled by WAD).
@@ -136,10 +136,6 @@ contract AdaptativeCurveIrm is IIrm {
             int256 elapsed = int256(block.timestamp - market.lastUpdate);
             int256 linearAdaptation = speed * elapsed;
 
-            // endRateAtTarget is bounded between MIN_RATE_AT_TARGET and MAX_RATE_AT_TARGET.
-            int256 endRateAtTarget =
-                startRateAtTarget.wMulDown(MathLib.wExp(linearAdaptation)).bound(MIN_RATE_AT_TARGET, MAX_RATE_AT_TARGET);
-
             // We want to approximate an average of the rate over the period [0, T]:
             // avg = 1/T ∫_0^T curve(startRateAtTarget * exp(speed * x), err) dx
             // We approximate the integral with a Riemann sum (steps of length T/N):
@@ -150,13 +146,15 @@ contract AdaptativeCurveIrm is IIrm {
             //     ~= curve(Σ_i=1^N startRateAtTarget * exp(linearVariation/N * i) / N, err)
             int256 sumRateAtTarget;
             int256 step = linearAdaptation / N_STEPS;
-            for (int256 k = 1; k <= N_STEPS; k++) {
-                sumRateAtTarget +=
-                    startRateAtTarget.wMulDown(MathLib.wExp(step * k)).bound(MIN_RATE_AT_TARGET, MAX_RATE_AT_TARGET);
+            // Stops after N_STEPS - 1, the last one is done with endRateAtTarget.
+            for (int256 k = 1; k < N_STEPS; k++) {
+                sumRateAtTarget += _newRateAtTarget(startRateAtTarget, step * k);
             }
+            int256 endRateAtTarget = _newRateAtTarget(startRateAtTarget, linearAdaptation);
+            sumRateAtTarget += endRateAtTarget;
             int256 avgRateAtTarget = sumRateAtTarget / N_STEPS;
 
-            // avgBorrowRate is non negative because avgRateAtTarget is non negative.
+            // avgRate is non negative because avgRateAtTarget is non negative.
             return (uint256(_curve(avgRateAtTarget, err)), endRateAtTarget);
         }
     }
@@ -170,5 +168,9 @@ contract AdaptativeCurveIrm is IIrm {
         int256 coeff = err < 0 ? WAD - WAD.wDivDown(CURVE_STEEPNESS) : CURVE_STEEPNESS - WAD;
         // Non negative because if err < 0, coeff <= 1.
         return (coeff.wMulDown(err) + WAD).wMulDown(int256(_rateAtTarget));
+    }
+
+    function _newRateAtTarget(int256 startRateAtTarget, int256 linearAdaptation) private pure returns (int256) {
+        return startRateAtTarget.wMulDown(MathLib.wExp(linearAdaptation)).bound(MIN_RATE_AT_TARGET, MAX_RATE_AT_TARGET);
     }
 }
