@@ -143,13 +143,17 @@ contract AdaptiveCurveIrm is IIrm {
                 // avg ~= 1/T Σ_i=1^N (f((i-1) * T/N) + f(i * T/N)) / 2 * T/N
                 // Where f(x) = curve(startRateAtTarget * exp(speed * x), err).
                 // avg ~= 1/N * ( (f(0)+f(T))/2 + Σ_i=1^(N-1) f(i*T/N) )
-                // avg ~= 1/N * ( (f(startRateAtTarget)+f(endRateAtTarget))/2 + Σ_i=1^(N-1) curve(startRateAtTarget * exp(speed * i*T/N), err))
+                // avg ~= 1/N * ( (f(startRateAtTarget)+f(endRateAtTarget))/2 + Σ_i=1^(N-1) curve(startRateAtTarget *
+                // exp(speed * i*T/N), err))
                 // As curve is linear in rateAtTarget:
-                // avg ~= 1/N * curve((startRateAtTarget+endRateAtTarget)/2 + Σ_i=1^(N-1) startRateAtTarget * exp(speed * i*T/N), err)
-                // avg ~= curve((startRateAtTarget+endRateAtTarget)/(2*N) + Σ_i=1^(N-1) startRateAtTarget * exp(speed * i*T/N) / N, err)
+                // avg ~= 1/N * curve((startRateAtTarget+endRateAtTarget)/2 + Σ_i=1^(N-1) startRateAtTarget * exp(speed
+                // * i*T/N), err)
+                // avg ~= curve((startRateAtTarget+endRateAtTarget)/(2*N) + Σ_i=1^(N-1) startRateAtTarget * exp(speed *
+                // i*T/N) / N, err)
                 // With N=2:
                 // avg ~= curve((startRateAtTarget+endRateAtTarget)/4 + startRateAtTarget * exp(speed * T/2) / 2, err)
-                // avg ~= curve((startRateAtTarget + endRateAtTarget + 2 * startRateAtTarget * exp(speed * T/2)) / 4, err)
+                // avg ~= curve((startRateAtTarget + endRateAtTarget + 2 * startRateAtTarget * exp(speed * T/2)) / 4,
+                // err)
                 int256 endRateAtTarget = _newRateAtTarget(startRateAtTarget, linearAdaptation);
                 int256 midRateAtTarget = _newRateAtTarget(startRateAtTarget, linearAdaptation / 2);
                 int256 avgRateAtTarget = (startRateAtTarget + 2 * midRateAtTarget + endRateAtTarget) / 4;
