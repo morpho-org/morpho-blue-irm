@@ -1,8 +1,8 @@
 import { AbiCoder, MaxUint256, keccak256, toBigInt } from "ethers";
 import hre from "hardhat";
 import _range from "lodash/range";
-import { ERC20Mock, Irm, MorphoMock, OracleMock } from "types";
-import { MarketParamsStruct } from "types/morpho-blue/Morpho";
+import { ERC20Mock, AdaptativeCurveIrm, MorphoMock, OracleMock } from "types";
+import { MarketParamsStruct } from "types/src/mocks/MorphoMock";
 
 import { SignerWithAddress } from "@nomicfoundation/hardhat-ethers/signers";
 import { setNextBlockTimestamp } from "@nomicfoundation/hardhat-network-helpers/dist/src/helpers/time";
@@ -38,7 +38,7 @@ const randomForwardTimestamp = async () => {
   await setNextBlockTimestamp(block!.timestamp + elapsed);
 };
 
-describe("Irm", () => {
+describe("irm", () => {
   let admin: SignerWithAddress;
   let suppliers: SignerWithAddress[];
   let borrowers: SignerWithAddress[];
@@ -47,7 +47,7 @@ describe("Irm", () => {
   let borrowable: ERC20Mock;
   let collateral: ERC20Mock;
   let oracle: OracleMock;
-  let irm: Irm;
+  let irm: AdaptativeCurveIrm;
 
   let marketParams: MarketParamsStruct;
   let id: Buffer;
@@ -83,14 +83,14 @@ describe("Irm", () => {
 
     const morphoAddress = await morpho.getAddress();
 
-    const IrmFactory = await hre.ethers.getContractFactory("Irm", admin);
+    const AdaptativeCurveIrmFactory = await hre.ethers.getContractFactory("AdaptativeCurveIrm", admin);
 
-    irm = await IrmFactory.deploy(
+    irm = await AdaptativeCurveIrmFactory.deploy(
       morphoAddress,
-      "693147180560000000",
-      "277777777778",
-      "800000000000000000",
-      "317097920",
+      4000000000000000000n,
+      1585489599188n,
+      900000000000000000n,
+      317097919n,
     );
 
     const borrowableAddress = await borrowable.getAddress();

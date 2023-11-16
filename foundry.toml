@@ -1,11 +1,35 @@
 [profile.default]
 src = "src"
 out = "out"
-test = "test/forge"
+test = "test"
 libs = ["lib"]
-via-ir = true
+
+[profile.default.fuzz]
+runs = 4096
+
+[profile.default.invariant]
+fail_on_revert = true
 
 [profile.default.fmt]
 wrap_comments = true
+
+
+[profile.build]
+via-ir = true
+test = "/dev/null"
+script = "/dev/null"
+
+
+[profile.test]
+via-ir = false
+
+[profile.test.fuzz]
+runs = 16384
+
+[profile.test.invariant]
+runs = 32
+depth = 1024
+fail_on_revert = true
+
 
 # See more config options https://github.com/foundry-rs/foundry/blob/master/crates/config/README.md#all-options
