@@ -10,10 +10,6 @@ import {MarketParamsLib} from "../lib/morpho-blue/src/libraries/MarketParamsLib.
 import {Id, MarketParams, Market} from "../lib/morpho-blue/src/interfaces/IMorpho.sol";
 import {MathLib as MorphoMathLib} from "../lib/morpho-blue/src/libraries/MathLib.sol";
 
-/// @dev Number of steps used in the Riemann sum.
-/// @dev 4 steps allows to have a relative error below 30% for 15 days at err=1 or err=-1.
-int256 constant N_STEPS = 4;
-
 /// @title AdaptiveCurveIrm
 /// @author Morpho Labs
 /// @custom:contact security@morpho.org
@@ -146,25 +142,21 @@ contract AdaptiveCurveIrm is IIrm {
                 endRateAtTarget = startRateAtTarget;
             } else {
                 // Formula of the average rate that should be returned to Morpho Blue:
-                // avg = 1/T ∫_0^T curve(startRateAtTarget * exp(speed * x), err) dx
-                // The integral is approximated with a Riemann sum (steps of length T/N). To underestimate the rate, a
-                // left Riemann (a=0, b=N-1) is done when the rate goes up (err>0) and a right Riemann (a=1, b=N) is
-                // done when the rate goes down (err<0).
-                // avg ~= 1/T Σ_i=a^b curve(startRateAtTarget * exp(speed * T/N * i), err) * T / N
-                //     ~= Σ_i=a^b curve(startRateAtTarget * exp(linearAdaptation/N * i), err) / N
-                // curve is linear in startRateAtTarget, so:
-                //     ~= curve(Σ_i=a^b startRateAtTarget * exp(linearAdaptation/N * i), err) / N
-                //     ~= curve(Σ_i=a^b startRateAtTarget * exp(linearAdaptation/N * i) / N, err)
-                int256 sumRateAtTarget;
-                int256 step = linearAdaptation / N_STEPS;
-                // Compute the terms 1 to N_STEPS - 1.
-                for (int256 k = 1; k < N_STEPS; k++) {
-                    sumRateAtTarget += _newRateAtTarget(startRateAtTarget, step * k);
-                }
+                // avg = 1/T * ∫_0^T curve(startRateAtTarget*exp(speed*x), err) dx
+                // The integral is approximated with the trapezoidal rule:
+                // avg ~= 1/T * Σ_i=1^N [curve(f((i-1) * T/N), err) + curve(f(i * T/N), err)] / 2 * T/N
+                // Where f(x) = startRateAtTarget*exp(speed*x)
+                // avg ~= Σ_i=1^N [curve(f((i-1) * T/N), err) + curve(f(i * T/N), err)] / (2 * N)
+                // As curve is linear in its first argument:
+                // avg ~= curve([Σ_i=1^N [f((i-1) * T/N) + f(i * T/N)] / (2 * N), err)
+                // avg ~= curve([(f(0) + f(T))/2 + Σ_i=1^(N-1) f(i * T/N)] / N, err)
+                // avg ~= curve([(startRateAtTarget + endRateAtTarget)/2 + Σ_i=1^(N-1) f(i * T/N)] / N, err)
+                // With N = 2:
+                // avg ~= curve([(startRateAtTarget + endRateAtTarget)/2 + startRateAtTarget*exp(speed*T/2)] / 2, err)
+                // avg ~= curve([startRateAtTarget + endRateAtTarget + 2*startRateAtTarget*exp(speed*T/2)] / 4, err)
                 endRateAtTarget = _newRateAtTarget(startRateAtTarget, linearAdaptation);
-                // Add the term 0 for a left Riemann or the term N_STEPS for a right Riemann.
-                sumRateAtTarget += err < 0 ? endRateAtTarget : startRateAtTarget;
-                avgRateAtTarget = sumRateAtTarget / N_STEPS;
+                int256 midRateAtTarget = _newRateAtTarget(startRateAtTarget, linearAdaptation / 2);
+                avgRateAtTarget = (startRateAtTarget + endRateAtTarget + 2 * midRateAtTarget) / 4;
             }
         }
 
