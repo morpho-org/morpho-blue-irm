@@ -151,7 +151,8 @@ contract AdaptativeCurveIrm is IIrm {
             int256 sumRateAtTarget;
             int256 step = linearAdaptation / N_STEPS;
             for (int256 k = 1; k <= N_STEPS; k++) {
-                sumRateAtTarget += startRateAtTarget.wMulDown(MathLib.wExp(step * k)).bound(MIN_RATE_AT_TARGET, MAX_RATE_AT_TARGET);
+                sumRateAtTarget +=
+                    startRateAtTarget.wMulDown(MathLib.wExp(step * k)).bound(MIN_RATE_AT_TARGET, MAX_RATE_AT_TARGET);
             }
             int256 avgRateAtTarget = sumRateAtTarget / N_STEPS;
 
