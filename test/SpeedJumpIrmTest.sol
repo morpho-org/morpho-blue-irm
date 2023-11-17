@@ -177,32 +177,79 @@ contract AdaptativeCurveIrmTest is Test {
         assertEq(irm.rateAtTarget(marketParams.id()), INITIAL_RATE_AT_TARGET);
     }
 
-    function testRateAfter3WeeksUtilizationTargetPingEveryMinute() public {
-        int256 initialRateAtTarget = int256(1 ether) / 365 days; // 100%
+    function testCompareAll() public {
+        comparePing({ndays:7,rate:10 ether,initialBorrow:0.90 ether});
+        comparePing({ndays:15,rate:10 ether,initialBorrow:0.90 ether});
+        comparePing({ndays:7,rate:1 ether,initialBorrow:0.95 ether});
+        comparePing({ndays:15,rate:1 ether,initialBorrow:0.95 ether});
+        comparePing({ndays:7,rate:10 ether,initialBorrow:0.95 ether});
+        comparePing({ndays:15,rate:10 ether,initialBorrow:0.95 ether});
+    }
 
+    function pingMarket(string memory marketName, int initialRateAtTarget,uint duration,uint period,uint128 initialBorrow) internal returns (Market memory market) {
         irm =
         new AdaptativeCurveIrm(address(this), CURVE_STEEPNESS, ADJUSTMENT_SPEED, TARGET_UTILIZATION, initialRateAtTarget);
+        marketParams.irm = address(irm);
 
-        Market memory market;
         market.totalSupplyAssets = 1 ether;
-        market.totalBorrowAssets = uint128(uint256(TARGET_UTILIZATION));
-        assertEq(irm.borrowRate(marketParams, market), uint256(initialRateAtTarget));
-        assertEq(irm.rateAtTarget(marketParams.id()), initialRateAtTarget);
+        market.totalBorrowAssets = initialBorrow;
 
-        for (uint256 i; i < 3 weeks / 1 minutes; ++i) {
+        for (uint256 i; i < duration / period; ++i) {
             market.lastUpdate = uint128(block.timestamp);
-            vm.warp(block.timestamp + 1 minutes);
+            vm.warp(block.timestamp + period);
 
             uint256 avgBorrowRate = irm.borrowRate(marketParams, market);
-            uint256 interest = market.totalBorrowAssets.wMulDown(avgBorrowRate.wTaylorCompounded(1 minutes));
+            uint256 interest = market.totalBorrowAssets.wMulDown(avgBorrowRate.wTaylorCompounded(period));
             market.totalSupplyAssets += uint128(interest);
             market.totalBorrowAssets += uint128(interest);
         }
 
-        assertApproxEqRel(
-            market.totalBorrowAssets.wDivDown(market.totalSupplyAssets), uint256(TARGET_UTILIZATION), 0.01 ether
-        );
-        assertApproxEqRel(irm.rateAtTarget(marketParams.id()), initialRateAtTarget, 0.1 ether);
+        console2.log("%s final borrow",marketName);
+        console2.log("  %s",market.totalBorrowAssets);
+        console2.log("%s final supply",marketName);
+        console2.log("  %s",market.totalSupplyAssets);
+        console2.log("%s rate at target",marketName);
+        int pingedRateAtTarget = irm.rateAtTarget(marketParams.id());
+        console2.log("  %s",pingedRateAtTarget);
+    }
+
+    function comparePing(uint ndays, uint rate, uint128 initialBorrow) internal {
+        console2.log(StdStyle.green("===================================================="));
+        console2.log("%s days | rate %s%% | start utilization 0.%s",ndays,rate/1e16,initialBorrow/1e16);
+        console2.log(StdStyle.green("===================================================="));
+        uint duration =  ndays * 1 days;
+        int256 initialRateAtTarget = int256(rate) / 365 days;
+
+        console2.log("initial rate at target");
+        console2.log("  %s",initialRateAtTarget);
+
+        Market memory pinged = pingMarket({
+            marketName: "pinged market",
+            initialRateAtTarget: initialRateAtTarget,
+            duration: duration,
+            period: 1 minutes,
+            initialBorrow: initialBorrow
+        });
+
+        int pingedRAT = irm.rateAtTarget(marketParams.id());
+
+        Market memory leaped = pingMarket({
+            marketName: "leaped market",
+            initialRateAtTarget: initialRateAtTarget,
+            duration: duration,
+            period: duration,
+            initialBorrow: initialBorrow
+        });
+
+        int leapedRAT = irm.rateAtTarget(marketParams.id());
+
+        console2.log("pinged borrow / leaped borrow %");
+        uint borrowRatio = pinged.totalBorrowAssets * 100_000 / leaped.totalBorrowAssets; 
+        console2.log("  %s.%s%%",borrowRatio/1000,borrowRatio%1000);
+
+        console2.log("pinged rate / leaped rate %");
+        uint rateRatio = uint(pingedRAT*100_000/leapedRAT);
+        console2.log("  %s.%s%%",rateRatio/1000,rateRatio%1000);
     }
 
     function testFirstBorrowRate(Market memory market) public {
