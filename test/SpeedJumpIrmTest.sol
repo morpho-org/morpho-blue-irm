@@ -178,15 +178,21 @@ contract AdaptativeCurveIrmTest is Test {
     }
 
     function testCompareAll() public {
-        comparePing({ndays:7,rate:10 ether,initialBorrow:0.90 ether});
-        comparePing({ndays:15,rate:10 ether,initialBorrow:0.90 ether});
-        comparePing({ndays:7,rate:1 ether,initialBorrow:0.95 ether});
-        comparePing({ndays:15,rate:1 ether,initialBorrow:0.95 ether});
-        comparePing({ndays:7,rate:10 ether,initialBorrow:0.95 ether});
-        comparePing({ndays:15,rate:10 ether,initialBorrow:0.95 ether});
+        comparePing({ndays: 7, rate: 10 ether, initialBorrow: 0.9 ether});
+        comparePing({ndays: 15, rate: 10 ether, initialBorrow: 0.9 ether});
+        comparePing({ndays: 7, rate: 1 ether, initialBorrow: 0.95 ether});
+        comparePing({ndays: 15, rate: 1 ether, initialBorrow: 0.95 ether});
+        comparePing({ndays: 7, rate: 10 ether, initialBorrow: 0.95 ether});
+        comparePing({ndays: 15, rate: 10 ether, initialBorrow: 0.95 ether});
     }
 
-    function pingMarket(string memory marketName, int initialRateAtTarget,uint duration,uint period,uint128 initialBorrow) internal returns (Market memory market) {
+    function pingMarket(
+        string memory marketName,
+        int256 initialRateAtTarget,
+        uint256 duration,
+        uint256 period,
+        uint128 initialBorrow
+    ) internal returns (Market memory market, uint256 endRateAtTarget, uint256 utilization) {
         irm =
         new AdaptativeCurveIrm(address(this), CURVE_STEEPNESS, ADJUSTMENT_SPEED, TARGET_UTILIZATION, initialRateAtTarget);
         marketParams.irm = address(irm);
@@ -204,26 +210,23 @@ contract AdaptativeCurveIrmTest is Test {
             market.totalBorrowAssets += uint128(interest);
         }
 
-        console2.log("%s final borrow",marketName);
-        console2.log("  %s",market.totalBorrowAssets);
-        console2.log("%s final supply",marketName);
-        console2.log("  %s",market.totalSupplyAssets);
-        console2.log("%s rate at target",marketName);
-        int pingedRateAtTarget = irm.rateAtTarget(marketParams.id());
-        console2.log("  %s",pingedRateAtTarget);
+        endRateAtTarget = uint256(irm.rateAtTarget(marketParams.id()));
+        utilization = market.totalBorrowAssets.wDivDown(market.totalSupplyAssets);
+
+        console2.log(marketName);
+        logPercent("  rateAtTarget: ", endRateAtTarget * 365 days / 1e13);
+        logPercent("  utilization: ", utilization / 1e13);
+        console2.log("  totalBorrowAssets: %e", market.totalBorrowAssets);
     }
 
-    function comparePing(uint ndays, uint rate, uint128 initialBorrow) internal {
+    function comparePing(uint256 ndays, uint256 rate, uint128 initialBorrow) internal {
         console2.log(StdStyle.green("===================================================="));
-        console2.log("%s days | rate %s%% | start utilization 0.%s",ndays,rate/1e16,initialBorrow/1e16);
+        console2.log("%s days | rate %s%% | start utilization 0.%s", ndays, rate / 1e16, initialBorrow / 1e16);
         console2.log(StdStyle.green("===================================================="));
-        uint duration =  ndays * 1 days;
+        uint256 duration = ndays * 1 days;
         int256 initialRateAtTarget = int256(rate) / 365 days;
 
-        console2.log("initial rate at target");
-        console2.log("  %s",initialRateAtTarget);
-
-        Market memory pinged = pingMarket({
+        (Market memory pinged, uint256 pingedRAT, uint256 pingedUtilization) = pingMarket({
             marketName: "pinged market",
             initialRateAtTarget: initialRateAtTarget,
             duration: duration,
@@ -231,9 +234,7 @@ contract AdaptativeCurveIrmTest is Test {
             initialBorrow: initialBorrow
         });
 
-        int pingedRAT = irm.rateAtTarget(marketParams.id());
-
-        Market memory leaped = pingMarket({
+        (Market memory leaped, uint256 leapedRAT, uint256 leapedUtilization) = pingMarket({
             marketName: "leaped market",
             initialRateAtTarget: initialRateAtTarget,
             duration: duration,
@@ -241,15 +242,19 @@ contract AdaptativeCurveIrmTest is Test {
             initialBorrow: initialBorrow
         });
 
-        int leapedRAT = irm.rateAtTarget(marketParams.id());
+        console2.log(StdStyle.yellow("===================================================="));
+        logPercent("rateAtTarget: +", pingedRAT * 100_000 / leapedRAT - 100_000);
+        logPercent("utilization: +", pingedUtilization * 100_000 / leapedUtilization - 100_000);
+        logPercent("totalBorrowAssets: +", pinged.totalBorrowAssets * 100_000 / leaped.totalBorrowAssets - 100_000);
+    }
 
-        console2.log("pinged borrow / leaped borrow %");
-        uint borrowRatio = pinged.totalBorrowAssets * 100_000 / leaped.totalBorrowAssets; 
-        console2.log("  %s.%s%%",borrowRatio/1000,borrowRatio%1000);
-
-        console2.log("pinged rate / leaped rate %");
-        uint rateRatio = uint(pingedRAT*100_000/leapedRAT);
-        console2.log("  %s.%s%%",rateRatio/1000,rateRatio%1000);
+    function logPercent(string memory message, uint256 ratio) internal pure {
+        uint256 decimals = ratio % 1_000;
+        console2.log(
+            string.concat(message, "%d.%s%"),
+            ratio / 1_000,
+            string.concat(decimals < 10 ? "00" : decimals < 100 ? "0" : "", vm.toString(decimals))
+        );
     }
 
     function testFirstBorrowRate(Market memory market) public {
