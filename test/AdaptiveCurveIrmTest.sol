@@ -252,11 +252,13 @@ contract AdaptiveCurveIrmTest is Test {
 
         console2.log("pinged borrow / leaped borrow %");
         uint borrowRatio = pinged.totalBorrowAssets * 100_000 / leaped.totalBorrowAssets; 
-        console2.log("  %s.%s%%",borrowRatio/1000,borrowRatio%1000);
+        uint dec = borrowRatio%1000;
+        console2.log("  %s.%s%%",borrowRatio/1000,string.concat(dec<10 ? "00" : (dec<100 ? "0" : ""),vm.toString(dec)));
 
         console2.log("pinged rate / leaped rate %");
         uint rateRatio = uint(pingedRAT*100_000/leapedRAT);
-        console2.log("  %s.%s%%",rateRatio/1000,rateRatio%1000);
+        dec = rateRatio%1000;
+        console2.log("  %s.%s%%",rateRatio/1000,string.concat(dec<10 ? "00" : (dec<100 ? "0" : ""),vm.toString(dec)));
     }
 
     function testFirstBorrowRate(Market memory market) public {
