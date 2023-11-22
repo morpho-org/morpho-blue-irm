@@ -5,7 +5,7 @@ import "../../src/SpeedJumpIrm.sol";
 
 import "../../lib/forge-std/src/Test.sol";
 
-contract AdaptativeCurveIrmTest is Test {
+contract AdaptiveCurveIrmTest is Test {
     using MathLib for int256;
     using MathLib for int256;
     using MathLib for uint256;
@@ -21,16 +21,16 @@ contract AdaptativeCurveIrmTest is Test {
     int256 internal constant TARGET_UTILIZATION = 0.9 ether;
     int256 internal constant INITIAL_RATE_AT_TARGET = int256(0.01 ether) / 365 days;
 
-    AdaptativeCurveIrm internal irm;
+    AdaptiveCurveIrm internal irm;
     MarketParams internal marketParams = MarketParams(address(0), address(0), address(0), address(0), 0);
 
     function setUp() public {
         irm =
-        new AdaptativeCurveIrm(address(this), CURVE_STEEPNESS, ADJUSTMENT_SPEED, TARGET_UTILIZATION, INITIAL_RATE_AT_TARGET);
+        new AdaptiveCurveIrm(address(this), CURVE_STEEPNESS, ADJUSTMENT_SPEED, TARGET_UTILIZATION, INITIAL_RATE_AT_TARGET);
         vm.warp(90 days);
 
         bytes4[] memory selectors = new bytes4[](1);
-        selectors[0] = AdaptativeCurveIrmTest.handleBorrowRate.selector;
+        selectors[0] = AdaptiveCurveIrmTest.handleBorrowRate.selector;
         targetSelector(FuzzSelector({addr: address(this), selectors: selectors}));
         targetContract(address(this));
     }
@@ -39,7 +39,7 @@ contract AdaptativeCurveIrmTest is Test {
 
     function testDeployment() public {
         vm.expectRevert(bytes(ErrorsLib.ZERO_ADDRESS));
-        new AdaptativeCurveIrm(address(0), 0, 0, 0, 0);
+        new AdaptiveCurveIrm(address(0), 0, 0, 0, 0);
     }
 
     function testFirstBorrowRateUtilizationZero() public {
@@ -172,7 +172,7 @@ contract AdaptativeCurveIrmTest is Test {
         uint256 borrowRate = irm.borrowRate(marketParams, market1);
 
         assertEq(borrowRateView, borrowRate, "borrowRateView");
-        assertApproxEqRel(borrowRate, expectedAvgRate, 0.1 ether, "avgBorrowRate");
+        assertApproxEqRel(borrowRate, expectedAvgRate, 0.11 ether, "avgBorrowRate");
         assertApproxEqRel(irm.rateAtTarget(marketParams.id()), expectedRateAtTarget, 0.001 ether, "rateAtTarget");
     }
 
@@ -227,12 +227,12 @@ contract AdaptativeCurveIrmTest is Test {
         totalSupplyAssets = bound(totalSupplyAssets, 0, type(uint128).max);
         totalBorrowAssets = bound(totalBorrowAssets, 0, totalSupplyAssets);
 
-        vm.warp(block.timestamp + elapsed);
-
         Market memory market;
+        market.lastUpdate = uint128(block.timestamp);
         market.totalBorrowAssets = uint128(totalSupplyAssets);
         market.totalSupplyAssets = uint128(totalBorrowAssets);
 
+        vm.warp(block.timestamp + elapsed);
         irm.borrowRate(marketParams, market);
     }
 
@@ -255,6 +255,8 @@ contract AdaptativeCurveIrmTest is Test {
         assertLe(irm.borrowRateView(marketParams, market), uint256(irm.MAX_RATE_AT_TARGET().wMulDown(CURVE_STEEPNESS)));
         assertLe(irm.borrowRate(marketParams, market), uint256(irm.MAX_RATE_AT_TARGET().wMulDown(CURVE_STEEPNESS)));
     }
+
+    /* HELPERS */
 
     function _expectedRateAtTarget(Id id, Market memory market) internal view returns (int256) {
         int256 rateAtTarget = int256(irm.rateAtTarget(id));

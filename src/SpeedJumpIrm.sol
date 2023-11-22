@@ -10,14 +10,10 @@ import {MarketParamsLib} from "../lib/morpho-blue/src/libraries/MarketParamsLib.
 import {Id, MarketParams, Market} from "../lib/morpho-blue/src/interfaces/IMorpho.sol";
 import {MathLib as MorphoMathLib} from "../lib/morpho-blue/src/libraries/MathLib.sol";
 
-/// @dev Number of steps used in the Riemann sum.
-/// @dev 4 steps allows to have a relative error below 30% for 15 days at err=1 or err=-1.
-int256 constant N_STEPS = 4;
-
-/// @title AdaptativeCurveIrm
+/// @title AdaptiveCurveIrm
 /// @author Morpho Labs
 /// @custom:contact security@morpho.org
-contract AdaptativeCurveIrm is IIrm {
+contract AdaptiveCurveIrm is IIrm {
     using MathLib for int256;
     using UtilsLib for int256;
     using MorphoMathLib for uint128;
@@ -124,10 +120,13 @@ contract AdaptativeCurveIrm is IIrm {
 
         int256 startRateAtTarget = rateAtTarget[id];
 
+        int256 avgRateAtTarget;
+        int256 endRateAtTarget;
+
         if (startRateAtTarget == 0) {
             // First interaction.
-            // Safe "unchecked" cast because INITIAL_RATE_AT_TARGET >= 0.
-            return (uint256(_curve(INITIAL_RATE_AT_TARGET, err)), INITIAL_RATE_AT_TARGET);
+            avgRateAtTarget = INITIAL_RATE_AT_TARGET;
+            endRateAtTarget = INITIAL_RATE_AT_TARGET;
         } else {
             // Note that the speed is assumed constant between two interactions, but in theory it increases because of
             // interests. So the rate will be slightly underestimated.
@@ -137,30 +136,32 @@ contract AdaptativeCurveIrm is IIrm {
             int256 elapsed = int256(block.timestamp - market.lastUpdate);
             int256 linearAdaptation = speed * elapsed;
 
-            // Formula of the average rate that should be returned to Morpho Blue:
-            // avg = 1/T ∫_0^T curve(startRateAtTarget * exp(speed * x), err) dx
-            // The integral is approximated with a Riemann sum (steps of length T/N). To underestimate the rate, a left
-            // Riemann (a=0, b=N-1) is done when the rate goes up (err>0) and a right Riemann (a=1, b=N) is done when
-            // the rate goes down (err<0).
-            // avg ~= 1/T Σ_i=a^b curve(startRateAtTarget * exp(speed * T/N * i), err) * T / N
-            //     ~= Σ_i=a^b curve(startRateAtTarget * exp(linearVariation/N * i), err) / N
-            // curve is linear in startRateAtTarget, so:
-            //     ~= curve(Σ_i=a^b startRateAtTarget * exp(linearVariation/N * i), err) / N
-            //     ~= curve(Σ_i=a^b startRateAtTarget * exp(linearVariation/N * i) / N, err)
-            int256 sumRateAtTarget;
-            int256 step = linearAdaptation / N_STEPS;
-            // Compute the terms 1 to N_STEPS - 1.
-            for (int256 k = 1; k < N_STEPS; k++) {
-                sumRateAtTarget += _newRateAtTarget(startRateAtTarget, step * k);
+            if (linearAdaptation == 0) {
+                // If linearAdaptation == 0, avgRateAtTarget = endRateAtTarget = startRateAtTarget;
+                avgRateAtTarget = startRateAtTarget;
+                endRateAtTarget = startRateAtTarget;
+            } else {
+                // Formula of the average rate that should be returned to Morpho Blue:
+                // avg = 1/T * ∫_0^T curve(startRateAtTarget*exp(speed*x), err) dx
+                // The integral is approximated with the trapezoidal rule:
+                // avg ~= 1/T * Σ_i=1^N [curve(f((i-1) * T/N), err) + curve(f(i * T/N), err)] / 2 * T/N
+                // Where f(x) = startRateAtTarget*exp(speed*x)
+                // avg ~= Σ_i=1^N [curve(f((i-1) * T/N), err) + curve(f(i * T/N), err)] / (2 * N)
+                // As curve is linear in its first argument:
+                // avg ~= curve([Σ_i=1^N [f((i-1) * T/N) + f(i * T/N)] / (2 * N), err)
+                // avg ~= curve([(f(0) + f(T))/2 + Σ_i=1^(N-1) f(i * T/N)] / N, err)
+                // avg ~= curve([(startRateAtTarget + endRateAtTarget)/2 + Σ_i=1^(N-1) f(i * T/N)] / N, err)
+                // With N = 2:
+                // avg ~= curve([(startRateAtTarget + endRateAtTarget)/2 + startRateAtTarget*exp(speed*T/2)] / 2, err)
+                // avg ~= curve([startRateAtTarget + endRateAtTarget + 2*startRateAtTarget*exp(speed*T/2)] / 4, err)
+                endRateAtTarget = _newRateAtTarget(startRateAtTarget, linearAdaptation);
+                int256 midRateAtTarget = _newRateAtTarget(startRateAtTarget, linearAdaptation / 2);
+                avgRateAtTarget = (startRateAtTarget + endRateAtTarget + 2 * midRateAtTarget) / 4;
             }
-            int256 endRateAtTarget = _newRateAtTarget(startRateAtTarget, linearAdaptation);
-            // Add the term 0 for a left Riemann or the term N_STEPS for a right Riemann.
-            sumRateAtTarget += err < 0 ? endRateAtTarget : startRateAtTarget;
-            int256 avgRateAtTarget = sumRateAtTarget / N_STEPS;
-
-            // Safe "unchecked" cast because avgRateAtTarget >= 0.
-            return (uint256(_curve(avgRateAtTarget, err)), endRateAtTarget);
         }
+
+        // Safe "unchecked" cast because avgRateAtTarget >= 0.
+        return (uint256(_curve(avgRateAtTarget, err)), endRateAtTarget);
     }
 
     /// @dev Returns the rate for a given `_rateAtTarget` and an `err`.
