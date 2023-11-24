@@ -24,8 +24,9 @@ contract AdaptiveCurveIrmTest is Test {
     MarketParams internal marketParams = MarketParams(address(0), address(0), address(0), address(0), 0);
 
     function setUp() public {
-        irm =
-        new AdaptiveCurveIrm(address(this), CURVE_STEEPNESS, ADJUSTMENT_SPEED, TARGET_UTILIZATION, INITIAL_RATE_AT_TARGET);
+        irm = new AdaptiveCurveIrm(
+            address(this), CURVE_STEEPNESS, ADJUSTMENT_SPEED, TARGET_UTILIZATION, INITIAL_RATE_AT_TARGET
+        );
         vm.warp(90 days);
 
         bytes4[] memory selectors = new bytes4[](1);
@@ -187,8 +188,9 @@ contract AdaptiveCurveIrmTest is Test {
     function testRateAfter3WeeksUtilizationTargetPingEveryMinute() public {
         int256 initialRateAtTarget = int256(1 ether) / 365 days; // 100%
 
-        irm =
-        new AdaptiveCurveIrm(address(this), CURVE_STEEPNESS, ADJUSTMENT_SPEED, TARGET_UTILIZATION, initialRateAtTarget);
+        irm = new AdaptiveCurveIrm(
+            address(this), CURVE_STEEPNESS, ADJUSTMENT_SPEED, TARGET_UTILIZATION, initialRateAtTarget
+        );
 
         Market memory market;
         market.totalSupplyAssets = 1 ether;
