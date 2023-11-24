@@ -3,7 +3,7 @@
 Some interest rate models for Morpho Blue:
 - [AdaptiveCurveIRM](./src/AdaptiveCurveIrm.sol)
 
-## Ressources
+## Resources
 
 - AdaptiveCurveIRM: [docs](https://www.notion.so/morpho-labs/Morpho-Blue-Documentation-Hub-External-00ff8194791045deb522821be46abbdc?pvs=4#d8269074bfd649009f28625a9caa38ea), [announcement article](https://morpho.mirror.xyz/aaUjIF85aIi5RT6-pLhVWBzuiCpOb4BV03OYNts2BHQ).
 
