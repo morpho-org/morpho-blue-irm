@@ -11,12 +11,12 @@ Some interest rate models for Morpho Blue:
 
 All audits are stored in the [audits](./audits/)' folder.
 
-## Licences
-
-The primary licence is MIT, see [LICENCE](./LICENSE).
-
 ## Getting started
 
 Install dependencies: `forge install`
 
 Run tests: `forge test`
+
+## Licenses
+
+The primary licence is MIT, see [LICENCE](./LICENSE).
