@@ -20,4 +20,4 @@ Run tests: `forge test`
 
 ## Licenses
 
-The primary licence is MIT, see [LICENCE](LICENSE).
+The primary license is MIT, see [LICENSE](LICENSE).
