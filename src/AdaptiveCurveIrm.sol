@@ -2,6 +2,7 @@
 pragma solidity 0.8.19;
 
 import {IIrm} from "../lib/morpho-blue/src/interfaces/IIrm.sol";
+import {IAdaptiveCurveIrm} from "./interfaces/IAdaptiveCurveIrm.sol";
 
 import {UtilsLib} from "./libraries/UtilsLib.sol";
 import {ErrorsLib} from "./libraries/ErrorsLib.sol";
@@ -15,7 +16,7 @@ import {MathLib as MorphoMathLib} from "../lib/morpho-blue/src/libraries/MathLib
 /// @title AdaptiveCurveIrm
 /// @author Morpho Labs
 /// @custom:contact security@morpho.org
-contract AdaptiveCurveIrm is IIrm {
+contract AdaptiveCurveIrm is IAdaptiveCurveIrm {
     using MathLib for int256;
     using UtilsLib for int256;
     using MorphoMathLib for uint128;
