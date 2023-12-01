@@ -30,31 +30,24 @@ contract AdaptiveCurveIrm is IAdaptiveCurveIrm {
 
     /* IMMUTABLES */
 
-    /// @notice Address of Morpho.
+    /// @inheritdoc IAdaptiveCurveIrm
     address public immutable MORPHO;
 
-    /// @notice Curve steepness (scaled by WAD).
-    /// @dev Verified to be inside the expected range at construction.
+    /// @inheritdoc IAdaptiveCurveIrm
     int256 public immutable CURVE_STEEPNESS;
 
-    /// @notice Adjustment speed (scaled by WAD).
-    /// @dev The speed is per second, so the rate moves at a speed of ADJUSTMENT_SPEED * err each second (while being
-    /// continuously compounded). A typical value for the ADJUSTMENT_SPEED would be 10 ether / 365 days.
-    /// @dev Verified to be inside the expected range at construction.
+    /// @inheritdoc IAdaptiveCurveIrm
     int256 public immutable ADJUSTMENT_SPEED;
 
-    /// @notice Target utilization (scaled by WAD).
-    /// @dev Verified to be strictly between 0 and 1 at construction.
+    /// @inheritdoc IAdaptiveCurveIrm
     int256 public immutable TARGET_UTILIZATION;
 
-    /// @notice Initial rate at target per second (scaled by WAD).
-    /// @dev Verified to be between MIN_RATE_AT_TARGET and MAX_RATE_AT_TARGET at contruction.
+    /// @inheritdoc IAdaptiveCurveIrm
     int256 public immutable INITIAL_RATE_AT_TARGET;
 
     /* STORAGE */
 
-    /// @notice Rate at target utilization.
-    /// @dev Tells the height of the curve.
+    /// @inheritdoc IAdaptiveCurveIrm
     mapping(Id => int256) public rateAtTarget;
 
     /* CONSTRUCTOR */
