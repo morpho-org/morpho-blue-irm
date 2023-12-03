@@ -41,7 +41,7 @@ contract AdaptiveCurveIrm is IIrm {
     int256 public constant TARGET_UTILIZATION = 0.9 ether;
 
     /// @notice Initial rate at target per second (scaled by WAD).
-    int256 public constant INITIAL_RATE_AT_TARGET = int256(0.01 ether) / 365 days;
+    int256 public constant INITIAL_RATE_AT_TARGET = int256(0.04 ether) / 365 days;
 
     /// @notice Mininimum rate at target per second (scaled by WAD) (0.1% APR).
     int256 public constant MIN_RATE_AT_TARGET = int256(0.001 ether) / 365 days;
