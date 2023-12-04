@@ -4,6 +4,7 @@ pragma solidity ^0.8.0;
 import {MathLib, WAD_INT} from "../src/libraries/MathLib.sol";
 import {ExpLib} from "../src/libraries/adaptive-curve/ExpLib.sol";
 import {wadExp} from "../lib/solmate/src/utils/SignedWadMath.sol";
+import {ConstantsLib} from "../src/libraries/adaptive-curve/ConstantsLib.sol";
 import {MathLib as MorphoMathLib} from "../lib/morpho-blue/src/libraries/MathLib.sol";
 
 import "../lib/forge-std/src/Test.sol";
@@ -62,7 +63,7 @@ contract ExpLibTest is Test {
     }
 
     function testWExpWMulDownMaxRate() public pure {
-        ExpLib.wExp(ExpLib.WEXP_UPPER_BOUND).wMulDown(int256(0.01e9 ether) / 365 days);
+        ExpLib.wExp(ExpLib.WEXP_UPPER_BOUND).wMulDown(ConstantsLib.MAX_RATE_AT_TARGET);
     }
 
     function _wExpUnbounded(int256 x) internal pure returns (int256) {
