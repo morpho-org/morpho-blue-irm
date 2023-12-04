@@ -85,8 +85,8 @@ contract AdaptiveCurveIrmTest is Test {
             uint256((ConstantsLib.INITIAL_RATE_AT_TARGET * 4).wMulDown(1.4361 ether)),
             0.1 ether
         );
-        // Expected rate: 5.744%.
-        assertApproxEqRel(irm.borrowRateView(marketParams, market), uint256(0.05744 ether) / 365 days, 0.1 ether);
+        // Expected rate: 22.976%.
+        assertApproxEqRel(irm.borrowRateView(marketParams, market), uint256(0.22976 ether) / 365 days, 0.1 ether);
     }
 
     function testRateAfterUtilizationZero() public {
@@ -116,8 +116,8 @@ contract AdaptiveCurveIrmTest is Test {
             uint256((ConstantsLib.INITIAL_RATE_AT_TARGET / 4).wMulDown(0.724 ether)),
             0.1 ether
         );
-        // Expected rate: 0.181%.
-        assertApproxEqRel(irm.borrowRateView(marketParams, market), uint256(0.00181 ether) / 365 days, 0.1 ether);
+        // Expected rate: 0.7240%.
+        assertApproxEqRel(irm.borrowRateView(marketParams, market), uint256(0.007240 ether) / 365 days, 0.1 ether);
     }
 
     function testRateAfter45DaysUtilizationAboveTargetNoPing() public {
@@ -133,8 +133,8 @@ contract AdaptiveCurveIrmTest is Test {
         market.totalBorrowAssets = uint128(uint256(ConstantsLib.TARGET_UTILIZATION + 1 ether) / 2); // Error = 50%
         irm.borrowRate(marketParams, market);
 
-        // Expected rate: 1% * exp(50 * 45 / 365 * 50%) = 21.81%.
-        assertApproxEqRel(irm.rateAtTarget(marketParams.id()), int256(0.2181 ether) / 365 days, 0.005 ether);
+        // Expected rate: 4% * exp(50 * 45 / 365 * 50%) = 87.22%.
+        assertApproxEqRel(irm.rateAtTarget(marketParams.id()), int256(0.8722 ether) / 365 days, 0.005 ether);
     }
 
     function testRateAfter45DaysUtilizationAboveTargetPingEveryMinute() public {
@@ -159,20 +159,20 @@ contract AdaptiveCurveIrmTest is Test {
         }
 
         assertApproxEqRel(
-            market.totalBorrowAssets.wDivDown(market.totalSupplyAssets), 0.95 ether, 0.002 ether, "utilization"
+            market.totalBorrowAssets.wDivDown(market.totalSupplyAssets), 0.95 ether, 0.01 ether, "utilization"
         );
 
         int256 rateAtTarget = irm.rateAtTarget(marketParams.id());
-        // Expected rate: 1% * exp(50 * 45 / 365 * 50%) = 21.81%.
-        int256 expectedRateAtTarget = int256(0.2181 ether) / 365 days;
+        // Expected rate: 4% * exp(50 * 45 / 365 * 50%) = 87.22%.
+        int256 expectedRateAtTarget = int256(0.8722 ether) / 365 days;
         assertGe(rateAtTarget, expectedRateAtTarget);
-        // The rate is tolerated to be +2% (relatively) because of the pings every minute.
-        assertApproxEqRel(rateAtTarget, expectedRateAtTarget, 0.02 ether, "expectedRateAtTarget");
+        // The rate is tolerated to be +8% (relatively) because of the pings every minute.
+        assertApproxEqRel(rateAtTarget, expectedRateAtTarget, 0.08 ether, "expectedRateAtTarget");
 
-        // Expected growth: exp(21.81% * 3.5 * 45 / 365) = +9.87%.
-        // The growth is tolerated to be +8% (relatively) because of the pings every minute.
+        // Expected growth: exp(87.22% * 3.5 * 45 / 365) = +45.70%.
+        // The growth is tolerated to be +30% (relatively) because of the pings every minute.
         assertApproxEqRel(
-            market.totalBorrowAssets, initialBorrowAssets.wMulDown(1.0987 ether), 0.08 ether, "totalBorrowAssets"
+            market.totalBorrowAssets, initialBorrowAssets.wMulDown(1.4570 ether), 0.3 ether, "totalBorrowAssets"
         );
     }
 
