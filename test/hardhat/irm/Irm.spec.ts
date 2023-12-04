@@ -79,7 +79,7 @@ describe("irm", () => {
       const lastUpdate = await randomForwardTimestamp();
 
       const totalSupplyAssets = BigInt.WAD * toBigInt(1 + Math.floor(random() * 100));
-      const totalBorrowAssets = totalSupplyAssets.wadMul(toBigInt(Math.floor(random() * 1e18)));
+      const totalBorrowAssets = totalSupplyAssets.percentMul(toBigInt(Math.floor(random() * BigInt.PERCENT.toFloat())));
 
       await irm.borrowRate(marketParams, {
         fee: 0,
