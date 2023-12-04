@@ -1,7 +1,7 @@
 import { AbiCoder, keccak256, toBigInt } from "ethers";
 import hre from "hardhat";
 import _range from "lodash/range";
-import { AdaptativeCurveIrm } from "types";
+import { AdaptiveCurveIrm } from "types";
 import { MarketParamsStruct } from "types/lib/morpho-blue/src/interfaces/IIrm";
 
 import { SignerWithAddress } from "@nomicfoundation/hardhat-ethers/signers";
@@ -41,16 +41,16 @@ const randomForwardTimestamp = async () => {
 describe("irm", () => {
   let admin: SignerWithAddress;
 
-  let irm: AdaptativeCurveIrm;
+  let irm: AdaptiveCurveIrm;
 
   let marketParams: MarketParamsStruct;
 
   beforeEach(async () => {
     [admin] = await hre.ethers.getSigners();
 
-    const AdaptativeCurveIrmFactory = await hre.ethers.getContractFactory("AdaptativeCurveIrm", admin);
+    const AdaptiveCurveIrmFactory = await hre.ethers.getContractFactory("AdaptiveCurveIrm", admin);
 
-    irm = await AdaptativeCurveIrmFactory.deploy(
+    irm = await AdaptiveCurveIrmFactory.deploy(
       await admin.getAddress(),
       4000000000000000000n,
       1585489599188n,
@@ -79,7 +79,7 @@ describe("irm", () => {
       const lastUpdate = await randomForwardTimestamp();
 
       const totalSupplyAssets = BigInt.WAD * toBigInt(1 + Math.floor(random() * 100));
-      const totalBorrowAssets = totalSupplyAssets.min(BigInt.WAD * toBigInt(1 + Math.floor(random() * 50)));
+      const totalBorrowAssets = totalSupplyAssets.wadMul(toBigInt(Math.floor(random() * 1e18)));
 
       await irm.borrowRate(marketParams, {
         fee: 0,
