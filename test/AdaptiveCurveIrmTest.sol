@@ -117,7 +117,7 @@ contract AdaptiveCurveIrmTest is Test {
             0.1 ether
         );
         // Expected rate: 0.7240%.
-        assertApproxEqRel(irm.borrowRateView(marketParams, market), uint256(0.007240 ether) / 365 days, 0.1 ether);
+        assertApproxEqRel(irm.borrowRateView(marketParams, market), uint256(0.00724 ether) / 365 days, 0.1 ether);
     }
 
     function testRateAfter45DaysUtilizationAboveTargetNoPing() public {
@@ -172,7 +172,7 @@ contract AdaptiveCurveIrmTest is Test {
         // Expected growth: exp(87.22% * 3.5 * 45 / 365) = +45.70%.
         // The growth is tolerated to be +30% (relatively) because of the pings every minute.
         assertApproxEqRel(
-            market.totalBorrowAssets, initialBorrowAssets.wMulDown(1.4570 ether), 0.3 ether, "totalBorrowAssets"
+            market.totalBorrowAssets, initialBorrowAssets.wMulDown(1.457 ether), 0.3 ether, "totalBorrowAssets"
         );
     }
 
@@ -343,10 +343,12 @@ contract AdaptiveCurveIrmTest is Test {
         market.totalSupplyAssets = 10 ether;
 
         assertGe(
-            irm.borrowRateView(marketParams, market), uint256(ConstantsLib.MIN_RATE_AT_TARGET.wDivDown(ConstantsLib.CURVE_STEEPNESS))
+            irm.borrowRateView(marketParams, market),
+            uint256(ConstantsLib.MIN_RATE_AT_TARGET.wDivDown(ConstantsLib.CURVE_STEEPNESS))
         );
         assertGe(
-            irm.borrowRate(marketParams, market), uint256(ConstantsLib.MIN_RATE_AT_TARGET.wDivDown(ConstantsLib.CURVE_STEEPNESS))
+            irm.borrowRate(marketParams, market),
+            uint256(ConstantsLib.MIN_RATE_AT_TARGET.wDivDown(ConstantsLib.CURVE_STEEPNESS))
         );
     }
 
@@ -356,10 +358,12 @@ contract AdaptiveCurveIrmTest is Test {
         market.totalSupplyAssets = 10 ether;
 
         assertLe(
-            irm.borrowRateView(marketParams, market), uint256(ConstantsLib.MAX_RATE_AT_TARGET.wMulDown(ConstantsLib.CURVE_STEEPNESS))
+            irm.borrowRateView(marketParams, market),
+            uint256(ConstantsLib.MAX_RATE_AT_TARGET.wMulDown(ConstantsLib.CURVE_STEEPNESS))
         );
         assertLe(
-            irm.borrowRate(marketParams, market), uint256(ConstantsLib.MAX_RATE_AT_TARGET.wMulDown(ConstantsLib.CURVE_STEEPNESS))
+            irm.borrowRate(marketParams, market),
+            uint256(ConstantsLib.MAX_RATE_AT_TARGET.wMulDown(ConstantsLib.CURVE_STEEPNESS))
         );
     }
 
@@ -372,7 +376,9 @@ contract AdaptiveCurveIrmTest is Test {
         int256 linearAdaptation = speed * int256(elapsed);
         int256 adaptationMultiplier = ExpLib.wExp(linearAdaptation);
         return (rateAtTarget > 0)
-            ? rateAtTarget.wMulDown(adaptationMultiplier).bound(ConstantsLib.MIN_RATE_AT_TARGET, ConstantsLib.MAX_RATE_AT_TARGET)
+            ? rateAtTarget.wMulDown(adaptationMultiplier).bound(
+                ConstantsLib.MIN_RATE_AT_TARGET, ConstantsLib.MAX_RATE_AT_TARGET
+            )
             : ConstantsLib.INITIAL_RATE_AT_TARGET;
     }
 
@@ -399,7 +405,8 @@ contract AdaptiveCurveIrmTest is Test {
     function _curve(int256 rateAtTarget, int256 err) internal pure returns (uint256) {
         // Safe "unchecked" cast because err >= -1 (in WAD).
         if (err < 0) {
-            return uint256(((WAD - WAD.wDivDown(ConstantsLib.CURVE_STEEPNESS)).wMulDown(err) + WAD).wMulDown(rateAtTarget));
+            return
+                uint256(((WAD - WAD.wDivDown(ConstantsLib.CURVE_STEEPNESS)).wMulDown(err) + WAD).wMulDown(rateAtTarget));
         } else {
             return uint256(((ConstantsLib.CURVE_STEEPNESS - WAD).wMulDown(err) + WAD).wMulDown(rateAtTarget));
         }
