@@ -1,6 +1,8 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
+import {WAD_INT} from "../MathLib.sol";
+
 /// @title ConstantsLib
 /// @author Morpho Labs
 /// @custom:contact security@morpho.org
@@ -17,9 +19,9 @@ library ConstantsLib {
     /// @notice Initial rate at target per second (scaled by WAD).
     int256 public constant INITIAL_RATE_AT_TARGET = int256(0.04 ether) / 365 days;
 
-    /// @notice Mininimum rate at target per second (scaled by WAD) (0.1% APR).
-    int256 public constant MIN_RATE_AT_TARGET = int256(0.001 ether) / 365 days;
+    /// @notice Mininimum rate at target per second (scaled by WAD) (0.025% APR).
+    int256 public constant MIN_RATE_AT_TARGET = int256(0.00025 ether) * CURVE_STEEPNESS / WAD_INT / 365 days;
 
-    /// @notice Maximum rate at target per second (scaled by WAD) (1B% APR).
-    int256 public constant MAX_RATE_AT_TARGET = int256(0.01e9 ether) / 365 days;
+    /// @notice Maximum rate at target per second (scaled by WAD) (1000% APR).
+    int256 public constant MAX_RATE_AT_TARGET = int256(0.01e3 ether) * WAD_INT / CURVE_STEEPNESS / 365 days;
 }
