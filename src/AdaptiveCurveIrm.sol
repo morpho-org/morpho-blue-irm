@@ -12,6 +12,8 @@ import {MarketParamsLib} from "../lib/morpho-blue/src/libraries/MarketParamsLib.
 import {Id, MarketParams, Market} from "../lib/morpho-blue/src/interfaces/IMorpho.sol";
 import {MathLib as MorphoMathLib} from "../lib/morpho-blue/src/libraries/MathLib.sol";
 
+import "../lib/forge-std/src/console2.sol";
+
 /// @title AdaptiveCurveIrm
 /// @author Morpho Labs
 /// @custom:contact security@morpho.org
@@ -103,6 +105,9 @@ contract AdaptiveCurveIrm is IIrm {
         Id id = marketParams.id();
 
         (uint256 avgRate, int256 endRateAtTarget) = _borrowRate(id, market);
+
+        console2.log("avgRate: %e", avgRate * 365 days);
+        console2.log("endRateAtTarget: %e", endRateAtTarget * 365 days);
 
         rateAtTarget[id] = endRateAtTarget;
 

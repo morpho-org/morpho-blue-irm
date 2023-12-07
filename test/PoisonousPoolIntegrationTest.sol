@@ -8,6 +8,7 @@ pragma solidity ^0.8.0;
 import "../lib/morpho-blue/test/forge/BaseTest.sol";
 
 contract PoisonousPoolIntegrationTest is BaseTest {
+    using MathLib for uint128;
     using MathLib for uint256;
     using SharesMathLib for uint256;
     using MarketParamsLib for MarketParams;
@@ -53,16 +54,18 @@ contract PoisonousPoolIntegrationTest is BaseTest {
                 - SharesMathLib.VIRTUAL_ASSETS
         );
 
-        skip(65 days);
+        for (uint256 i; i < 5; ++i) {
+            skip(365 days);
 
-        morpho.accrueInterest(marketParams);
+            morpho.accrueInterest(marketParams);
 
-        market = morpho.market(marketParams.id());
-        console2.log(
-            "bad debt: %e",
-            SharesMathLib.VIRTUAL_SHARES.toAssetsDown(market.totalBorrowAssets, market.totalBorrowShares)
-                - SharesMathLib.VIRTUAL_ASSETS
-        );
+            market = morpho.market(marketParams.id());
+            console2.log(
+                "bad debt: %e",
+                SharesMathLib.VIRTUAL_SHARES.toAssetsDown(market.totalBorrowAssets, market.totalBorrowShares)
+                    - SharesMathLib.VIRTUAL_ASSETS
+            );
+        }
 
         uint256 borrowed =
             (supplied * SharesMathLib.VIRTUAL_SHARES).toAssetsUp(market.totalBorrowAssets, market.totalBorrowShares);
@@ -79,6 +82,7 @@ contract PoisonousPoolIntegrationTest is BaseTest {
             morpho.accrueInterest(marketParams);
 
             market = morpho.market(marketParams.id());
+            console2.log("utilization: %e", market.totalBorrowAssets.wDivDown(market.totalSupplyAssets));
             console2.log(
                 "bad debt: %e",
                 SharesMathLib.VIRTUAL_SHARES.toAssetsDown(market.totalBorrowAssets, market.totalBorrowShares)
