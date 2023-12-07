@@ -1,9 +1,9 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-import "../src/AdaptiveCurveIrm.sol";
+import "../../src/AdaptiveCurveIrm.sol";
 
-import "../lib/forge-std/src/Test.sol";
+import "../../lib/forge-std/src/Test.sol";
 
 contract AdaptiveCurveIrmTest is Test {
     using MathLib for int256;
