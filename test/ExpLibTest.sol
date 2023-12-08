@@ -62,8 +62,8 @@ contract ExpLibTest is Test {
         assertLe(ExpLib.wExp(x), 1e18);
     }
 
-    function testWExpWMulDownMaxRate() public pure {
-        ExpLib.wExp(ExpLib.WEXP_UPPER_BOUND).wMulDown(ConstantsLib.MAX_RATE_AT_TARGET);
+    function testWExpWMulMaxRate() public pure {
+        ExpLib.wExp(ExpLib.WEXP_UPPER_BOUND).wMul(ConstantsLib.MAX_RATE_AT_TARGET);
     }
 
     function _wExpUnbounded(int256 x) internal pure returns (int256) {
