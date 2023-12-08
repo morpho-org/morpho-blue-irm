@@ -20,8 +20,8 @@ library ConstantsLib {
     int256 public constant INITIAL_RATE_AT_TARGET = int256(0.01 ether) * CURVE_STEEPNESS / WAD_INT / 365 days;
 
     /// @notice Minimum rate at target per second (scaled by WAD) (0.1% APR <=> 0.025% min APR).
-    int256 public constant MIN_RATE_AT_TARGET = int256(0.00025 ether) * CURVE_STEEPNESS / WAD_INT / 365 days;
+    int256 public constant MIN_RATE_AT_TARGET = int256(0.025 * 0.01 ether) * CURVE_STEEPNESS / WAD_INT / 365 days;
 
-    /// @notice Maximum rate at target per second (scaled by WAD) (250% APR <=> 1000% max APR).
-    int256 public constant MAX_RATE_AT_TARGET = int256(0.01e3 ether) * WAD_INT / CURVE_STEEPNESS / 365 days;
+    /// @notice Maximum rate at target per second (scaled by WAD) (200% APR <=> 800% max APR).
+    int256 public constant MAX_RATE_AT_TARGET = int256(800 * 0.01 ether) * WAD_INT / CURVE_STEEPNESS / 365 days;
 }
