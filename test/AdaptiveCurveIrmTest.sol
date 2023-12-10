@@ -15,7 +15,7 @@ contract AdaptiveCurveIrmTest is Test {
 
     event BorrowRateUpdate(Id indexed id, uint256 avgBorrowRate, uint256 rateAtTarget);
 
-    AdaptiveCurveIrm internal irm;
+    IAdaptiveCurveIrm internal irm;
     MarketParams internal marketParams = MarketParams(address(0), address(0), address(0), address(0), 0);
 
     function setUp() public {
@@ -370,7 +370,7 @@ contract AdaptiveCurveIrmTest is Test {
     /* HELPERS */
 
     function _expectedRateAtTarget(Id id, Market memory market) internal view returns (int256) {
-        int256 rateAtTarget = int256(irm.rateAtTarget(id));
+        int256 rateAtTarget = irm.rateAtTarget(id);
         int256 speed = ConstantsLib.ADJUSTMENT_SPEED.wMulDown(_err(market));
         uint256 elapsed = (rateAtTarget > 0) ? block.timestamp - market.lastUpdate : 0;
         int256 linearAdaptation = speed * int256(elapsed);
@@ -383,7 +383,7 @@ contract AdaptiveCurveIrmTest is Test {
     }
 
     function _expectedAvgRate(Id id, Market memory market) internal view returns (uint256) {
-        int256 rateAtTarget = int256(irm.rateAtTarget(id));
+        int256 rateAtTarget = irm.rateAtTarget(id);
         int256 err = _err(market);
         int256 speed = ConstantsLib.ADJUSTMENT_SPEED.wMulDown(err);
         uint256 elapsed = (rateAtTarget > 0) ? block.timestamp - market.lastUpdate : 0;
