@@ -126,8 +126,8 @@ contract AdaptiveCurveIrm is IAdaptiveCurveIrm {
             avgRateAtTarget = INITIAL_RATE_AT_TARGET;
             endRateAtTarget = INITIAL_RATE_AT_TARGET;
         } else {
-            // Note that the speed is assumed constant between two interactions, but in theory it increases because of
-            // interests. So the rate will be slightly underestimated.
+            // The speed is assumed constant between two updates, but it is in fact not constant because of interest.
+            // So the rate is underestimated.
             int256 speed = ADJUSTMENT_SPEED.wMulDown(err);
             // market.lastUpdate != 0 because it is not the first interaction with this market.
             // Safe "unchecked" cast because block.timestamp - market.lastUpdate <= block.timestamp <= type(int256).max.
