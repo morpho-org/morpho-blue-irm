@@ -7,6 +7,8 @@ import {WAD_INT} from "../MathLib.sol";
 /// @author Morpho Labs
 /// @custom:contact security@morpho.org
 library ConstantsLib {
+    int256 public constant ONE_BPS = 0.0001 ether;
+
     /// @notice Curve steepness (scaled by WAD).
     int256 public constant CURVE_STEEPNESS = 4 ether;
 
@@ -16,12 +18,12 @@ library ConstantsLib {
     /// @notice Target utilization (scaled by WAD).
     int256 public constant TARGET_UTILIZATION = 0.9 ether;
 
-    /// @notice Initial rate at target per second (scaled by WAD) (4% APR <=> 1% min APR).
-    int256 public constant INITIAL_RATE_AT_TARGET = int256(0.01 ether) * CURVE_STEEPNESS / WAD_INT / 365 days;
+    /// @notice Initial rate at target per second (scaled by WAD).
+    int256 public constant INITIAL_RATE_AT_TARGET = 4_00 * ONE_BPS / 365 days;
 
-    /// @notice Minimum rate at target per second (scaled by WAD) (0.1% APR <=> 0.025% min APR).
-    int256 public constant MIN_RATE_AT_TARGET = int256(0.025 * 0.01 ether) * CURVE_STEEPNESS / WAD_INT / 365 days;
+    /// @notice Minimum rate at target per second (scaled by WAD) (min APR is MAX_RATE_AT_TARGET / CURVE_STEEPNESS).
+    int256 public constant MIN_RATE_AT_TARGET = 10 * ONE_BPS / 365 days;
 
-    /// @notice Maximum rate at target per second (scaled by WAD) (200% APR <=> 800% max APR).
-    int256 public constant MAX_RATE_AT_TARGET = int256(800 * 0.01 ether) * WAD_INT / CURVE_STEEPNESS / 365 days;
+    /// @notice Maximum rate at target per second (scaled by WAD) (max APR is MAX_RATE_AT_TARGET * CURVE_STEEPNESS).
+    int256 public constant MAX_RATE_AT_TARGET = 200_00 * ONE_BPS / 365 days;
 }
