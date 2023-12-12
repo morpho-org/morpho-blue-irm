@@ -73,7 +73,7 @@ contract AdaptiveCurveIrmTest is Test {
         assertApproxEqRel(
             irm.borrowRateView(marketParams, market),
             uint256(
-                (ConstantsLib.INITIAL_RATE_AT_TARGET * 4).wMulDown(
+                (ConstantsLib.INITIAL_RATE_AT_TARGET * 4).wMulTo0(
                     (1.9836 ether - 1 ether) * WAD / (ConstantsLib.ADJUSTMENT_SPEED * 5 days)
                 )
             ),
@@ -82,7 +82,7 @@ contract AdaptiveCurveIrmTest is Test {
         // The average value of exp((50/365)*x) between 0 and 5 is approx. 1.4361.
         assertApproxEqRel(
             irm.borrowRateView(marketParams, market),
-            uint256((ConstantsLib.INITIAL_RATE_AT_TARGET * 4).wMulDown(1.4361 ether)),
+            uint256((ConstantsLib.INITIAL_RATE_AT_TARGET * 4).wMulTo0(1.4361 ether)),
             0.1 ether
         );
         // Expected rate: 22.976%.
@@ -104,7 +104,7 @@ contract AdaptiveCurveIrmTest is Test {
         assertApproxEqRel(
             irm.borrowRateView(marketParams, market),
             uint256(
-                (ConstantsLib.INITIAL_RATE_AT_TARGET / 4).wMulDown(
+                (ConstantsLib.INITIAL_RATE_AT_TARGET / 4).wMulTo0(
                     (0.5041 ether - 1 ether) * WAD / (-ConstantsLib.ADJUSTMENT_SPEED * 5 days)
                 )
             ),
@@ -113,7 +113,7 @@ contract AdaptiveCurveIrmTest is Test {
         // The average value of exp((-50/365*x)) between 0 and 5 is approx. 0.7240.
         assertApproxEqRel(
             irm.borrowRateView(marketParams, market),
-            uint256((ConstantsLib.INITIAL_RATE_AT_TARGET / 4).wMulDown(0.724 ether)),
+            uint256((ConstantsLib.INITIAL_RATE_AT_TARGET / 4).wMulTo0(0.724 ether)),
             0.1 ether
         );
         // Expected rate: 0.7240%.
@@ -344,11 +344,11 @@ contract AdaptiveCurveIrmTest is Test {
 
         assertGe(
             irm.borrowRateView(marketParams, market),
-            uint256(ConstantsLib.MIN_RATE_AT_TARGET.wDivDown(ConstantsLib.CURVE_STEEPNESS))
+            uint256(ConstantsLib.MIN_RATE_AT_TARGET.wDivTo0(ConstantsLib.CURVE_STEEPNESS))
         );
         assertGe(
             irm.borrowRate(marketParams, market),
-            uint256(ConstantsLib.MIN_RATE_AT_TARGET.wDivDown(ConstantsLib.CURVE_STEEPNESS))
+            uint256(ConstantsLib.MIN_RATE_AT_TARGET.wDivTo0(ConstantsLib.CURVE_STEEPNESS))
         );
     }
 
@@ -359,11 +359,11 @@ contract AdaptiveCurveIrmTest is Test {
 
         assertLe(
             irm.borrowRateView(marketParams, market),
-            uint256(ConstantsLib.MAX_RATE_AT_TARGET.wMulDown(ConstantsLib.CURVE_STEEPNESS))
+            uint256(ConstantsLib.MAX_RATE_AT_TARGET.wMulTo0(ConstantsLib.CURVE_STEEPNESS))
         );
         assertLe(
             irm.borrowRate(marketParams, market),
-            uint256(ConstantsLib.MAX_RATE_AT_TARGET.wMulDown(ConstantsLib.CURVE_STEEPNESS))
+            uint256(ConstantsLib.MAX_RATE_AT_TARGET.wMulTo0(ConstantsLib.CURVE_STEEPNESS))
         );
     }
 
@@ -382,12 +382,12 @@ contract AdaptiveCurveIrmTest is Test {
 
     function _expectedRateAtTarget(Id id, Market memory market) internal view returns (int256) {
         int256 rateAtTarget = irm.rateAtTarget(id);
-        int256 speed = ConstantsLib.ADJUSTMENT_SPEED.wMulDown(_err(market));
+        int256 speed = ConstantsLib.ADJUSTMENT_SPEED.wMulTo0(_err(market));
         uint256 elapsed = (rateAtTarget > 0) ? block.timestamp - market.lastUpdate : 0;
         int256 linearAdaptation = speed * int256(elapsed);
         int256 adaptationMultiplier = ExpLib.wExp(linearAdaptation);
         return (rateAtTarget > 0)
-            ? rateAtTarget.wMulDown(adaptationMultiplier).bound(
+            ? rateAtTarget.wMulTo0(adaptationMultiplier).bound(
                 ConstantsLib.MIN_RATE_AT_TARGET, ConstantsLib.MAX_RATE_AT_TARGET
             )
             : ConstantsLib.INITIAL_RATE_AT_TARGET;
@@ -396,7 +396,7 @@ contract AdaptiveCurveIrmTest is Test {
     function _expectedAvgRate(Id id, Market memory market) internal view returns (uint256) {
         int256 rateAtTarget = irm.rateAtTarget(id);
         int256 err = _err(market);
-        int256 speed = ConstantsLib.ADJUSTMENT_SPEED.wMulDown(err);
+        int256 speed = ConstantsLib.ADJUSTMENT_SPEED.wMulTo0(err);
         uint256 elapsed = (rateAtTarget > 0) ? block.timestamp - market.lastUpdate : 0;
         int256 linearAdaptation = speed * int256(elapsed);
         int256 endRateAtTarget = int256(_expectedRateAtTarget(id, market));
@@ -408,7 +408,7 @@ contract AdaptiveCurveIrmTest is Test {
         } else {
             // Safe "unchecked" cast to uint256 because linearAdaptation < 0 <=> newBorrowRate <= borrowRateAfterJump.
             avgBorrowRate =
-                uint256((int256(newBorrowRate) - int256(_curve(rateAtTarget, err))).wDivDown(linearAdaptation));
+                uint256((int256(newBorrowRate) - int256(_curve(rateAtTarget, err))).wDivTo0(linearAdaptation));
         }
         return avgBorrowRate;
     }
@@ -416,10 +416,9 @@ contract AdaptiveCurveIrmTest is Test {
     function _curve(int256 rateAtTarget, int256 err) internal pure returns (uint256) {
         // Safe "unchecked" cast because err >= -1 (in WAD).
         if (err < 0) {
-            return
-                uint256(((WAD - WAD.wDivDown(ConstantsLib.CURVE_STEEPNESS)).wMulDown(err) + WAD).wMulDown(rateAtTarget));
+            return uint256(((WAD - WAD.wDivTo0(ConstantsLib.CURVE_STEEPNESS)).wMulTo0(err) + WAD).wMulTo0(rateAtTarget));
         } else {
-            return uint256(((ConstantsLib.CURVE_STEEPNESS - WAD).wMulDown(err) + WAD).wMulDown(rateAtTarget));
+            return uint256(((ConstantsLib.CURVE_STEEPNESS - WAD).wMulTo0(err) + WAD).wMulTo0(rateAtTarget));
         }
     }
 
@@ -429,9 +428,9 @@ contract AdaptiveCurveIrmTest is Test {
         int256 utilization = int256(market.totalBorrowAssets.wDivDown(market.totalSupplyAssets));
 
         if (utilization > ConstantsLib.TARGET_UTILIZATION) {
-            err = (utilization - ConstantsLib.TARGET_UTILIZATION).wDivDown(WAD - ConstantsLib.TARGET_UTILIZATION);
+            err = (utilization - ConstantsLib.TARGET_UTILIZATION).wDivTo0(WAD - ConstantsLib.TARGET_UTILIZATION);
         } else {
-            err = (utilization - ConstantsLib.TARGET_UTILIZATION).wDivDown(ConstantsLib.TARGET_UTILIZATION);
+            err = (utilization - ConstantsLib.TARGET_UTILIZATION).wDivTo0(ConstantsLib.TARGET_UTILIZATION);
         }
     }
 }
