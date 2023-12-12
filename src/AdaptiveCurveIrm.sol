@@ -6,8 +6,8 @@ import {IAdaptiveCurveIrm} from "./interfaces/IAdaptiveCurveIrm.sol";
 
 import {UtilsLib} from "./libraries/UtilsLib.sol";
 import {ErrorsLib} from "./libraries/ErrorsLib.sol";
-import {MathLib, WAD_INT as WAD} from "./libraries/MathLib.sol";
 import {ExpLib} from "./libraries/adaptive-curve/ExpLib.sol";
+import {MathLib, WAD_INT as WAD} from "./libraries/MathLib.sol";
 import {ConstantsLib} from "./libraries/adaptive-curve/ConstantsLib.sol";
 import {MarketParamsLib} from "../lib/morpho-blue/src/libraries/MarketParamsLib.sol";
 import {Id, MarketParams, Market} from "../lib/morpho-blue/src/interfaces/IMorpho.sol";
@@ -33,18 +33,6 @@ contract AdaptiveCurveIrm is IAdaptiveCurveIrm {
     /// @inheritdoc IAdaptiveCurveIrm
     address public immutable MORPHO;
 
-    /// @inheritdoc IAdaptiveCurveIrm
-    int256 public immutable CURVE_STEEPNESS;
-
-    /// @inheritdoc IAdaptiveCurveIrm
-    int256 public immutable ADJUSTMENT_SPEED;
-
-    /// @inheritdoc IAdaptiveCurveIrm
-    int256 public immutable TARGET_UTILIZATION;
-
-    /// @inheritdoc IAdaptiveCurveIrm
-    int256 public immutable INITIAL_RATE_AT_TARGET;
-
     /* STORAGE */
 
     /// @inheritdoc IAdaptiveCurveIrm
@@ -54,32 +42,10 @@ contract AdaptiveCurveIrm is IAdaptiveCurveIrm {
 
     /// @notice Constructor.
     /// @param morpho The address of Morpho.
-    /// @param curveSteepness The curve steepness (scaled by WAD).
-    /// @param adjustmentSpeed The adjustment speed (scaled by WAD).
-    /// @param targetUtilization The target utilization (scaled by WAD).
-    /// @param initialRateAtTarget The initial rate at target (scaled by WAD).
-    constructor(
-        address morpho,
-        int256 curveSteepness,
-        int256 adjustmentSpeed,
-        int256 targetUtilization,
-        int256 initialRateAtTarget
-    ) {
+    constructor(address morpho) {
         require(morpho != address(0), ErrorsLib.ZERO_ADDRESS);
-        require(curveSteepness >= WAD, ErrorsLib.INPUT_TOO_SMALL);
-        require(curveSteepness <= ConstantsLib.MAX_CURVE_STEEPNESS, ErrorsLib.INPUT_TOO_LARGE);
-        require(adjustmentSpeed >= 0, ErrorsLib.INPUT_TOO_SMALL);
-        require(adjustmentSpeed <= ConstantsLib.MAX_ADJUSTMENT_SPEED, ErrorsLib.INPUT_TOO_LARGE);
-        require(targetUtilization < WAD, ErrorsLib.INPUT_TOO_LARGE);
-        require(targetUtilization > 0, ErrorsLib.ZERO_INPUT);
-        require(initialRateAtTarget >= ConstantsLib.MIN_RATE_AT_TARGET, ErrorsLib.INPUT_TOO_SMALL);
-        require(initialRateAtTarget <= ConstantsLib.MAX_RATE_AT_TARGET, ErrorsLib.INPUT_TOO_LARGE);
 
         MORPHO = morpho;
-        CURVE_STEEPNESS = curveSteepness;
-        ADJUSTMENT_SPEED = adjustmentSpeed;
-        TARGET_UTILIZATION = targetUtilization;
-        INITIAL_RATE_AT_TARGET = initialRateAtTarget;
     }
 
     /* BORROW RATES */
@@ -113,8 +79,10 @@ contract AdaptiveCurveIrm is IAdaptiveCurveIrm {
         int256 utilization =
             int256(market.totalSupplyAssets > 0 ? market.totalBorrowAssets.wDivDown(market.totalSupplyAssets) : 0);
 
-        int256 errNormFactor = utilization > TARGET_UTILIZATION ? WAD - TARGET_UTILIZATION : TARGET_UTILIZATION;
-        int256 err = (utilization - TARGET_UTILIZATION).wDivTo0(errNormFactor);
+        int256 errNormFactor = utilization > ConstantsLib.TARGET_UTILIZATION
+            ? WAD - ConstantsLib.TARGET_UTILIZATION
+            : ConstantsLib.TARGET_UTILIZATION;
+        int256 err = (utilization - ConstantsLib.TARGET_UTILIZATION).wDivTo0(errNormFactor);
 
         int256 startRateAtTarget = rateAtTarget[id];
 
@@ -123,12 +91,12 @@ contract AdaptiveCurveIrm is IAdaptiveCurveIrm {
 
         if (startRateAtTarget == 0) {
             // First interaction.
-            avgRateAtTarget = INITIAL_RATE_AT_TARGET;
-            endRateAtTarget = INITIAL_RATE_AT_TARGET;
+            avgRateAtTarget = ConstantsLib.INITIAL_RATE_AT_TARGET;
+            endRateAtTarget = ConstantsLib.INITIAL_RATE_AT_TARGET;
         } else {
             // Note that the speed is assumed constant between two interactions, but in theory it increases because of
             // interests. So the rate will be slightly underestimated.
-            int256 speed = ADJUSTMENT_SPEED.wMulTo0(err);
+            int256 speed = ConstantsLib.ADJUSTMENT_SPEED.wMulTo0(err);
             // market.lastUpdate != 0 because it is not the first interaction with this market.
             // Safe "unchecked" cast because block.timestamp - market.lastUpdate <= block.timestamp <= type(int256).max.
             int256 elapsed = int256(block.timestamp - market.lastUpdate);
@@ -166,9 +134,9 @@ contract AdaptiveCurveIrm is IAdaptiveCurveIrm {
     /// The formula of the curve is the following:
     /// r = ((1-1/C)*err + 1) * rateAtTarget if err < 0
     ///     ((C-1)*err + 1) * rateAtTarget else.
-    function _curve(int256 _rateAtTarget, int256 err) private view returns (int256) {
+    function _curve(int256 _rateAtTarget, int256 err) private pure returns (int256) {
         // Non negative because 1 - 1/C >= 0, C - 1 >= 0.
-        int256 coeff = err < 0 ? WAD - WAD.wDivTo0(CURVE_STEEPNESS) : CURVE_STEEPNESS - WAD;
+        int256 coeff = err < 0 ? WAD - WAD.wDivTo0(ConstantsLib.CURVE_STEEPNESS) : ConstantsLib.CURVE_STEEPNESS - WAD;
         // Non negative if _rateAtTarget >= 0 because if err < 0, coeff <= 1.
         return (coeff.wMulTo0(err) + WAD).wMulTo0(int256(_rateAtTarget));
     }
