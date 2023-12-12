@@ -367,6 +367,17 @@ contract AdaptiveCurveIrmTest is Test {
         );
     }
 
+    function testConstants() public {
+        assertGe(ConstantsLib.CURVE_STEEPNESS, 1 ether, "curveSteepness too small");
+        assertLe(ConstantsLib.CURVE_STEEPNESS, 100 ether, "curveSteepness too big");
+        assertGe(ConstantsLib.ADJUSTMENT_SPEED, 0, "adjustmentSpeed too small");
+        assertLe(ConstantsLib.ADJUSTMENT_SPEED, int256(1_000 ether) / 365 days, "adjustmentSpeed too big");
+        assertGt(ConstantsLib.TARGET_UTILIZATION, 0, "targetUtilization too small");
+        assertLt(ConstantsLib.TARGET_UTILIZATION, 1 ether, "targetUtilization too big");
+        assertGe(ConstantsLib.INITIAL_RATE_AT_TARGET, ConstantsLib.MIN_RATE_AT_TARGET, "initialRateAtTarget too small");
+        assertLe(ConstantsLib.INITIAL_RATE_AT_TARGET, ConstantsLib.MAX_RATE_AT_TARGET, "initialRateAtTarget too large");
+    }
+
     /* HELPERS */
 
     function _expectedRateAtTarget(Id id, Market memory market) internal view returns (int256) {
