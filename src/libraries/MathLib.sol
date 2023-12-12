@@ -11,12 +11,12 @@ int256 constant WAD_INT = int256(WAD);
 /// @notice Library to manage fixed-point arithmetic on signed integers.
 library MathLib {
     /// @dev Returns the multiplication of `a` by `b` (in WAD) rounded towards 0.
-    function wMul(int256 a, int256 b) internal pure returns (int256) {
+    function wMulTo0(int256 a, int256 b) internal pure returns (int256) {
         return a * b / WAD_INT;
     }
 
     /// @dev Returns the division of `a` by `b` (in WAD) rounded towards 0.
-    function wDiv(int256 a, int256 b) internal pure returns (int256) {
+    function wDivTo0(int256 a, int256 b) internal pure returns (int256) {
         return a * WAD_INT / b;
     }
 }
