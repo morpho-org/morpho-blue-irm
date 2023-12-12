@@ -102,7 +102,9 @@ contract AdaptiveCurveIrmTest is Test {
         );
         // The average value of exp((-50/365*x)) between 0 and 5 is approx. 0.7240.
         assertApproxEqRel(
-            irm.borrowRateView(marketParams, market), uint256((INITIAL_RATE_AT_TARGET / 4).wMulTo0(0.724 ether)), 0.1 ether
+            irm.borrowRateView(marketParams, market),
+            uint256((INITIAL_RATE_AT_TARGET / 4).wMulTo0(0.724 ether)),
+            0.1 ether
         );
         // Expected rate: 0.181%.
         assertApproxEqRel(irm.borrowRateView(marketParams, market), uint256(0.00181 ether) / 365 days, 0.1 ether);
@@ -335,7 +337,9 @@ contract AdaptiveCurveIrmTest is Test {
         assertGe(
             irm.borrowRateView(marketParams, market), uint256(ConstantsLib.MIN_RATE_AT_TARGET.wDivTo0(CURVE_STEEPNESS))
         );
-        assertGe(irm.borrowRate(marketParams, market), uint256(ConstantsLib.MIN_RATE_AT_TARGET.wDivTo0(CURVE_STEEPNESS)));
+        assertGe(
+            irm.borrowRate(marketParams, market), uint256(ConstantsLib.MIN_RATE_AT_TARGET.wDivTo0(CURVE_STEEPNESS))
+        );
     }
 
     function invariantLeMaxRateAtTarget() public {
@@ -346,7 +350,9 @@ contract AdaptiveCurveIrmTest is Test {
         assertLe(
             irm.borrowRateView(marketParams, market), uint256(ConstantsLib.MAX_RATE_AT_TARGET.wMulTo0(CURVE_STEEPNESS))
         );
-        assertLe(irm.borrowRate(marketParams, market), uint256(ConstantsLib.MAX_RATE_AT_TARGET.wMulTo0(CURVE_STEEPNESS)));
+        assertLe(
+            irm.borrowRate(marketParams, market), uint256(ConstantsLib.MAX_RATE_AT_TARGET.wMulTo0(CURVE_STEEPNESS))
+        );
     }
 
     /* HELPERS */
@@ -378,7 +384,8 @@ contract AdaptiveCurveIrmTest is Test {
             avgBorrowRate = newBorrowRate;
         } else {
             // Safe "unchecked" cast to uint256 because linearAdaptation < 0 <=> newBorrowRate <= borrowRateAfterJump.
-            avgBorrowRate = uint256((int256(newBorrowRate) - int256(_curve(rateAtTarget, err))).wDivTo0(linearAdaptation));
+            avgBorrowRate =
+                uint256((int256(newBorrowRate) - int256(_curve(rateAtTarget, err))).wDivTo0(linearAdaptation));
         }
         return avgBorrowRate;
     }
