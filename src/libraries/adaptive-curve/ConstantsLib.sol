@@ -19,7 +19,7 @@ library ConstantsLib {
     /// @notice Target utilization (scaled by WAD).
     int256 public constant TARGET_UTILIZATION = 0.9 ether;
 
-    /// @notice Initial rate at target per second (scaled by WAD).
+    /// @notice Initial rate at target per second (scaled by WAD) (1% min APR / 16% max APR).
     int256 public constant INITIAL_RATE_AT_TARGET = 4_00 * ONE_BPS / 365 days;
 
     /// @notice Minimum rate at target per second (scaled by WAD) (0.025% min APR).
