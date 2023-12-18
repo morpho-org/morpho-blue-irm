@@ -6,13 +6,16 @@ pragma solidity ^0.8.0;
 /// @custom:contact security@morpho.org
 library ConstantsLib {
     /// @notice Curve steepness (scaled by WAD).
+    /// @dev Curve steepness = 4.
     int256 public constant CURVE_STEEPNESS = 4 ether;
 
     /// @notice Adjustment speed per second (scaled by WAD).
+    /// @dev Adjustment speed = 50/an.
     int256 public constant ADJUSTMENT_SPEED = int256(50 ether) / 365 days;
 
     /// @notice Target utilization (scaled by WAD).
-    int256 public constant TARGET_UTILIZATION = 0.9 ether;
+    /// @dev Target utilization = 90%.
+    int256 public constant TARGET_UTILIZATION = 0.90 ether;
 
     /// @notice Initial rate at target per second (scaled by WAD).
     /// @dev Initial rate at target = 4% (rate between 1% and 16%).
