@@ -11,7 +11,7 @@ library ConstantsLib {
 
     /// @notice Adjustment speed per second (scaled by WAD).
     /// @dev Adjustment speed = 50/an.
-    int256 public constant ADJUSTMENT_SPEED = int256(50 ether) / 365 days;
+    int256 public constant ADJUSTMENT_SPEED = 50 ether / int256(365 days);
 
     /// @notice Target utilization (scaled by WAD).
     /// @dev Target utilization = 90%.
