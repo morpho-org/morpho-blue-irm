@@ -15,7 +15,7 @@ library ConstantsLib {
 
     /// @notice Target utilization (scaled by WAD).
     /// @dev Target utilization = 90%.
-    int256 public constant TARGET_UTILIZATION = 0.90 ether;
+    int256 public constant TARGET_UTILIZATION = 0.9 ether;
 
     /// @notice Initial rate at target per second (scaled by WAD).
     /// @dev Initial rate at target = 4% (rate between 1% and 16%).
@@ -27,5 +27,5 @@ library ConstantsLib {
 
     /// @notice Maximum rate at target per second (scaled by WAD).
     /// @dev Maximum rate at target = 200% (maximum rate = 800%).
-    int256 public constant MAX_RATE_AT_TARGET = 2.00 ether / int256(365 days);
+    int256 public constant MAX_RATE_AT_TARGET = 2.0 ether / int256(365 days);
 }
