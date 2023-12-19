@@ -1,0 +1,94 @@
+{
+  "name": "morpho-blue-irm",
+  "description": "Morpho Blue IRM Contracts",
+  "license": "GPL-2.0-or-later",
+  "version": "0.0.0",
+  "main": "lib/index.js",
+  "bin": "lib/cli.js",
+  "files": [
+    "lib/**/*"
+  ],
+  "scripts": {
+    "prepare": "husky install && forge install",
+    "build:forge": "FOUNDRY_PROFILE=build forge build",
+    "build:hardhat": "npx hardhat compile",
+    "test:forge": "FOUNDRY_PROFILE=test forge test",
+    "test:hardhat": "npx hardhat test",
+    "lint": "yarn lint:forge && yarn lint:ts",
+    "lint:ts": "prettier --check test/hardhat",
+    "lint:forge": "forge fmt --check",
+    "lint:fix": "yarn lint:forge:fix && yarn lint:ts:fix",
+    "lint:ts:fix": "prettier --write test/hardhat",
+    "lint:forge:fix": "forge fmt",
+    "clean": "npx hardhat clean && forge clean"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/morpho-org/morpho-blue-irm.git"
+  },
+  "author": {
+    "name": "Morpho Labs",
+    "email": "security@morpho.org",
+    "url": "https://github.com/morpho-labs"
+  },
+  "bugs": {
+    "url": "https://github.com/morpho-org/morpho-blue-irm/issues"
+  },
+  "homepage": "https://github.com/morpho-org/morpho-blue-irm#readme",
+  "dependencies": {
+    "ethers": "^6.7.1",
+    "ethers-maths": "^4.0.2",
+    "lodash": "^4.17.21"
+  },
+  "devDependencies": {
+    "@commitlint/cli": "^17.7.1",
+    "@commitlint/config-conventional": "^17.7.0",
+    "@nomicfoundation/hardhat-chai-matchers": "^2.0.2",
+    "@nomicfoundation/hardhat-ethers": "^3.0.4",
+    "@nomicfoundation/hardhat-foundry": "^1.0.3",
+    "@nomicfoundation/hardhat-network-helpers": "^1.0.8",
+    "@trivago/prettier-plugin-sort-imports": "^4.2.0",
+    "@typechain/ethers-v6": "^0.5.0",
+    "@typechain/hardhat": "^9.0.0",
+    "@types/chai": "^4.3.5",
+    "@types/lodash": "^4.14.197",
+    "@types/mocha": "^10.0.1",
+    "@types/node": "^20.5.4",
+    "chai": "^4.3.7",
+    "dotenv": "^16.3.1",
+    "hardhat": "^2.17.1",
+    "hardhat-gas-reporter": "^1.0.9",
+    "hardhat-tracer": "^2.6.0",
+    "husky": "^8.0.3",
+    "lint-staged": "^14.0.1",
+    "prettier": "^3.0.2",
+    "solidity-coverage": "^0.8.4",
+    "ts-node": "^10.9.1",
+    "typechain": "^8.3.1",
+    "typescript": "^5.1.6"
+  },
+  "lint-staged": {
+    "*.sol": "forge fmt",
+    "*.js": "prettier",
+    "*.ts": "prettier",
+    "*.json": "prettier",
+    "*.yml": "prettier"
+  },
+  "commitlint": {
+    "extends": [
+      "@commitlint/config-conventional"
+    ]
+  },
+  "prettier": {
+    "printWidth": 120,
+    "plugins": [
+      "@trivago/prettier-plugin-sort-imports"
+    ],
+    "importOrder": [
+      "^@",
+      "^\\.\\.",
+      "^\\."
+    ],
+    "importOrderSeparation": true
+  }
+}
