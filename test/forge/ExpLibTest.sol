@@ -2,9 +2,9 @@
 pragma solidity ^0.8.0;
 
 import {MathLib, WAD_INT} from "../../src/libraries/MathLib.sol";
-import {ConstantsLib} from "../../src/libraries/adaptive-curve/ConstantsLib.sol";
 import {ExpLib} from "../../src/libraries/adaptive-curve/ExpLib.sol";
 import {wadExp} from "../../lib/solmate/src/utils/SignedWadMath.sol";
+import {ConstantsLib} from "../../src/libraries/adaptive-curve/ConstantsLib.sol";
 import {MathLib as MorphoMathLib} from "../../lib/morpho-blue/src/libraries/MathLib.sol";
 
 import "../../lib/forge-std/src/Test.sol";

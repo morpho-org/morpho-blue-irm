@@ -50,13 +50,7 @@ describe("irm", () => {
 
     const AdaptiveCurveIrmFactory = await hre.ethers.getContractFactory("AdaptiveCurveIrm", admin);
 
-    irm = await AdaptiveCurveIrmFactory.deploy(
-      await admin.getAddress(),
-      4000000000000000000n,
-      1585489599188n,
-      900000000000000000n,
-      317097919n,
-    );
+    irm = await AdaptiveCurveIrmFactory.deploy(await admin.getAddress());
 
     const irmAddress = await irm.getAddress();
 
