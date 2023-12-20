@@ -20,7 +20,6 @@ contract AdaptiveCurveIrm is IAdaptiveCurveIrm {
     using MathLib for int256;
     using UtilsLib for int256;
     using MorphoMathLib for uint128;
-    using MorphoMathLib for uint256;
     using MarketParamsLib for MarketParams;
 
     /* EVENTS */
@@ -95,7 +94,7 @@ contract AdaptiveCurveIrm is IAdaptiveCurveIrm {
             endRateAtTarget = ConstantsLib.INITIAL_RATE_AT_TARGET;
         } else {
             // The speed is assumed constant between two updates, but it is in fact not constant because of interest.
-            // So the rate will be underestimated.
+            // So the rate is always underestimated.
             int256 speed = ConstantsLib.ADJUSTMENT_SPEED.wMulTo0(err);
             // market.lastUpdate != 0 because it is not the first interaction with this market.
             // Safe "unchecked" cast because block.timestamp - market.lastUpdate <= block.timestamp <= type(int256).max.
