@@ -63,7 +63,7 @@ contract ExpLibTest is Test {
     }
 
     function testWExpWMulMaxRate() public pure {
-        ExpLib.wExp(ExpLib.WEXP_UPPER_BOUND).wMulTo0(ConstantsLib.MAX_RATE_AT_TARGET);
+        ExpLib.wExp(ExpLib.WEXP_UPPER_BOUND).wMulToZero(ConstantsLib.MAX_RATE_AT_TARGET);
     }
 
     function _wExpUnbounded(int256 x) internal pure returns (int256) {
