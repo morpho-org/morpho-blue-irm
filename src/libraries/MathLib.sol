@@ -10,13 +10,13 @@ int256 constant WAD_INT = int256(WAD);
 /// @custom:contact security@morpho.org
 /// @notice Library to manage fixed-point arithmetic on signed integers.
 library MathLib {
-    /// @dev Returns the multiplication of `a` by `b` (in WAD) rounded towards 0.
-    function wMulToZero(int256 a, int256 b) internal pure returns (int256) {
-        return a * b / WAD_INT;
+    /// @dev Returns the multiplication of `x` by `y` (in WAD) rounded towards 0.
+    function wMulToZero(int256 x, int256 y) internal pure returns (int256) {
+        return (x * y) / WAD_INT;
     }
 
-    /// @dev Returns the division of `a` by `b` (in WAD) rounded towards 0.
-    function wDivToZero(int256 a, int256 b) internal pure returns (int256) {
-        return a * WAD_INT / b;
+    /// @dev Returns the division of `x` by `y` (in WAD) rounded towards 0.
+    function wDivToZero(int256 x, int256 y) internal pure returns (int256) {
+        return (x * WAD_INT) / y;
     }
 }
