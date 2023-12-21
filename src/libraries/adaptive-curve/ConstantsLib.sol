@@ -10,6 +10,8 @@ library ConstantsLib {
     int256 public constant CURVE_STEEPNESS = 4 ether;
 
     /// @notice Adjustment speed per second (scaled by WAD).
+    /// @dev The speed is per second, so the rate moves at a speed of ADJUSTMENT_SPEED * err each second (while being
+    /// continuously compounded).
     /// @dev Adjustment speed = 50/year.
     int256 public constant ADJUSTMENT_SPEED = 50 ether / int256(365 days);
 
