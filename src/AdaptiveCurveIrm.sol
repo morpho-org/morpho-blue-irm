@@ -2,11 +2,12 @@
 pragma solidity 0.8.19;
 
 import {IIrm} from "../lib/morpho-blue/src/interfaces/IIrm.sol";
+import {IAdaptiveCurveIrm} from "./interfaces/IAdaptiveCurveIrm.sol";
 
 import {UtilsLib} from "./libraries/UtilsLib.sol";
 import {ErrorsLib} from "./libraries/ErrorsLib.sol";
-import {MathLib, WAD_INT as WAD} from "./libraries/MathLib.sol";
 import {ExpLib} from "./libraries/adaptive-curve/ExpLib.sol";
+import {MathLib, WAD_INT as WAD} from "./libraries/MathLib.sol";
 import {ConstantsLib} from "./libraries/adaptive-curve/ConstantsLib.sol";
 import {MarketParamsLib} from "../lib/morpho-blue/src/libraries/MarketParamsLib.sol";
 import {Id, MarketParams, Market} from "../lib/morpho-blue/src/interfaces/IMorpho.sol";
@@ -15,11 +16,10 @@ import {MathLib as MorphoMathLib} from "../lib/morpho-blue/src/libraries/MathLib
 /// @title AdaptiveCurveIrm
 /// @author Morpho Labs
 /// @custom:contact security@morpho.org
-contract AdaptiveCurveIrm is IIrm {
+contract AdaptiveCurveIrm is IAdaptiveCurveIrm {
     using MathLib for int256;
     using UtilsLib for int256;
     using MorphoMathLib for uint128;
-    using MorphoMathLib for uint256;
     using MarketParamsLib for MarketParams;
 
     /* EVENTS */
@@ -29,63 +29,22 @@ contract AdaptiveCurveIrm is IIrm {
 
     /* IMMUTABLES */
 
-    /// @notice Address of Morpho.
+    /// @inheritdoc IAdaptiveCurveIrm
     address public immutable MORPHO;
-
-    /// @notice Curve steepness (scaled by WAD).
-    /// @dev Verified to be inside the expected range at construction.
-    int256 public immutable CURVE_STEEPNESS;
-
-    /// @notice Adjustment speed (scaled by WAD).
-    /// @dev The speed is per second, so the rate moves at a speed of ADJUSTMENT_SPEED * err each second (while being
-    /// continuously compounded). A typical value for the ADJUSTMENT_SPEED would be 10 ether / 365 days.
-    /// @dev Verified to be inside the expected range at construction.
-    int256 public immutable ADJUSTMENT_SPEED;
-
-    /// @notice Target utilization (scaled by WAD).
-    /// @dev Verified to be strictly between 0 and 1 at construction.
-    int256 public immutable TARGET_UTILIZATION;
-
-    /// @notice Initial rate at target per second (scaled by WAD).
-    /// @dev Verified to be between MIN_RATE_AT_TARGET and MAX_RATE_AT_TARGET at contruction.
-    int256 public immutable INITIAL_RATE_AT_TARGET;
 
     /* STORAGE */
 
-    /// @notice Rate at target utilization.
-    /// @dev Tells the height of the curve.
+    /// @inheritdoc IAdaptiveCurveIrm
     mapping(Id => int256) public rateAtTarget;
 
     /* CONSTRUCTOR */
 
     /// @notice Constructor.
     /// @param morpho The address of Morpho.
-    /// @param curveSteepness The curve steepness (scaled by WAD).
-    /// @param adjustmentSpeed The adjustment speed (scaled by WAD).
-    /// @param targetUtilization The target utilization (scaled by WAD).
-    /// @param initialRateAtTarget The initial rate at target (scaled by WAD).
-    constructor(
-        address morpho,
-        int256 curveSteepness,
-        int256 adjustmentSpeed,
-        int256 targetUtilization,
-        int256 initialRateAtTarget
-    ) {
+    constructor(address morpho) {
         require(morpho != address(0), ErrorsLib.ZERO_ADDRESS);
-        require(curveSteepness >= WAD, ErrorsLib.INPUT_TOO_SMALL);
-        require(curveSteepness <= ConstantsLib.MAX_CURVE_STEEPNESS, ErrorsLib.INPUT_TOO_LARGE);
-        require(adjustmentSpeed >= 0, ErrorsLib.INPUT_TOO_SMALL);
-        require(adjustmentSpeed <= ConstantsLib.MAX_ADJUSTMENT_SPEED, ErrorsLib.INPUT_TOO_LARGE);
-        require(targetUtilization < WAD, ErrorsLib.INPUT_TOO_LARGE);
-        require(targetUtilization > 0, ErrorsLib.ZERO_INPUT);
-        require(initialRateAtTarget >= ConstantsLib.MIN_RATE_AT_TARGET, ErrorsLib.INPUT_TOO_SMALL);
-        require(initialRateAtTarget <= ConstantsLib.MAX_RATE_AT_TARGET, ErrorsLib.INPUT_TOO_LARGE);
 
         MORPHO = morpho;
-        CURVE_STEEPNESS = curveSteepness;
-        ADJUSTMENT_SPEED = adjustmentSpeed;
-        TARGET_UTILIZATION = targetUtilization;
-        INITIAL_RATE_AT_TARGET = initialRateAtTarget;
     }
 
     /* BORROW RATES */
@@ -119,8 +78,10 @@ contract AdaptiveCurveIrm is IIrm {
         int256 utilization =
             int256(market.totalSupplyAssets > 0 ? market.totalBorrowAssets.wDivDown(market.totalSupplyAssets) : 0);
 
-        int256 errNormFactor = utilization > TARGET_UTILIZATION ? WAD - TARGET_UTILIZATION : TARGET_UTILIZATION;
-        int256 err = (utilization - TARGET_UTILIZATION).wDivDown(errNormFactor);
+        int256 errNormFactor = utilization > ConstantsLib.TARGET_UTILIZATION
+            ? WAD - ConstantsLib.TARGET_UTILIZATION
+            : ConstantsLib.TARGET_UTILIZATION;
+        int256 err = (utilization - ConstantsLib.TARGET_UTILIZATION).wDivToZero(errNormFactor);
 
         int256 startRateAtTarget = rateAtTarget[id];
 
@@ -129,12 +90,12 @@ contract AdaptiveCurveIrm is IIrm {
 
         if (startRateAtTarget == 0) {
             // First interaction.
-            avgRateAtTarget = INITIAL_RATE_AT_TARGET;
-            endRateAtTarget = INITIAL_RATE_AT_TARGET;
+            avgRateAtTarget = ConstantsLib.INITIAL_RATE_AT_TARGET;
+            endRateAtTarget = ConstantsLib.INITIAL_RATE_AT_TARGET;
         } else {
-            // Note that the speed is assumed constant between two interactions, but in theory it increases because of
-            // interests. So the rate will be slightly underestimated.
-            int256 speed = ADJUSTMENT_SPEED.wMulDown(err);
+            // The speed is assumed constant between two updates, but it is in fact not constant because of interest.
+            // So the rate is always underestimated.
+            int256 speed = ConstantsLib.ADJUSTMENT_SPEED.wMulToZero(err);
             // market.lastUpdate != 0 because it is not the first interaction with this market.
             // Safe "unchecked" cast because block.timestamp - market.lastUpdate <= block.timestamp <= type(int256).max.
             int256 elapsed = int256(block.timestamp - market.lastUpdate);
@@ -172,18 +133,18 @@ contract AdaptiveCurveIrm is IIrm {
     /// The formula of the curve is the following:
     /// r = ((1-1/C)*err + 1) * rateAtTarget if err < 0
     ///     ((C-1)*err + 1) * rateAtTarget else.
-    function _curve(int256 _rateAtTarget, int256 err) private view returns (int256) {
+    function _curve(int256 _rateAtTarget, int256 err) private pure returns (int256) {
         // Non negative because 1 - 1/C >= 0, C - 1 >= 0.
-        int256 coeff = err < 0 ? WAD - WAD.wDivDown(CURVE_STEEPNESS) : CURVE_STEEPNESS - WAD;
+        int256 coeff = err < 0 ? WAD - WAD.wDivToZero(ConstantsLib.CURVE_STEEPNESS) : ConstantsLib.CURVE_STEEPNESS - WAD;
         // Non negative if _rateAtTarget >= 0 because if err < 0, coeff <= 1.
-        return (coeff.wMulDown(err) + WAD).wMulDown(int256(_rateAtTarget));
+        return (coeff.wMulToZero(err) + WAD).wMulToZero(int256(_rateAtTarget));
     }
 
     /// @dev Returns the new rate at target, for a given `startRateAtTarget` and a given `linearAdaptation`.
     /// The formula is: max(min(startRateAtTarget * exp(linearAdaptation), maxRateAtTarget), minRateAtTarget).
     function _newRateAtTarget(int256 startRateAtTarget, int256 linearAdaptation) private pure returns (int256) {
         // Non negative because MIN_RATE_AT_TARGET > 0.
-        return startRateAtTarget.wMulDown(ExpLib.wExp(linearAdaptation)).bound(
+        return startRateAtTarget.wMulToZero(ExpLib.wExp(linearAdaptation)).bound(
             ConstantsLib.MIN_RATE_AT_TARGET, ConstantsLib.MAX_RATE_AT_TARGET
         );
     }

@@ -3,6 +3,7 @@ src = "src"
 out = "out"
 test = "test"
 libs = ["lib"]
+optimizer_runs = 999999 # Etherscan does not support verifying contracts with more optimization runs.
 
 [profile.default.fuzz]
 runs = 4096
