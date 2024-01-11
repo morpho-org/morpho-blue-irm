@@ -16,13 +16,13 @@ wrap_comments = true
 
 
 [profile.build]
-via-ir = true
+via_ir = true
 test = "/dev/null"
 script = "/dev/null"
 
 
 [profile.test]
-via-ir = false
+via_ir = false
 
 [profile.test.fuzz]
 runs = 16384
