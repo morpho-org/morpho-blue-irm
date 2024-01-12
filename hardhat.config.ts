@@ -1,5 +1,5 @@
 import * as dotenv from "dotenv";
-import "ethers-maths";
+import "evm-maths";
 import "hardhat-gas-reporter";
 import "hardhat-tracer";
 import { HardhatUserConfig } from "hardhat/config";
@@ -10,7 +10,6 @@ import "@nomicfoundation/hardhat-ethers";
 import "@nomicfoundation/hardhat-foundry";
 import "@nomicfoundation/hardhat-network-helpers";
 import "@typechain/hardhat";
-
 
 dotenv.config();
 
