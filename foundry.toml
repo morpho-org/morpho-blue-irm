@@ -3,7 +3,8 @@ src = "src"
 out = "out"
 test = "test"
 libs = ["lib"]
-optimizer_runs = 999999 # Etherscan does not support verifying contracts with more optimization runs.
+via_ir = true
+optimizer_runs = 999999 # Etherscan does not support verifying contracts with more optimizer runs.
 
 [profile.default.fuzz]
 runs = 4096
@@ -16,7 +17,6 @@ wrap_comments = true
 
 
 [profile.build]
-via_ir = true
 test = "/dev/null"
 script = "/dev/null"
 
