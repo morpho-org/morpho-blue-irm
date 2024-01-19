@@ -14,9 +14,9 @@ All audits are stored in the [audits](audits)' folder.
 
 ## Getting started
 
-Install dependencies: `forge install`
+Install dependencies: `yarn`
 
-Run tests: `forge test`
+Run tests: `yarn test:forge`
 
 ## Licenses
 
