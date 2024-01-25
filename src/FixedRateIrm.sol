@@ -22,7 +22,7 @@ contract FixedRateIrm is IFixedRateIrm {
     /* STORAGE */
 
     /// @notice Borrow rates.
-    mapping(Id => uint256) private _borrowRate;
+    mapping(Id => uint256) public _borrowRate;
 
     /* SETTER */
 
