@@ -13,7 +13,7 @@ library ErrorsLib {
     string internal constant NOT_MORPHO = "not Morpho";
 
     /// @dev Thrown when the rate is already set for this market.
-    string internal constant ALREADY_SET = "already set";
+    string internal constant RATE_ALREADY_SET = "rate already set";
 
     /// @dev Thrown when trying to set the rate at zero.
     string internal constant RATE_ZERO = "rate zero";

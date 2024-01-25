@@ -26,8 +26,9 @@ contract FixedRateIrm is IFixedRateIrm {
 
     /* SETTER */
 
+    /// @inheritdoc IFixedRateIrm
     function setBorrowRate(Id id, uint256 newBorrowRate) external {
-        require(_borrowRate[id] == 0, ErrorsLib.ALREADY_SET);
+        require(_borrowRate[id] == 0, ErrorsLib.RATE_ALREADY_SET);
         require(newBorrowRate != 0, ErrorsLib.RATE_ZERO);
 
         _borrowRate[id] = newBorrowRate;

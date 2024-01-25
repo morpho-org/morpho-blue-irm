@@ -35,7 +35,7 @@ contract FixedRateIrmTest is Test {
         vm.assume(newBorrowRate1 != 0);
         vm.assume(newBorrowRate2 != 0);
         fixedRateIrm.setBorrowRate(id, newBorrowRate1);
-        vm.expectRevert(bytes(ErrorsLib.ALREADY_SET));
+        vm.expectRevert(bytes(ErrorsLib.RATE_ALREADY_SET));
         fixedRateIrm.setBorrowRate(id, newBorrowRate2);
     }
 
