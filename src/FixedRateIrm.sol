@@ -20,8 +20,10 @@ contract FixedRateIrm is IFixedRateIrm {
 
     /* ERRORS */
 
+    /// @dev Thrown when the rate is not already set for this market.
+    string public constant RATE_NOT_SET = "rate not set";
     /// @dev Thrown when the rate is already set for this market.
-    string public constant RATE_ALREADY_SET = "rate already set";
+    string public constant RATE_SET = "rate set";
     /// @dev Thrown when trying to set the rate at zero.
     string public constant RATE_ZERO = "rate zero";
 
@@ -34,7 +36,7 @@ contract FixedRateIrm is IFixedRateIrm {
 
     /// @inheritdoc IFixedRateIrm
     function setBorrowRate(Id id, uint256 newBorrowRate) external {
-        require(_borrowRate[id] == 0, RATE_ALREADY_SET);
+        require(_borrowRate[id] == 0, RATE_SET);
         require(newBorrowRate != 0, RATE_ZERO);
 
         _borrowRate[id] = newBorrowRate;
@@ -46,11 +48,15 @@ contract FixedRateIrm is IFixedRateIrm {
 
     /// @inheritdoc IIrm
     function borrowRateView(MarketParams memory marketParams, Market memory) external view returns (uint256) {
-        return _borrowRate[marketParams.id()];
+        uint256 borrowRateCached = _borrowRate[marketParams.id()];
+        require(borrowRateCached != 0, RATE_NOT_SET);
+        return borrowRateCached;
     }
 
     /// @inheritdoc IIrm
     function borrowRate(MarketParams memory marketParams, Market memory) external view returns (uint256) {
-        return _borrowRate[marketParams.id()];
+        uint256 borrowRateCached = _borrowRate[marketParams.id()];
+        require(borrowRateCached != 0, RATE_NOT_SET);
+        return borrowRateCached;
     }
 }
