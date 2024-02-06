@@ -15,14 +15,9 @@ fail_on_revert = true
 [profile.default.fmt]
 wrap_comments = true
 
-
 [profile.build]
 test = "/dev/null"
 script = "/dev/null"
-
-
-[profile.test]
-via_ir = false
 
 [profile.test.fuzz]
 runs = 16384
