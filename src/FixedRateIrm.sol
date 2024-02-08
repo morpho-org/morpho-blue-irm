@@ -54,6 +54,7 @@ contract FixedRateIrm is IFixedRateIrm {
     }
 
     /// @inheritdoc IIrm
+    /// @dev Reverts on not set rate, so the rate has to be set before the market creation.
     function borrowRate(MarketParams memory marketParams, Market memory) external view returns (uint256) {
         uint256 borrowRateCached = _borrowRate[marketParams.id()];
         require(borrowRateCached != 0, RATE_NOT_SET);
