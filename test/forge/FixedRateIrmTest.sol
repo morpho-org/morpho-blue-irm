@@ -20,7 +20,7 @@ contract FixedRateIrmTest is Test {
         vm.assume(newBorrowRate != 0);
 
         fixedRateIrm.setBorrowRate(id, newBorrowRate);
-        assertEq(fixedRateIrm._borrowRate(id), newBorrowRate);
+        assertEq(fixedRateIrm.borrowRateStored(id), newBorrowRate);
     }
 
     function testSetBorrowRateEvent(Id id, uint256 newBorrowRate) external {

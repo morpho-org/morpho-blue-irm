@@ -30,16 +30,19 @@ contract FixedRateIrm is IFixedRateIrm {
     /* STORAGE */
 
     /// @notice Borrow rates.
-    mapping(Id => uint256) public _borrowRate;
+    mapping(Id => uint256) public borrowRateStored;
 
     /* SETTER */
 
-    /// @inheritdoc IFixedRateIrm
+    /// @notice Sets the borrow rate for a market.
+    /// @dev A rate can be set by anybody, but only once.
+    /// @dev `borrowRate` reverts on rate not set, so the rate needs to be set before the market creation.
+    /// @dev The creator of a market with this IRM would typically batch setting of the rate with the market creation.
     function setBorrowRate(Id id, uint256 newBorrowRate) external {
-        require(_borrowRate[id] == 0, RATE_SET);
+        require(borrowRateStored[id] == 0, RATE_SET);
         require(newBorrowRate != 0, RATE_ZERO);
 
-        _borrowRate[id] = newBorrowRate;
+        borrowRateStored[id] = newBorrowRate;
 
         emit SetBorrowRate(id, newBorrowRate);
     }
@@ -48,7 +51,7 @@ contract FixedRateIrm is IFixedRateIrm {
 
     /// @inheritdoc IIrm
     function borrowRateView(MarketParams memory marketParams, Market memory) external view returns (uint256) {
-        uint256 borrowRateCached = _borrowRate[marketParams.id()];
+        uint256 borrowRateCached = borrowRateStored[marketParams.id()];
         require(borrowRateCached != 0, RATE_NOT_SET);
         return borrowRateCached;
     }
@@ -56,7 +59,7 @@ contract FixedRateIrm is IFixedRateIrm {
     /// @inheritdoc IIrm
     /// @dev Reverts on not set rate, so the rate has to be set before the market creation.
     function borrowRate(MarketParams memory marketParams, Market memory) external view returns (uint256) {
-        uint256 borrowRateCached = _borrowRate[marketParams.id()];
+        uint256 borrowRateCached = borrowRateStored[marketParams.id()];
         require(borrowRateCached != 0, RATE_NOT_SET);
         return borrowRateCached;
     }
