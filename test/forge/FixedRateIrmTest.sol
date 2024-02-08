@@ -35,12 +35,12 @@ contract FixedRateIrmTest is Test {
         vm.assume(newBorrowRate1 != 0);
         vm.assume(newBorrowRate2 != 0);
         fixedRateIrm.setBorrowRate(id, newBorrowRate1);
-        vm.expectRevert("rate set");
+        vm.expectRevert(bytes(RATE_SET));
         fixedRateIrm.setBorrowRate(id, newBorrowRate2);
     }
 
     function testSetBorrowRateRateZero(Id id) external {
-        vm.expectRevert("rate zero");
+        vm.expectRevert(bytes(RATE_ZERO));
         fixedRateIrm.setBorrowRate(id, 0);
     }
 
@@ -50,8 +50,8 @@ contract FixedRateIrmTest is Test {
         assertEq(fixedRateIrm.borrowRate(marketParams, market), newBorrowRate);
     }
 
-    function testBorrowRateRateZero(MarketParams memory marketParams, Market memory market) external {
-        vm.expectRevert("rate not set");
+    function testBorrowRateRateNotSet(MarketParams memory marketParams, Market memory market) external {
+        vm.expectRevert(bytes(RATE_NOT_SET));
         fixedRateIrm.borrowRate(marketParams, market);
     }
 
@@ -63,8 +63,8 @@ contract FixedRateIrmTest is Test {
         assertEq(fixedRateIrm.borrowRateView(marketParams, market), newBorrowRate);
     }
 
-    function testBorrowRateViewRateZero(MarketParams memory marketParams, Market memory market) external {
-        vm.expectRevert("rate not set");
+    function testBorrowRateViewRateNotSet(MarketParams memory marketParams, Market memory market) external {
+        vm.expectRevert(bytes(RATE_NOT_SET));
         fixedRateIrm.borrowRateView(marketParams, market);
     }
 }

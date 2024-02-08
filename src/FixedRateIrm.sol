@@ -7,6 +7,15 @@ import {IFixedRateIrm} from "./interfaces/IFixedRateIrm.sol";
 import {MarketParamsLib} from "../lib/morpho-blue/src/libraries/MarketParamsLib.sol";
 import {Id, MarketParams, Market} from "../lib/morpho-blue/src/interfaces/IMorpho.sol";
 
+/* ERRORS */
+
+/// @dev Thrown when the rate is not already set for this market.
+string constant RATE_NOT_SET = "rate not set";
+/// @dev Thrown when the rate is already set for this market.
+string constant RATE_SET = "rate set";
+/// @dev Thrown when trying to set the rate at zero.
+string constant RATE_ZERO = "rate zero";
+
 /// @title FixedRateIrm
 /// @author Morpho Labs
 /// @custom:contact security@morpho.org
@@ -17,15 +26,6 @@ contract FixedRateIrm is IFixedRateIrm {
 
     /// @notice Emitted when a borrow rate is set.
     event SetBorrowRate(Id indexed id, uint256 newBorrowRate);
-
-    /* ERRORS */
-
-    /// @dev Thrown when the rate is not already set for this market.
-    string public constant RATE_NOT_SET = "rate not set";
-    /// @dev Thrown when the rate is already set for this market.
-    string public constant RATE_SET = "rate set";
-    /// @dev Thrown when trying to set the rate at zero.
-    string public constant RATE_ZERO = "rate zero";
 
     /* STORAGE */
 
