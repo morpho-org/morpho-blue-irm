@@ -37,7 +37,6 @@ contract FixedRateIrm is IFixedRateIrm {
     /// @notice Sets the borrow rate for a market.
     /// @dev A rate can be set by anybody, but only once.
     /// @dev `borrowRate` reverts on rate not set, so the rate needs to be set before the market creation.
-    /// @dev The creator of a market with this IRM would typically batch setting of the rate with the market creation.
     function setBorrowRate(Id id, uint256 newBorrowRate) external {
         require(borrowRateStored[id] == 0, RATE_SET);
         require(newBorrowRate != 0, RATE_ZERO);
