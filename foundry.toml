@@ -22,6 +22,9 @@ script = "/dev/null"
 [profile.test.fuzz]
 runs = 16384
 
+[profile.test]
+via_ir = false
+
 [profile.test.invariant]
 runs = 32
 depth = 1024
