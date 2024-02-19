@@ -19,11 +19,11 @@ wrap_comments = true
 test = "/dev/null"
 script = "/dev/null"
 
-[profile.test.fuzz]
-runs = 16384
-
 [profile.test]
 via_ir = false
+
+[profile.test.fuzz]
+runs = 16384
 
 [profile.test.invariant]
 runs = 32
