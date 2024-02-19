@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-import "../../src/libraries/UtilsLib.sol";
+import "../../src/adaptive-curve-irm/libraries/UtilsLib.sol";
 
 import "../../lib/forge-std/src/Test.sol";
 

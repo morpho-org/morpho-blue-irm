@@ -1,11 +1,11 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.24;
 
-import {IIrm} from "../lib/morpho-blue/src/interfaces/IIrm.sol";
+import {IIrm} from "../../lib/morpho-blue/src/interfaces/IIrm.sol";
 import {IFixedRateIrm} from "./interfaces/IFixedRateIrm.sol";
 
-import {MarketParamsLib} from "../lib/morpho-blue/src/libraries/MarketParamsLib.sol";
-import {Id, MarketParams, Market} from "../lib/morpho-blue/src/interfaces/IMorpho.sol";
+import {MarketParamsLib} from "../../lib/morpho-blue/src/libraries/MarketParamsLib.sol";
+import {Id, MarketParams, Market} from "../../lib/morpho-blue/src/interfaces/IMorpho.sol";
 
 /* ERRORS */
 
