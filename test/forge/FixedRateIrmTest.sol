@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-import "../../src/FixedRateIrm.sol";
+import "../../src/fixed-rate-irm/FixedRateIrm.sol";
 
 import "../../lib/forge-std/src/Test.sol";
 

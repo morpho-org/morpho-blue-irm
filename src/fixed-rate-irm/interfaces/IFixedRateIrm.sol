@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: MIT
 pragma solidity >=0.5.0;
 
-import {IIrm} from "../../lib/morpho-blue/src/interfaces/IIrm.sol";
-import {Id} from "../../lib/morpho-blue/src/interfaces/IMorpho.sol";
+import {IIrm} from "../../../lib/morpho-blue/src/interfaces/IIrm.sol";
+import {Id} from "../../../lib/morpho-blue/src/interfaces/IMorpho.sol";
 
 /// @title IFixedRateIrm
 /// @author Morpho Labs

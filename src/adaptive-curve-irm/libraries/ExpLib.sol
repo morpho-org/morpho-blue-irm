@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-import {WAD_INT} from "../MathLib.sol";
+import {WAD_INT} from "./MathLib.sol";
 
 /// @title ExpLib
 /// @author Morpho Labs
