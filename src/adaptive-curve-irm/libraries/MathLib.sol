@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-import {WAD} from "../../lib/morpho-blue/src/libraries/MathLib.sol";
+import {WAD} from "../../../lib/morpho-blue/src/libraries/MathLib.sol";
 
 int256 constant WAD_INT = int256(WAD);
 
