@@ -8,6 +8,18 @@ import {Id} from "../../../lib/morpho-blue/src/interfaces/IMorpho.sol";
 /// @author Morpho Labs
 /// @custom:contact security@morpho.org
 interface IFixedRateIrm is IIrm {
+    /* EVENTS */
+
+    /// @notice Emitted when a borrow rate is set.
+    event SetBorrowRate(Id indexed id, uint256 newBorrowRate);
+
+    /* EXTERNAL */
+
+    /// @notice Borrow rates.
     function borrowRateStored(Id id) external returns (uint256);
+
+    /// @notice Sets the borrow rate for a market.
+    /// @dev A rate can be set by anybody, but only once.
+    /// @dev `borrowRate` reverts on rate not set, so the rate needs to be set before the market creation.
     function setBorrowRate(Id id, uint256 newBorrowRate) external;
 }

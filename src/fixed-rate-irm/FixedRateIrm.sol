@@ -22,21 +22,14 @@ string constant RATE_ZERO = "rate zero";
 contract FixedRateIrm is IFixedRateIrm {
     using MarketParamsLib for MarketParams;
 
-    /* EVENTS */
-
-    /// @notice Emitted when a borrow rate is set.
-    event SetBorrowRate(Id indexed id, uint256 newBorrowRate);
-
     /* STORAGE */
 
-    /// @notice Borrow rates.
+    /// @inheritdoc IFixedRateIrm
     mapping(Id => uint256) public borrowRateStored;
 
     /* SETTER */
 
-    /// @notice Sets the borrow rate for a market.
-    /// @dev A rate can be set by anybody, but only once.
-    /// @dev `borrowRate` reverts on rate not set, so the rate needs to be set before the market creation.
+    /// @inheritdoc IFixedRateIrm
     function setBorrowRate(Id id, uint256 newBorrowRate) external {
         require(borrowRateStored[id] == 0, RATE_SET);
         require(newBorrowRate != 0, RATE_ZERO);
