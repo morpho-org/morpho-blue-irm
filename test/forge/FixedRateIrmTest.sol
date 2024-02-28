@@ -34,10 +34,9 @@ contract FixedRateIrmTest is Test {
     }
 
     function testSetBorrowRateAlreadySet(Id id, uint256 newBorrowRate1, uint256 newBorrowRate2) external {
-        vm.assume(newBorrowRate1 != 0);
-        vm.assume(newBorrowRate1 <= fixedRateIrm.MAX_BORROW_RATE());
-        vm.assume(newBorrowRate2 != 0);
-        vm.assume(newBorrowRate2 <= fixedRateIrm.MAX_BORROW_RATE());
+        newBorrowRate1 = bound(newBorrowRate1, 1, fixedRateIrm.MAX_BORROW_RATE());
+        newBorrowRate2 = bound(newBorrowRate2, 1, fixedRateIrm.MAX_BORROW_RATE());
+
         fixedRateIrm.setBorrowRate(id, newBorrowRate1);
         vm.expectRevert(bytes(RATE_SET));
         fixedRateIrm.setBorrowRate(id, newBorrowRate2);
