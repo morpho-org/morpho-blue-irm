@@ -17,16 +17,14 @@ contract FixedRateIrmTest is Test {
     }
 
     function testSetBorrowRate(Id id, uint256 newBorrowRate) external {
-        vm.assume(newBorrowRate != 0);
-        vm.assume(newBorrowRate <= fixedRateIrm.MAX_BORROW_RATE());
+        newBorrowRate = bound(newBorrowRate, 1, fixedRateIrm.MAX_BORROW_RATE());
 
         fixedRateIrm.setBorrowRate(id, newBorrowRate);
         assertEq(fixedRateIrm.borrowRateStored(id), newBorrowRate);
     }
 
     function testSetBorrowRateEvent(Id id, uint256 newBorrowRate) external {
-        vm.assume(newBorrowRate != 0);
-        vm.assume(newBorrowRate <= fixedRateIrm.MAX_BORROW_RATE());
+        newBorrowRate = bound(newBorrowRate, 1, fixedRateIrm.MAX_BORROW_RATE());
 
         vm.expectEmit(true, true, true, true, address(fixedRateIrm));
         emit SetBorrowRate(id, newBorrowRate);
@@ -48,14 +46,13 @@ contract FixedRateIrmTest is Test {
     }
 
     function testSetBorrowRateRateTooHigh(Id id, uint256 newBorrowRate) external {
-        vm.assume(newBorrowRate > fixedRateIrm.MAX_BORROW_RATE());
+        newBorrowRate = bound(newBorrowRate, fixedRateIrm.MAX_BORROW_RATE() + 1, type(uint256).max);
         vm.expectRevert(bytes(RATE_TOO_HIGH));
         fixedRateIrm.setBorrowRate(id, newBorrowRate);
     }
 
     function testBorrowRate(MarketParams memory marketParams, Market memory market, uint256 newBorrowRate) external {
-        vm.assume(newBorrowRate != 0);
-        vm.assume(newBorrowRate <= fixedRateIrm.MAX_BORROW_RATE());
+        newBorrowRate = bound(newBorrowRate, 1, fixedRateIrm.MAX_BORROW_RATE());
         fixedRateIrm.setBorrowRate(marketParams.id(), newBorrowRate);
         assertEq(fixedRateIrm.borrowRate(marketParams, market), newBorrowRate);
     }
@@ -68,8 +65,7 @@ contract FixedRateIrmTest is Test {
     function testBorrowRateView(MarketParams memory marketParams, Market memory market, uint256 newBorrowRate)
         external
     {
-        vm.assume(newBorrowRate != 0);
-        vm.assume(newBorrowRate <= fixedRateIrm.MAX_BORROW_RATE());
+        newBorrowRate = bound(newBorrowRate, 1, fixedRateIrm.MAX_BORROW_RATE());
         fixedRateIrm.setBorrowRate(marketParams.id(), newBorrowRate);
         assertEq(fixedRateIrm.borrowRateView(marketParams, market), newBorrowRate);
     }
