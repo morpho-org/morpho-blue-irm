@@ -15,6 +15,8 @@ string constant RATE_NOT_SET = "rate not set";
 string constant RATE_SET = "rate set";
 /// @dev Thrown when trying to set the rate at zero.
 string constant RATE_ZERO = "rate zero";
+/// @dev Thrown when trying to set a rate that is too high.
+string constant RATE_TOO_HIGH = "rate too high";
 
 /// @title FixedRateIrm
 /// @author Morpho Labs
@@ -26,6 +28,11 @@ contract FixedRateIrm is IFixedRateIrm {
 
     /// @notice Emitted when a borrow rate is set.
     event SetBorrowRate(Id indexed id, uint256 newBorrowRate);
+
+    /* CONSTANTS */
+
+    /// @notice Max settable borrow rate (800%).
+    uint256 public constant MAX_BORROW_RATE = 8.0 ether / uint256(365 days);
 
     /* STORAGE */
 
@@ -40,6 +47,7 @@ contract FixedRateIrm is IFixedRateIrm {
     function setBorrowRate(Id id, uint256 newBorrowRate) external {
         require(borrowRateStored[id] == 0, RATE_SET);
         require(newBorrowRate != 0, RATE_ZERO);
+        require(newBorrowRate <= MAX_BORROW_RATE, RATE_TOO_HIGH);
 
         borrowRateStored[id] = newBorrowRate;
 

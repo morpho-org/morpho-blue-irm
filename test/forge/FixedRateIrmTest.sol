@@ -18,6 +18,7 @@ contract FixedRateIrmTest is Test {
 
     function testSetBorrowRate(Id id, uint256 newBorrowRate) external {
         vm.assume(newBorrowRate != 0);
+        vm.assume(newBorrowRate <= fixedRateIrm.MAX_BORROW_RATE());
 
         fixedRateIrm.setBorrowRate(id, newBorrowRate);
         assertEq(fixedRateIrm.borrowRateStored(id), newBorrowRate);
@@ -25,6 +26,7 @@ contract FixedRateIrmTest is Test {
 
     function testSetBorrowRateEvent(Id id, uint256 newBorrowRate) external {
         vm.assume(newBorrowRate != 0);
+        vm.assume(newBorrowRate <= fixedRateIrm.MAX_BORROW_RATE());
 
         vm.expectEmit(true, true, true, true, address(fixedRateIrm));
         emit SetBorrowRate(id, newBorrowRate);
@@ -33,7 +35,9 @@ contract FixedRateIrmTest is Test {
 
     function testSetBorrowRateAlreadySet(Id id, uint256 newBorrowRate1, uint256 newBorrowRate2) external {
         vm.assume(newBorrowRate1 != 0);
+        vm.assume(newBorrowRate1 <= fixedRateIrm.MAX_BORROW_RATE());
         vm.assume(newBorrowRate2 != 0);
+        vm.assume(newBorrowRate2 <= fixedRateIrm.MAX_BORROW_RATE());
         fixedRateIrm.setBorrowRate(id, newBorrowRate1);
         vm.expectRevert(bytes(RATE_SET));
         fixedRateIrm.setBorrowRate(id, newBorrowRate2);
@@ -44,8 +48,15 @@ contract FixedRateIrmTest is Test {
         fixedRateIrm.setBorrowRate(id, 0);
     }
 
+    function testSetBorrowRateRateTooHigh(Id id, uint256 newBorrowRate) external {
+        vm.assume(newBorrowRate > fixedRateIrm.MAX_BORROW_RATE());
+        vm.expectRevert(bytes(RATE_TOO_HIGH));
+        fixedRateIrm.setBorrowRate(id, newBorrowRate);
+    }
+
     function testBorrowRate(MarketParams memory marketParams, Market memory market, uint256 newBorrowRate) external {
         vm.assume(newBorrowRate != 0);
+        vm.assume(newBorrowRate <= fixedRateIrm.MAX_BORROW_RATE());
         fixedRateIrm.setBorrowRate(marketParams.id(), newBorrowRate);
         assertEq(fixedRateIrm.borrowRate(marketParams, market), newBorrowRate);
     }
@@ -59,6 +70,7 @@ contract FixedRateIrmTest is Test {
         external
     {
         vm.assume(newBorrowRate != 0);
+        vm.assume(newBorrowRate <= fixedRateIrm.MAX_BORROW_RATE());
         fixedRateIrm.setBorrowRate(marketParams.id(), newBorrowRate);
         assertEq(fixedRateIrm.borrowRateView(marketParams, market), newBorrowRate);
     }
