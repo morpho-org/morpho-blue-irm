@@ -45,7 +45,7 @@ contract FixedRateIrmTest is Test {
         fixedRateIrm.setBorrowRate(id, 0);
     }
 
-    function testSetBorrowRateRateTooHigh(Id id, uint256 newBorrowRate) external {
+    function testSetBorrowRateTooHigh(Id id, uint256 newBorrowRate) external {
         newBorrowRate = bound(newBorrowRate, fixedRateIrm.MAX_BORROW_RATE() + 1, type(uint256).max);
         vm.expectRevert(bytes(RATE_TOO_HIGH));
         fixedRateIrm.setBorrowRate(id, newBorrowRate);
