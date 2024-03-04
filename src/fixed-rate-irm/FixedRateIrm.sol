@@ -24,28 +24,19 @@ string constant RATE_TOO_HIGH = "rate too high";
 contract FixedRateIrm is IFixedRateIrm {
     using MarketParamsLib for MarketParams;
 
-    /* EVENTS */
-
-    /// @notice Emitted when a borrow rate is set.
-    event SetBorrowRate(Id indexed id, uint256 newBorrowRate);
-
     /* CONSTANTS */
 
-    /// @notice Max settable borrow rate (800%).
+    /// @inheritdoc IFixedRateIrm
     uint256 public constant MAX_BORROW_RATE = 8.0 ether / uint256(365 days);
 
     /* STORAGE */
 
-    /// @notice Borrow rates.
+    /// @inheritdoc IFixedRateIrm
     mapping(Id => uint256) public borrowRateStored;
 
     /* SETTER */
 
-    /// @notice Sets the borrow rate for a market.
-    /// @dev A rate can be set by anybody, but only once.
-    /// @dev `borrowRate` reverts on rate not set, so the rate needs to be set before the market creation.
-    /// @dev As interest are rounded down in Morpho, for markets with a low total borrow, setting a rate too low could
-    /// prevent interest from accruing if interactions are frequent.
+    /// @inheritdoc IFixedRateIrm
     function setBorrowRate(Id id, uint256 newBorrowRate) external {
         require(borrowRateStored[id] == 0, RATE_SET);
         require(newBorrowRate != 0, RATE_ZERO);
