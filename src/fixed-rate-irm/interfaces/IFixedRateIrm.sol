@@ -15,11 +15,16 @@ interface IFixedRateIrm is IIrm {
 
     /* EXTERNAL */
 
+    /// @notice Max settable borrow rate (800%).
+    function MAX_BORROW_RATE() external returns (uint256);
+
     /// @notice Borrow rates.
     function borrowRateStored(Id id) external returns (uint256);
 
     /// @notice Sets the borrow rate for a market.
     /// @dev A rate can be set by anybody, but only once.
     /// @dev `borrowRate` reverts on rate not set, so the rate needs to be set before the market creation.
+    /// @dev As interest are rounded down in Morpho, for markets with a low total borrow, setting a rate too low could
+    /// prevent interest from accruing if interactions are frequent.
     function setBorrowRate(Id id, uint256 newBorrowRate) external;
 }
