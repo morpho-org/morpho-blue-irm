@@ -3,6 +3,7 @@
 Some interest rate models for Morpho Blue:
 
 - [AdaptiveCurveIRM](src/AdaptiveCurveIrm.sol)
+- [FixedRateIRM](src/fixed-rate-irm/AdaptiveCurveIrm.sol)
 
 ## Resources
 
