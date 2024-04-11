@@ -52,9 +52,11 @@ contract BlueTest is Test {
 
         oracle.setPrice(ORACLE_PRICE_SCALE);
 
+        vm.startPrank(OWNER);
         morpho.enableIrm(address(adaptiveCurveIrm));
         morpho.enableIrm(address(fixedRateIrm));
         morpho.enableLltv(DEFAULT_TEST_LLTV);
+        vm.stopPrank();
 
         vm.prank(SUPPLIER);
         loanToken.approve(address(morpho), type(uint256).max);
