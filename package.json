@@ -11,8 +11,9 @@
   "scripts": {
     "prepare": "husky install && forge install",
     "build:forge": "FOUNDRY_PROFILE=build forge build",
+    "build:blue": "yarn --cwd lib/morpho-blue/ build:forge --out ../../out/",
     "build:hardhat": "hardhat compile",
-    "test:forge": "FOUNDRY_PROFILE=test forge test",
+    "test:forge": "yarn build:blue && FOUNDRY_PROFILE=test forge test",
     "test:hardhat": "hardhat test",
     "lint": "yarn lint:forge && yarn lint:ts",
     "lint:ts": "prettier --check test/hardhat",
