@@ -5,6 +5,7 @@ test = "test"
 libs = ["lib"]
 via_ir = true
 optimizer_runs = 999999 # Etherscan does not support verifying contracts with more optimizer runs.
+bytecode_hash = "none"
 
 [profile.default.fuzz]
 runs = 4096
