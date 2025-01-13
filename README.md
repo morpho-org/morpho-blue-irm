@@ -3,7 +3,9 @@
 Some interest rate models for Morpho Blue:
 
 - [AdaptiveCurveIRM](src/AdaptiveCurveIrm.sol)
-  - _Important_: The `AdaptiveCurveIRM` was deployed [on Ethereum](https://etherscan.io/address/0x870aC11D48B15DB9a138Cf899d20F13F79Ba00BC) without the `via_ir` solc compilation option. To check the bytecode on Ethereum, disable `via_ir` in `foundry.toml`. Other deployments use `via_ir`.
+  - _Important_: The `AdaptiveCurveIRM` was deployed [on Ethereum](https://etherscan.io/address/0x870aC11D48B15DB9a138Cf899d20F13F79Ba00BC) without the `via_ir` solc compilation option. 
+    To check the bytecode on Ethereum, disable `via_ir` in `foundry.toml`. 
+    Other deployments use `via_ir`.
 
 ## Resources
 
