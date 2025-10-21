@@ -18,6 +18,9 @@ fail_on_revert = true
 [profile.default.fmt]
 wrap_comments = true
 
+[lint]
+exclude_lints = ["unsafe-typecast", "mixed-case-function", "unaliased-plain-import"]
+
 [profile.build]
 test = "/dev/null"
 script = "/dev/null"

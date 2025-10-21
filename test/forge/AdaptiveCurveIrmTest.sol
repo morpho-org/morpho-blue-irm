@@ -16,7 +16,9 @@ contract AdaptiveCurveIrmTest is Test {
     event BorrowRateUpdate(Id indexed id, uint256 avgBorrowRate, uint256 rateAtTarget);
 
     IAdaptiveCurveIrm internal irm;
-    MarketParams internal marketParams = MarketParams(address(0), address(0), address(0), address(0), 0);
+    MarketParams internal marketParams = MarketParams({
+        loanToken: address(0), collateralToken: address(0), oracle: address(0), irm: address(0), lltv: 0
+    });
 
     function setUp() public {
         irm = new AdaptiveCurveIrm(address(this));
