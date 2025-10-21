@@ -144,8 +144,7 @@ contract AdaptiveCurveIrm is IAdaptiveCurveIrm {
     /// The formula is: max(min(startRateAtTarget * exp(linearAdaptation), maxRateAtTarget), minRateAtTarget).
     function _newRateAtTarget(int256 startRateAtTarget, int256 linearAdaptation) private pure returns (int256) {
         // Non negative because MIN_RATE_AT_TARGET > 0.
-        return startRateAtTarget.wMulToZero(ExpLib.wExp(linearAdaptation)).bound(
-            ConstantsLib.MIN_RATE_AT_TARGET, ConstantsLib.MAX_RATE_AT_TARGET
-        );
+        return startRateAtTarget.wMulToZero(ExpLib.wExp(linearAdaptation))
+            .bound(ConstantsLib.MIN_RATE_AT_TARGET, ConstantsLib.MAX_RATE_AT_TARGET);
     }
 }

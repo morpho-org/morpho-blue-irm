@@ -73,9 +73,8 @@ contract AdaptiveCurveIrmTest is Test {
         assertApproxEqRel(
             irm.borrowRateView(marketParams, market),
             uint256(
-                (ConstantsLib.INITIAL_RATE_AT_TARGET * 4).wMulToZero(
-                    (1.9836 ether - 1 ether) * WAD / (ConstantsLib.ADJUSTMENT_SPEED * 5 days)
-                )
+                (ConstantsLib.INITIAL_RATE_AT_TARGET * 4)
+                .wMulToZero((1.9836 ether - 1 ether) * WAD / (ConstantsLib.ADJUSTMENT_SPEED * 5 days))
             ),
             0.1 ether
         );
@@ -104,9 +103,8 @@ contract AdaptiveCurveIrmTest is Test {
         assertApproxEqRel(
             irm.borrowRateView(marketParams, market),
             uint256(
-                (ConstantsLib.INITIAL_RATE_AT_TARGET / 4).wMulToZero(
-                    (0.5041 ether - 1 ether) * WAD / (-ConstantsLib.ADJUSTMENT_SPEED * 5 days)
-                )
+                (ConstantsLib.INITIAL_RATE_AT_TARGET / 4)
+                .wMulToZero((0.5041 ether - 1 ether) * WAD / (-ConstantsLib.ADJUSTMENT_SPEED * 5 days))
             ),
             0.1 ether
         );
@@ -387,9 +385,8 @@ contract AdaptiveCurveIrmTest is Test {
         int256 linearAdaptation = speed * int256(elapsed);
         int256 adaptationMultiplier = ExpLib.wExp(linearAdaptation);
         return (rateAtTarget > 0)
-            ? rateAtTarget.wMulToZero(adaptationMultiplier).bound(
-                ConstantsLib.MIN_RATE_AT_TARGET, ConstantsLib.MAX_RATE_AT_TARGET
-            )
+            ? rateAtTarget.wMulToZero(adaptationMultiplier)
+                .bound(ConstantsLib.MIN_RATE_AT_TARGET, ConstantsLib.MAX_RATE_AT_TARGET)
             : ConstantsLib.INITIAL_RATE_AT_TARGET;
     }
 
