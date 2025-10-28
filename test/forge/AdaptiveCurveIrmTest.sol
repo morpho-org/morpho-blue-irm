@@ -16,7 +16,9 @@ contract AdaptiveCurveIrmTest is Test {
     event BorrowRateUpdate(Id indexed id, uint256 avgBorrowRate, uint256 rateAtTarget);
 
     IAdaptiveCurveIrm internal irm;
-    MarketParams internal marketParams = MarketParams(address(0), address(0), address(0), address(0), 0);
+    MarketParams internal marketParams = MarketParams({
+        loanToken: address(0), collateralToken: address(0), oracle: address(0), irm: address(0), lltv: 0
+    });
 
     function setUp() public {
         irm = new AdaptiveCurveIrm(address(this));
@@ -73,9 +75,8 @@ contract AdaptiveCurveIrmTest is Test {
         assertApproxEqRel(
             irm.borrowRateView(marketParams, market),
             uint256(
-                (ConstantsLib.INITIAL_RATE_AT_TARGET * 4).wMulToZero(
-                    (1.9836 ether - 1 ether) * WAD / (ConstantsLib.ADJUSTMENT_SPEED * 5 days)
-                )
+                (ConstantsLib.INITIAL_RATE_AT_TARGET * 4)
+                .wMulToZero((1.9836 ether - 1 ether) * WAD / (ConstantsLib.ADJUSTMENT_SPEED * 5 days))
             ),
             0.1 ether
         );
@@ -104,9 +105,8 @@ contract AdaptiveCurveIrmTest is Test {
         assertApproxEqRel(
             irm.borrowRateView(marketParams, market),
             uint256(
-                (ConstantsLib.INITIAL_RATE_AT_TARGET / 4).wMulToZero(
-                    (0.5041 ether - 1 ether) * WAD / (-ConstantsLib.ADJUSTMENT_SPEED * 5 days)
-                )
+                (ConstantsLib.INITIAL_RATE_AT_TARGET / 4)
+                .wMulToZero((0.5041 ether - 1 ether) * WAD / (-ConstantsLib.ADJUSTMENT_SPEED * 5 days))
             ),
             0.1 ether
         );
@@ -387,9 +387,8 @@ contract AdaptiveCurveIrmTest is Test {
         int256 linearAdaptation = speed * int256(elapsed);
         int256 adaptationMultiplier = ExpLib.wExp(linearAdaptation);
         return (rateAtTarget > 0)
-            ? rateAtTarget.wMulToZero(adaptationMultiplier).bound(
-                ConstantsLib.MIN_RATE_AT_TARGET, ConstantsLib.MAX_RATE_AT_TARGET
-            )
+            ? rateAtTarget.wMulToZero(adaptationMultiplier)
+                .bound(ConstantsLib.MIN_RATE_AT_TARGET, ConstantsLib.MAX_RATE_AT_TARGET)
             : ConstantsLib.INITIAL_RATE_AT_TARGET;
     }
 
