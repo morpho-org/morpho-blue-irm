@@ -24,10 +24,8 @@ jobs:
       - name: Install Foundry
         uses: foundry-rs/foundry-toolchain@v1
 
-      - name: Build contracts via IR & check sizes
-        run: yarn build:forge --force --sizes # don't use compilation cache
-        env:
-          FOUNDRY_PROFILE: build
+      - name: Build contracts and check sizes
+        run: forge build --force --sizes
 
   test:
     name: Tests
@@ -42,7 +40,5 @@ jobs:
       - name: Install Foundry
         uses: foundry-rs/foundry-toolchain@v1
 
-      - name: Run forge tests
-        run: yarn test:forge -vvv
-        env:
-          FOUNDRY_PROFILE: test
+      - name: Run tests
+        run: forge test -vvv

@@ -1,9 +1,9 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-import "../../src/fixed-rate-irm/FixedRateIrm.sol";
+import "../src/fixed-rate-irm/FixedRateIrm.sol";
 
-import "../../lib/forge-std/src/Test.sol";
+import "../lib/forge-std/src/Test.sol";
 
 contract FixedRateIrmTest is Test {
     using MarketParamsLib for MarketParams;
