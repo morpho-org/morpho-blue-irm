@@ -20,6 +20,8 @@ contract AdaptiveCurveIrmBorrowRateView2LibTest is Test {
         vm.warp(1000 days);
 
         vm.assume(rateAtTarget <= uint256(ConstantsLib.MAX_RATE_AT_TARGET));
+        // borrow rate doesn't revert on utilization > 1, and the test passes. Still, we require that.
+        vm.assume(market.totalBorrowAssets <= market.totalSupplyAssets);
         vm.assume(market.lastUpdate <= 1000 days);
         vm.assume(market.fee < 0.25e18);
 
