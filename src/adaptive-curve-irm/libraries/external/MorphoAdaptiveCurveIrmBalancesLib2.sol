@@ -14,7 +14,7 @@ import {MathLib as MorphoMathLib} from "lib/morpho-blue/src/libraries/MathLib.so
 import {UtilsLib as MorphoUtilsLib} from "lib/morpho-blue/src/libraries/UtilsLib.sol";
 import {MathLib as MorphoMathLib} from "../../../../lib/morpho-blue/src/libraries/MathLib.sol";
 
-library MorphoBalancesLib2 {
+library MorphoAdaptiveCurveIrmBalancesLib2 {
     using MathLib for int256;
     using UtilsLib for int256;
     using MorphoMathLib for uint256;
@@ -50,13 +50,17 @@ library MorphoBalancesLib2 {
 
     /// @dev Same as the AdaptiveCurveIrm.borrowRateView function, but takes the market id as input.
     function borrowRateView2(Id id, Market memory market, address adaptiveCurveIrm) internal view returns (uint256) {
-        (uint256 avgRate, ) = _borrowRate(id, market, adaptiveCurveIrm);
+        (uint256 avgRate,) = _borrowRate(id, market, adaptiveCurveIrm);
         return avgRate;
     }
 
     /// @dev Same as the AdaptiveCurveIrm.borrowRate function, but takes the market id as input.
     /// @dev Returns avgRate and endRateAtTarget.
-    function _borrowRate(Id id, Market memory market, address adaptiveCurveIrm) internal view returns (uint256, int256) {
+    function _borrowRate(Id id, Market memory market, address adaptiveCurveIrm)
+        internal
+        view
+        returns (uint256, int256)
+    {
         // Safe "unchecked" cast because the utilization is smaller than 1 (scaled by WAD).
         int256 utilization =
             int256(market.totalSupplyAssets > 0 ? market.totalBorrowAssets.wDivDown(market.totalSupplyAssets) : 0);
