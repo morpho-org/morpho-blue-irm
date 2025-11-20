@@ -1,11 +1,11 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-import "../../src/adaptive-curve-irm/AdaptiveCurveIrm.sol";
-import "../../src/adaptive-curve-irm/libraries/external/AdaptiveCurveIrmBalancesLib.sol";
-import "../../lib/forge-std/src/Test.sol";
-import "../../lib/morpho-blue/src/interfaces/IMorpho.sol";
-import {MorphoBalancesLib} from "../../lib/morpho-blue/src/libraries/periphery/MorphoBalancesLib.sol";
+import "../src/adaptive-curve-irm/AdaptiveCurveIrm.sol";
+import "../src/adaptive-curve-irm/libraries/external/AdaptiveCurveIrmBalancesLib.sol";
+import "../lib/forge-std/src/Test.sol";
+import "../lib/morpho-blue/src/interfaces/IMorpho.sol";
+import {MorphoBalancesLib} from "../lib/morpho-blue/src/libraries/periphery/MorphoBalancesLib.sol";
 
 contract AdaptiveCurveIrmBalancesLibTest is Test {
     using MarketParamsLib for MarketParams;
