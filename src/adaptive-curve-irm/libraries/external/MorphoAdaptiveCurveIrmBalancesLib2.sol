@@ -12,7 +12,6 @@ import {SharesMathLib} from "lib/morpho-blue/src/libraries/SharesMathLib.sol";
 import {Id, Market} from "../../../../lib/morpho-blue/src/interfaces/IMorpho.sol";
 import {MathLib as MorphoMathLib} from "lib/morpho-blue/src/libraries/MathLib.sol";
 import {UtilsLib as MorphoUtilsLib} from "lib/morpho-blue/src/libraries/UtilsLib.sol";
-import {MathLib as MorphoMathLib} from "../../../../lib/morpho-blue/src/libraries/MathLib.sol";
 
 library MorphoAdaptiveCurveIrmBalancesLib2 {
     using MathLib for int256;
