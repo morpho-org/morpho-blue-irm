@@ -22,11 +22,6 @@ library MorphoBalancesLib2 {
     using MorphoUtilsLib for uint256;
     using SharesMathLib for uint256;
 
-    /// @notice Returns the expected market balances of a market after having accrued interest.
-    /// @return The expected total supply assets.
-    /// @return The expected total supply shares.
-    /// @return The expected total borrow assets.
-    /// @return The expected total borrow shares.
     function expectedMarketBalances2(IMorpho morpho, Id id, address adaptiveCurveIrm)
         internal
         view
@@ -36,7 +31,6 @@ library MorphoBalancesLib2 {
 
         uint256 elapsed = block.timestamp - market.lastUpdate;
 
-        // Skipped if elapsed == 0 or totalBorrowAssets == 0 because interest would be null, or if irm == address(0).
         if (elapsed != 0 && market.totalBorrowAssets != 0) {
             uint256 borrowRate = _borrowRateView2(id, market, adaptiveCurveIrm);
             uint256 interest = market.totalBorrowAssets.wMulDown(borrowRate.wTaylorCompounded(elapsed));
@@ -45,8 +39,6 @@ library MorphoBalancesLib2 {
 
             if (market.fee != 0) {
                 uint256 feeAmount = interest.wMulDown(market.fee);
-                // The fee amount is subtracted from the total supply in this calculation to compensate for the fact
-                // that total supply is already updated.
                 uint256 feeShares =
                     feeAmount.toSharesDown(market.totalSupplyAssets - feeAmount, market.totalSupplyShares);
                 market.totalSupplyShares += feeShares.toUint128();
@@ -56,10 +48,7 @@ library MorphoBalancesLib2 {
         return (market.totalSupplyAssets, market.totalSupplyShares, market.totalBorrowAssets, market.totalBorrowShares);
     }
 
-    /// @dev Returns avgRate and endRateAtTarget.
-    /// @dev Assumes that the inputs `marketParams` and `id` match.
     function _borrowRateView2(Id id, Market memory market, address irm) internal view returns (uint256) {
-        // Safe "unchecked" cast because the utilization is smaller than 1 (scaled by WAD).
         int256 utilization =
             int256(market.totalSupplyAssets > 0 ? market.totalBorrowAssets.wDivDown(market.totalSupplyAssets) : 0);
 
