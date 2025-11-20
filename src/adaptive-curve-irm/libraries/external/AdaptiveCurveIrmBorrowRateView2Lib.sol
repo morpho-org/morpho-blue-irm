@@ -8,44 +8,16 @@ import {ExpLib} from "../../libraries/ExpLib.sol";
 import {UtilsLib} from "../../libraries/UtilsLib.sol";
 import {ConstantsLib} from "../../libraries/ConstantsLib.sol";
 import {MathLib, WAD_INT as WAD} from "../../libraries/MathLib.sol";
-import {SharesMathLib} from "../../../../lib/morpho-blue/src/libraries/SharesMathLib.sol";
 import {Id, Market} from "../../../../lib/morpho-blue/src/interfaces/IMorpho.sol";
 import {MathLib as MorphoMathLib} from "../../../../lib/morpho-blue/src/libraries/MathLib.sol";
 import {UtilsLib as MorphoUtilsLib} from "../../../../lib/morpho-blue/src/libraries/UtilsLib.sol";
 
-library MorphoAdaptiveCurveIrmBalancesLib2 {
+library AdaptiveCurveIrmBorrowRateView2Lib {
     using MathLib for int256;
     using UtilsLib for int256;
     using MorphoMathLib for uint256;
     using MorphoMathLib for uint128;
     using MorphoUtilsLib for uint256;
-    using SharesMathLib for uint256;
-
-    function expectedMarketBalances2(IMorpho morpho, Id id, address adaptiveCurveIrm)
-        internal
-        view
-        returns (uint256, uint256, uint256, uint256)
-    {
-        Market memory market = morpho.market(id);
-
-        uint256 elapsed = block.timestamp - market.lastUpdate;
-
-        if (elapsed != 0 && market.totalBorrowAssets != 0) {
-            uint256 borrowRate = borrowRateView2(id, market, adaptiveCurveIrm);
-            uint256 interest = market.totalBorrowAssets.wMulDown(borrowRate.wTaylorCompounded(elapsed));
-            market.totalBorrowAssets += interest.toUint128();
-            market.totalSupplyAssets += interest.toUint128();
-
-            if (market.fee != 0) {
-                uint256 feeAmount = interest.wMulDown(market.fee);
-                uint256 feeShares =
-                    feeAmount.toSharesDown(market.totalSupplyAssets - feeAmount, market.totalSupplyShares);
-                market.totalSupplyShares += feeShares.toUint128();
-            }
-        }
-
-        return (market.totalSupplyAssets, market.totalSupplyShares, market.totalBorrowAssets, market.totalBorrowShares);
-    }
 
     /// @dev Same as the AdaptiveCurveIrm.borrowRateView function, but takes the market id as input.
     function borrowRateView2(Id id, Market memory market, address adaptiveCurveIrm) internal view returns (uint256) {
