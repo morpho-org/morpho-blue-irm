@@ -16,8 +16,8 @@ jobs:
 
       matrix:
         conf:
-          - BorrowRateViewLib
-          - BalancesLib
+          - BorrowRateView
+          - ExpectedMarketBalances
 
     steps:
       - uses: actions/checkout@v3
