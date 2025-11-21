@@ -1,15 +1,15 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-import {ACIBalancesLib} from "../../src/adaptive-curve-irm/libraries/periphery/ACIBalancesLib.sol";
+import {AdaptiveCurveIrmLib} from "../../src/adaptive-curve-irm/libraries/periphery/AdaptiveCurveIrmLib.sol";
 import {MorphoBalancesLib} from "../../lib/morpho-blue/src/libraries/periphery/MorphoBalancesLib.sol";
 import {Id, Market, MarketParams, IMorpho} from "../../lib/morpho-blue/src/interfaces/IMorpho.sol";
 import {MarketParamsLib} from "../../lib/morpho-blue/src/libraries/MarketParamsLib.sol";
 
-contract BalancesLibWrapper {
+contract AdaptiveCurveIrmLibHarness {
     using MarketParamsLib for MarketParams;
 
-    function adaptiveCurveIrmExpectedMarketBalances(IMorpho morpho, Id id, address adaptiveCurveIrm)
+    function adaptiveCurveIrmLibExpectedMarketBalances(IMorpho morpho, Id id, address adaptiveCurveIrm)
         external
         view
         returns (uint256, uint256, uint256, uint256)
@@ -17,12 +17,16 @@ contract BalancesLibWrapper {
         return ACIBalancesLib.expectedMarketBalances(address(morpho), Id.unwrap(id), adaptiveCurveIrm);
     }
 
-    function morphoExpectedMarketBalances(IMorpho morpho, MarketParams memory marketParams)
+    function morphoBalancesLibExpectedMarketBalances(IMorpho morpho, MarketParams memory marketParams)
         external
         view
         returns (uint256, uint256, uint256, uint256)
     {
         return MorphoBalancesLib.expectedMarketBalances(morpho, marketParams);
+    }
+
+    function borrowRateView(Id id, Market memory market, address adaptiveCurveIrm) external view returns (uint256) {
+        return ACIBorrowRateViewLib.borrowRateView(Id.unwrap(id), market, adaptiveCurveIrm);
     }
 
     function toId(MarketParams memory marketParams) external pure returns (Id) {
