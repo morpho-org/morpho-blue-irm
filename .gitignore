@@ -21,4 +21,8 @@ node_modules/
 /cache_hardhat
 /artifacts
 
-*.log
+# Certora
+.certora*/
+
+# Claude
+.claude/
