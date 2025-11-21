@@ -3,12 +3,12 @@ pragma solidity ^0.8.0;
 
 import {Id, Market, IMorpho} from "../../../../lib/morpho-blue/src/interfaces/IMorpho.sol";
 
+import {ACIBorrowRateViewLib} from "./ACIBorrowRateViewLib.sol";
 import {SharesMathLib} from "../../../../lib/morpho-blue/src/libraries/SharesMathLib.sol";
-import {AdaptiveCurveIrmBorrowRateView2Lib} from "./AdaptiveCurveIrmBorrowRateView2Lib.sol";
 import {MathLib as MorphoMathLib} from "../../../../lib/morpho-blue/src/libraries/MathLib.sol";
 import {UtilsLib as MorphoUtilsLib} from "../../../../lib/morpho-blue/src/libraries/UtilsLib.sol";
 
-library AdaptiveCurveIrmBalancesLib {
+library ACIBalancesLib {
     using MorphoMathLib for uint256;
     using MorphoMathLib for uint128;
     using SharesMathLib for uint256;
@@ -25,7 +25,7 @@ library AdaptiveCurveIrmBalancesLib {
 
         // Skipped if elapsed == 0 or totalBorrowAssets == 0 because interest would be null.
         if (elapsed != 0 && market.totalBorrowAssets != 0) {
-            uint256 borrowRate = AdaptiveCurveIrmBorrowRateView2Lib.borrowRateView2(id, market, adaptiveCurveIrm);
+            uint256 borrowRate = ACIBorrowRateViewLib.borrowRateView2(id, market, adaptiveCurveIrm);
             uint256 interest = market.totalBorrowAssets.wMulDown(borrowRate.wTaylorCompounded(elapsed));
             market.totalBorrowAssets += interest.toUint128();
             market.totalSupplyAssets += interest.toUint128();

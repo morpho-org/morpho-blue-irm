@@ -2,10 +2,10 @@
 pragma solidity ^0.8.0;
 
 import "../src/adaptive-curve-irm/AdaptiveCurveIrm.sol";
-import "../src/adaptive-curve-irm/libraries/periphery/AdaptiveCurveIrmBorrowRateView2Lib.sol";
+import "../src/adaptive-curve-irm/libraries/periphery/ACIBorrowRateViewLib.sol";
 import "../lib/forge-std/src/Test.sol";
 
-contract AdaptiveCurveIrmBorrowRateView2LibTest is Test {
+contract ACIBorrowRateViewLibTest is Test {
     using MarketParamsLib for MarketParams;
     using stdStorage for StdStorage;
     using MathLib for uint256;
@@ -38,7 +38,7 @@ contract AdaptiveCurveIrmBorrowRateView2LibTest is Test {
         vm.store(adaptiveCurveIrm, slot, bytes32(rateAtTarget));
         assertEq(IAdaptiveCurveIrm(adaptiveCurveIrm).rateAtTarget(id), int256(rateAtTarget), "rateAtTarget");
 
-        uint256 computedBorrowRate = AdaptiveCurveIrmBorrowRateView2Lib.borrowRateView2(id, market, adaptiveCurveIrm);
+        uint256 computedBorrowRate = ACIBorrowRateViewLib.borrowRateView2(id, market, adaptiveCurveIrm);
         uint256 expectedBorrowRate = IAdaptiveCurveIrm(adaptiveCurveIrm).borrowRateView(marketParams, market);
         assertEq(computedBorrowRate, expectedBorrowRate, "computedBorrowRate");
     }

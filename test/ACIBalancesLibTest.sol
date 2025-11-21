@@ -2,12 +2,12 @@
 pragma solidity ^0.8.0;
 
 import "../src/adaptive-curve-irm/AdaptiveCurveIrm.sol";
-import "../src/adaptive-curve-irm/libraries/periphery/AdaptiveCurveIrmBalancesLib.sol";
+import "../src/adaptive-curve-irm/libraries/periphery/ACIBalancesLib.sol";
 import "../lib/forge-std/src/Test.sol";
 import "../lib/morpho-blue/src/interfaces/IMorpho.sol";
 import {MorphoBalancesLib} from "../lib/morpho-blue/src/libraries/periphery/MorphoBalancesLib.sol";
 
-contract AdaptiveCurveIrmBalancesLibTest is Test {
+contract ACIBalancesLibTest is Test {
     using MarketParamsLib for MarketParams;
 
     address public adaptiveCurveIrm;
@@ -59,7 +59,7 @@ contract AdaptiveCurveIrmBalancesLibTest is Test {
 
         this.adaptiveCurveIrm();
         (uint256 totalSupplyAssets, uint256 totalSupplyShares, uint256 totalBorrowAssets, uint256 totalBorrowShares) =
-            AdaptiveCurveIrmBalancesLib.expectedMarketBalances(IMorpho(morpho), id, adaptiveCurveIrm);
+            ACIBalancesLib.expectedMarketBalances(IMorpho(morpho), id, adaptiveCurveIrm);
         this.adaptiveCurveIrm();
         (
             uint256 expectedTotalSupplyAssets,

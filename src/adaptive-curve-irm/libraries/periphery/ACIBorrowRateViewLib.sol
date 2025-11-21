@@ -11,7 +11,7 @@ import {MathLib, WAD_INT as WAD} from "../MathLib.sol";
 import {MathLib as MorphoMathLib} from "../../../../lib/morpho-blue/src/libraries/MathLib.sol";
 import {UtilsLib as MorphoUtilsLib} from "../../../../lib/morpho-blue/src/libraries/UtilsLib.sol";
 
-library AdaptiveCurveIrmBorrowRateView2Lib {
+library ACIBorrowRateViewLib {
     using MathLib for int256;
     using UtilsLib for int256;
     using MorphoMathLib for uint128;
