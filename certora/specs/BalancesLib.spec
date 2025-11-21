@@ -2,11 +2,14 @@
 
 using AdaptiveCurveIrm as AdaptiveCurveIrm;
 using BalancesLibWrapper as BalancesLibWrapper;
+using Morpho as Morpho;
 
 methods {
     function BalancesLibWrapper.toId(AdaptiveCurveIrm.MarketParams) external returns (AdaptiveCurveIrm.Id) envfree;
 
     function _.rateAtTarget(AdaptiveCurveIrm.Id id) external => DISPATCHER(true);
+    function _.market(Morpho.Id) external => DISPATCHER(true);
+    function _.borrowRateView(Morpho.MarketParams, Morpho.Market) external => DISPATCHER(true);
 }
 
 // Rule: AdaptiveCurveIrmBalancesLib behaves identically to MorphoBalancesLib
