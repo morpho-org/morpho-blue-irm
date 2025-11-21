@@ -47,19 +47,19 @@ contract ACIBalancesLibTest is Test {
         MarketParams memory marketParams = MarketParams({
             loanToken: address(0), collateralToken: address(0), oracle: address(0), irm: adaptiveCurveIrm, lltv: 0
         });
-        Id id = marketParams.id();
+        bytes32 id = Id.unwrap(marketParams.id());
 
         address morpho = makeAddr("morpho");
         // set rate at target.
         bytes32 slot = keccak256(abi.encode(id, 0));
         vm.store(adaptiveCurveIrm, slot, bytes32(rateAtTarget));
-        assertEq(IAdaptiveCurveIrm(adaptiveCurveIrm).rateAtTarget(id), int256(rateAtTarget), "rateAtTarget");
+        assertEq(IAdaptiveCurveIrm(adaptiveCurveIrm).rateAtTarget(Id.wrap(id)), int256(rateAtTarget), "rateAtTarget");
         // set market state.
         vm.mockCall(morpho, abi.encodeWithSelector(IMorpho.market.selector), abi.encode(market));
 
         this.adaptiveCurveIrm();
         (uint256 totalSupplyAssets, uint256 totalSupplyShares, uint256 totalBorrowAssets, uint256 totalBorrowShares) =
-            ACIBalancesLib.expectedMarketBalances(IMorpho(morpho), id, adaptiveCurveIrm);
+            ACIBalancesLib.expectedMarketBalances(morpho, id, adaptiveCurveIrm);
         this.adaptiveCurveIrm();
         (
             uint256 expectedTotalSupplyAssets,

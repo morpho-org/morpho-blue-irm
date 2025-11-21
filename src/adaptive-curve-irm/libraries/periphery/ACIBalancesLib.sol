@@ -14,18 +14,18 @@ library ACIBalancesLib {
     using SharesMathLib for uint256;
     using MorphoUtilsLib for uint256;
 
-    function expectedMarketBalances(IMorpho morpho, Id id, address adaptiveCurveIrm)
+    function expectedMarketBalances(address morpho, bytes32 id, address adaptiveCurveIrm)
         internal
         view
         returns (uint256, uint256, uint256, uint256)
     {
-        Market memory market = morpho.market(id);
+        Market memory market = IMorpho(morpho).market(Id.wrap(id));
 
         uint256 elapsed = block.timestamp - market.lastUpdate;
 
         // Skipped if elapsed == 0 or totalBorrowAssets == 0 because interest would be null.
         if (elapsed != 0 && market.totalBorrowAssets != 0) {
-            uint256 borrowRate = ACIBorrowRateViewLib.borrowRateView2(id, market, adaptiveCurveIrm);
+            uint256 borrowRate = ACIBorrowRateViewLib.borrowRateView(id, market, adaptiveCurveIrm);
             uint256 interest = market.totalBorrowAssets.wMulDown(borrowRate.wTaylorCompounded(elapsed));
             market.totalBorrowAssets += interest.toUint128();
             market.totalSupplyAssets += interest.toUint128();

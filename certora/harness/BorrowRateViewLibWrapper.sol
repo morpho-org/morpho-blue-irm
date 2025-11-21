@@ -8,8 +8,8 @@ import {MarketParamsLib} from "../../lib/morpho-blue/src/libraries/MarketParamsL
 contract BorrowRateViewLibWrapper {
     using MarketParamsLib for MarketParams;
 
-    function borrowRateView2(Id id, Market memory market, address adaptiveCurveIrm) external view returns (uint256) {
-        return ACIBorrowRateViewLib.borrowRateView2(id, market, adaptiveCurveIrm);
+    function borrowRateView(Id id, Market memory market, address adaptiveCurveIrm) external view returns (uint256) {
+        return ACIBorrowRateViewLib.borrowRateView(Id.unwrap(id), market, adaptiveCurveIrm);
     }
 
     function toId(MarketParams memory marketParams) external pure returns (Id) {

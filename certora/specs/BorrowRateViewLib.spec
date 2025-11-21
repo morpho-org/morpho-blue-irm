@@ -9,24 +9,24 @@ methods {
     function _.rateAtTarget(AdaptiveCurveIrm.Id id) external => DISPATCHER(true);
 }
 
-// Rule: borrowRateView2 returns the same result as borrowRateView
-rule borrowRateView2Equivalence(env e, AdaptiveCurveIrm.MarketParams marketParams, AdaptiveCurveIrm.Market market) {
+// Rule: the lib returns the same result as the contract
+rule borrowRateViewEquivalence(env e, AdaptiveCurveIrm.MarketParams marketParams, AdaptiveCurveIrm.Market market) {
     AdaptiveCurveIrm.Id id = BorrowRateViewLibWrapper.toId(marketParams);
 
     uint256 originalRate = AdaptiveCurveIrm.borrowRateView(e, marketParams, market);
-    uint256 view2Rate = BorrowRateViewLibWrapper.borrowRateView2(e, id, market, AdaptiveCurveIrm);
+    uint256 libRate = BorrowRateViewLibWrapper.borrowRateView(e, id, market, AdaptiveCurveIrm);
 
-    assert originalRate == view2Rate;
+    assert originalRate == libRate;
 }
 
-// Rule: borrowRateView and borrowRateView2 have the same revert behavior
+// Rule: the lib reverts exactly when the contract reverts
 rule borrowRateView2Liveness(env e, AdaptiveCurveIrm.MarketParams marketParams, AdaptiveCurveIrm.Market market) {
     AdaptiveCurveIrm.Id id = BorrowRateViewLibWrapper.toId(marketParams);
 
     AdaptiveCurveIrm.borrowRateView@withrevert(e, marketParams, market);
     bool originalReverted = lastReverted;
 
-    BorrowRateViewLibWrapper.borrowRateView2@withrevert(e, id, market, AdaptiveCurveIrm);
+    BorrowRateViewLibWrapper.borrowRateView@withrevert(e, id, market, AdaptiveCurveIrm);
     bool view2Reverted = lastReverted;
 
     assert originalReverted == view2Reverted;

@@ -18,8 +18,12 @@ library ACIBorrowRateViewLib {
     using MorphoUtilsLib for uint256;
 
     /// @dev Same as the AdaptiveCurveIrm.borrowRateView function, but takes the market id as input.
-    function borrowRateView2(Id id, Market memory market, address adaptiveCurveIrm) internal view returns (uint256) {
-        (uint256 avgRate,) = _borrowRate(id, market, adaptiveCurveIrm);
+    function borrowRateView(bytes32 id, Market memory market, address adaptiveCurveIrm)
+        internal
+        view
+        returns (uint256)
+    {
+        (uint256 avgRate,) = _borrowRate(Id.wrap(id), market, adaptiveCurveIrm);
         return avgRate;
     }
 

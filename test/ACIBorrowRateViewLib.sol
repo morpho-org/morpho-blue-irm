@@ -16,7 +16,7 @@ contract ACIBorrowRateViewLibTest is Test {
         adaptiveCurveIrm = address(new AdaptiveCurveIrm(address(this)));
     }
 
-    function testBorrowRateView2(uint256 rateAtTarget, Market memory market) public {
+    function testBorrowRateView(uint256 rateAtTarget, Market memory market) public {
         vm.warp(1000 days);
 
         vm.assume(rateAtTarget <= uint256(ConstantsLib.MAX_RATE_AT_TARGET));
@@ -27,7 +27,7 @@ contract ACIBorrowRateViewLibTest is Test {
 
         MarketParams memory marketParams;
         marketParams.irm = adaptiveCurveIrm;
-        Id id = marketParams.id();
+        bytes32 id = Id.unwrap(marketParams.id());
 
         // set rate at target.
         vm.mockCall(
@@ -36,9 +36,9 @@ contract ACIBorrowRateViewLibTest is Test {
         // compute slot by hand.
         bytes32 slot = keccak256(abi.encode(id, 0));
         vm.store(adaptiveCurveIrm, slot, bytes32(rateAtTarget));
-        assertEq(IAdaptiveCurveIrm(adaptiveCurveIrm).rateAtTarget(id), int256(rateAtTarget), "rateAtTarget");
+        assertEq(IAdaptiveCurveIrm(adaptiveCurveIrm).rateAtTarget(Id.wrap(id)), int256(rateAtTarget), "rateAtTarget");
 
-        uint256 computedBorrowRate = ACIBorrowRateViewLib.borrowRateView2(id, market, adaptiveCurveIrm);
+        uint256 computedBorrowRate = ACIBorrowRateViewLib.borrowRateView(id, market, adaptiveCurveIrm);
         uint256 expectedBorrowRate = IAdaptiveCurveIrm(adaptiveCurveIrm).borrowRateView(marketParams, market);
         assertEq(computedBorrowRate, expectedBorrowRate, "computedBorrowRate");
     }
