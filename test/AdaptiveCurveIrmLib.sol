@@ -2,13 +2,16 @@
 pragma solidity ^0.8.0;
 
 import "../src/adaptive-curve-irm/AdaptiveCurveIrm.sol";
-import "../src/adaptive-curve-irm/libraries/periphery/ACIBalancesLib.sol";
-import "../lib/forge-std/src/Test.sol";
+import "../src/adaptive-curve-irm/libraries/periphery/AdaptiveCurveIrmLib.sol";
 import "../lib/morpho-blue/src/interfaces/IMorpho.sol";
 import {MorphoBalancesLib} from "../lib/morpho-blue/src/libraries/periphery/MorphoBalancesLib.sol";
 
-contract ACIBalancesLibTest is Test {
+import "../lib/forge-std/src/Test.sol";
+
+contract AdaptiveCurveIrmLibTest is Test {
     using MarketParamsLib for MarketParams;
+    using stdStorage for StdStorage;
+    using MathLib for uint256;
 
     address public adaptiveCurveIrm;
 
@@ -59,7 +62,7 @@ contract ACIBalancesLibTest is Test {
 
         this.adaptiveCurveIrm();
         (uint256 totalSupplyAssets, uint256 totalSupplyShares, uint256 totalBorrowAssets, uint256 totalBorrowShares) =
-            ACIBalancesLib.expectedMarketBalances(morpho, id, adaptiveCurveIrm);
+            AdaptiveCurveIrmLib.expectedMarketBalances(morpho, id, adaptiveCurveIrm);
         this.adaptiveCurveIrm();
         (
             uint256 expectedTotalSupplyAssets,
@@ -72,5 +75,32 @@ contract ACIBalancesLibTest is Test {
         assertEq(totalSupplyShares, expectedTotalSupplyShares, "total supply shares");
         assertEq(totalBorrowAssets, expectedTotalBorrowAssets, "total borrow assets");
         assertEq(totalBorrowShares, expectedTotalBorrowShares, "total borrow shares");
+    }
+
+    function testBorrowRateView(uint256 rateAtTarget, Market memory market) public {
+        vm.warp(1000 days);
+
+        vm.assume(rateAtTarget <= uint256(ConstantsLib.MAX_RATE_AT_TARGET));
+        // borrow rate doesn't revert on utilization > 1, and the test passes. Still, we require that.
+        vm.assume(market.totalBorrowAssets <= market.totalSupplyAssets);
+        vm.assume(market.lastUpdate <= 1000 days);
+        vm.assume(market.fee < 0.25e18);
+
+        MarketParams memory marketParams;
+        marketParams.irm = adaptiveCurveIrm;
+        bytes32 id = Id.unwrap(marketParams.id());
+
+        // set rate at target.
+        vm.mockCall(
+            adaptiveCurveIrm, abi.encodeWithSelector(IAdaptiveCurveIrm.rateAtTarget.selector), abi.encode(rateAtTarget)
+        );
+        // compute slot by hand.
+        bytes32 slot = keccak256(abi.encode(id, 0));
+        vm.store(adaptiveCurveIrm, slot, bytes32(rateAtTarget));
+        assertEq(IAdaptiveCurveIrm(adaptiveCurveIrm).rateAtTarget(Id.wrap(id)), int256(rateAtTarget), "rateAtTarget");
+
+        uint256 computedBorrowRate = AdaptiveCurveIrmLib.borrowRateView(id, market, adaptiveCurveIrm);
+        uint256 expectedBorrowRate = IAdaptiveCurveIrm(adaptiveCurveIrm).borrowRateView(marketParams, market);
+        assertEq(computedBorrowRate, expectedBorrowRate, "computedBorrowRate");
     }
 }
