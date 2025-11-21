@@ -18,3 +18,16 @@ rule borrowRateView2Equivalence(env e, AdaptiveCurveIrm.MarketParams marketParam
 
     assert originalRate == view2Rate;
 }
+
+// Rule: borrowRateView and borrowRateView2 have the same revert behavior
+rule borrowRateView2Liveness(env e, AdaptiveCurveIrm.MarketParams marketParams, AdaptiveCurveIrm.Market market) {
+    AdaptiveCurveIrm.Id id = BorrowRateView2Wrapper.toId(marketParams);
+
+    AdaptiveCurveIrm.borrowRateView@withrevert(e, marketParams, market);
+    bool originalReverted = lastReverted;
+
+    BorrowRateView2Wrapper.borrowRateView2@withrevert(e, id, market, AdaptiveCurveIrm);
+    bool view2Reverted = lastReverted;
+
+    assert originalReverted == view2Reverted;
+}
