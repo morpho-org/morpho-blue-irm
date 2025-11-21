@@ -17,6 +17,7 @@ jobs:
       matrix:
         conf:
           - BorrowRateView2
+          - BalancesLib
 
     steps:
       - uses: actions/checkout@v3
