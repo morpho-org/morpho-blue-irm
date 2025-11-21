@@ -4,18 +4,16 @@ pragma solidity ^0.8.0;
 import {Id, Market, IMorpho} from "../../../../lib/morpho-blue/src/interfaces/IMorpho.sol";
 import {IAdaptiveCurveIrm} from "../../interfaces/IAdaptiveCurveIrm.sol";
 
-import {ExpLib} from "../../libraries/ExpLib.sol";
-import {UtilsLib} from "../../libraries/UtilsLib.sol";
-import {ConstantsLib} from "../../libraries/ConstantsLib.sol";
-import {MathLib, WAD_INT as WAD} from "../../libraries/MathLib.sol";
-import {Id, Market} from "../../../../lib/morpho-blue/src/interfaces/IMorpho.sol";
+import {ExpLib} from "../ExpLib.sol";
+import {UtilsLib} from "../UtilsLib.sol";
+import {ConstantsLib} from "../ConstantsLib.sol";
+import {MathLib, WAD_INT as WAD} from "../MathLib.sol";
 import {MathLib as MorphoMathLib} from "../../../../lib/morpho-blue/src/libraries/MathLib.sol";
 import {UtilsLib as MorphoUtilsLib} from "../../../../lib/morpho-blue/src/libraries/UtilsLib.sol";
 
 library AdaptiveCurveIrmBorrowRateView2Lib {
     using MathLib for int256;
     using UtilsLib for int256;
-    using MorphoMathLib for uint256;
     using MorphoMathLib for uint128;
     using MorphoUtilsLib for uint256;
 
