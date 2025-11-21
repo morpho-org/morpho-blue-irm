@@ -14,7 +14,7 @@ contract AdaptiveCurveIrmLibHarness {
         view
         returns (uint256, uint256, uint256, uint256)
     {
-        return ACIBalancesLib.expectedMarketBalances(address(morpho), Id.unwrap(id), adaptiveCurveIrm);
+        return AdaptiveCurveIrmLib.expectedMarketBalances(address(morpho), Id.unwrap(id), adaptiveCurveIrm);
     }
 
     function morphoBalancesLibExpectedMarketBalances(IMorpho morpho, MarketParams memory marketParams)
@@ -26,7 +26,7 @@ contract AdaptiveCurveIrmLibHarness {
     }
 
     function borrowRateView(Id id, Market memory market, address adaptiveCurveIrm) external view returns (uint256) {
-        return ACIBorrowRateViewLib.borrowRateView(Id.unwrap(id), market, adaptiveCurveIrm);
+        return AdaptiveCurveIrmLib.borrowRateView(Id.unwrap(id), market, adaptiveCurveIrm);
     }
 
     function toId(MarketParams memory marketParams) external pure returns (Id) {
