@@ -3,14 +3,10 @@ pragma solidity ^0.8.0;
 
 import {Id, Market, IMorpho} from "../../../../lib/morpho-blue/src/interfaces/IMorpho.sol";
 
+import {SharesMathLib} from "../../../../lib/morpho-blue/src/libraries/SharesMathLib.sol";
+import {AdaptiveCurveIrmBorrowRateView2Lib} from "./AdaptiveCurveIrmBorrowRateView2Lib.sol";
 import {MathLib as MorphoMathLib} from "../../../../lib/morpho-blue/src/libraries/MathLib.sol";
 import {UtilsLib as MorphoUtilsLib} from "../../../../lib/morpho-blue/src/libraries/UtilsLib.sol";
-import {Id, Market} from "../../../../lib/morpho-blue/src/interfaces/IMorpho.sol";
-import {SharesMathLib} from "../../../../lib/morpho-blue/src/libraries/SharesMathLib.sol";
-
-import {AdaptiveCurveIrmBorrowRateView2Lib} from "./AdaptiveCurveIrmBorrowRateView2Lib.sol";
-
-import {console2} from "../../../../lib/forge-std/src/console2.sol";
 
 library AdaptiveCurveIrmBalancesLib {
     using MorphoMathLib for uint256;
