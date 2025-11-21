@@ -16,7 +16,7 @@ jobs:
 
       matrix:
         conf:
-          - BorrowRateView2
+          - BorrowRateViewLib
           - BalancesLib
 
     steps:
