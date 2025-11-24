@@ -1,11 +1,11 @@
 // SPDX-License-Identifier: MIT
 
 using AdaptiveCurveIrm as AdaptiveCurveIrm;
-using BalancesLibWrapper as BalancesLibWrapper;
+using AdaptiveCurveIrmLibHarness as AdaptiveCurveIrmLibHarness;
 using Morpho as Morpho;
 
 methods {
-    function BalancesLibWrapper.toId(AdaptiveCurveIrm.MarketParams) external returns (AdaptiveCurveIrm.Id) envfree;
+    function AdaptiveCurveIrmLibHarness.toId(AdaptiveCurveIrm.MarketParams) external returns (AdaptiveCurveIrm.Id) envfree;
 
     function _.rateAtTarget(AdaptiveCurveIrm.Id id) external => DISPATCHER(true);
     function _.market(Morpho.Id) external => DISPATCHER(true);
@@ -16,7 +16,7 @@ methods {
 rule balancesLibEquivalence(env e, address morpho, AdaptiveCurveIrm.MarketParams marketParams) {
     require marketParams.irm == AdaptiveCurveIrm;
 
-    AdaptiveCurveIrm.Id id = BalancesLibWrapper.toId(marketParams);
+    AdaptiveCurveIrm.Id id = AdaptiveCurveIrmLibHarness.toId(marketParams);
 
     // Get results from both libraries
     uint256 adaptiveTotalSupplyAssets;
@@ -24,14 +24,14 @@ rule balancesLibEquivalence(env e, address morpho, AdaptiveCurveIrm.MarketParams
     uint256 adaptiveTotalBorrowAssets;
     uint256 adaptiveTotalBorrowShares;
     (adaptiveTotalSupplyAssets, adaptiveTotalSupplyShares, adaptiveTotalBorrowAssets, adaptiveTotalBorrowShares) =
-        BalancesLibWrapper.adaptiveCurveIrmExpectedMarketBalances(e, morpho, id, AdaptiveCurveIrm);
+        AdaptiveCurveIrmLibHarness.adaptiveCurveIrmLibExpectedMarketBalances(e, morpho, id, AdaptiveCurveIrm);
 
     uint256 morphoTotalSupplyAssets;
     uint256 morphoTotalSupplyShares;
     uint256 morphoTotalBorrowAssets;
     uint256 morphoTotalBorrowShares;
     (morphoTotalSupplyAssets, morphoTotalSupplyShares, morphoTotalBorrowAssets, morphoTotalBorrowShares) =
-        BalancesLibWrapper.morphoExpectedMarketBalances(e, morpho, marketParams);
+        AdaptiveCurveIrmLibHarness.morphoBalancesLibExpectedMarketBalances(e, morpho, marketParams);
 
     // Both libraries should return identical results
     assert adaptiveTotalSupplyAssets == morphoTotalSupplyAssets;
@@ -43,12 +43,12 @@ rule balancesLibEquivalence(env e, address morpho, AdaptiveCurveIrm.MarketParams
 rule balancesLibLiveness(env e, address morpho, AdaptiveCurveIrm.MarketParams marketParams) {
     require marketParams.irm == AdaptiveCurveIrm;
 
-    AdaptiveCurveIrm.Id id = BalancesLibWrapper.toId(marketParams);
+    AdaptiveCurveIrm.Id id = AdaptiveCurveIrmLibHarness.toId(marketParams);
 
-    BalancesLibWrapper.adaptiveCurveIrmExpectedMarketBalances@withrevert(e, morpho, id, AdaptiveCurveIrm);
+    AdaptiveCurveIrmLibHarness.adaptiveCurveIrmLibExpectedMarketBalances@withrevert(e, morpho, id, AdaptiveCurveIrm);
     bool adaptiveCurveIrmReverted = lastReverted;
 
-    BalancesLibWrapper.morphoExpectedMarketBalances@withrevert(e, morpho, marketParams);
+    AdaptiveCurveIrmLibHarness.morphoBalancesLibExpectedMarketBalances@withrevert(e, morpho, marketParams);
     bool morphoReverted = lastReverted;
 
     assert adaptiveCurveIrmReverted == morphoReverted;
