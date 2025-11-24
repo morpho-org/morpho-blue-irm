@@ -24,7 +24,7 @@ library AdaptiveCurveIrmLib {
 
     /// @dev Same as the MorphoBalancesLib.expectedMarketBalances function, but takes the market id as input.
     /// @dev Works only for markets with an AdaptiveCurveIrm as irm.
-    /// @dev Returns the expected totalSupplyAssets, totalBorrowAssets, totalSupplyShares, totalBorrowShares.
+    /// @dev Returns the expected totalSupplyAssets, totalSupplyShares, totalBorrowAssets, totalBorrowShares.
     function expectedMarketBalances(address morpho, bytes32 id, address adaptiveCurveIrm)
         internal
         view
