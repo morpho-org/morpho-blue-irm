@@ -91,9 +91,6 @@ contract AdaptiveCurveIrmLibTest is Test {
         bytes32 id = Id.unwrap(marketParams.id());
 
         // set rate at target.
-        vm.mockCall(
-            adaptiveCurveIrm, abi.encodeWithSelector(IAdaptiveCurveIrm.rateAtTarget.selector), abi.encode(rateAtTarget)
-        );
         // compute slot by hand.
         bytes32 slot = keccak256(abi.encode(id, 0));
         vm.store(adaptiveCurveIrm, slot, bytes32(rateAtTarget));
