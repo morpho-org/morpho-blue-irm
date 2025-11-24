@@ -12,6 +12,8 @@ import {SharesMathLib} from "../../../../lib/morpho-blue/src/libraries/SharesMat
 import {MathLib as MorphoMathLib} from "../../../../lib/morpho-blue/src/libraries/MathLib.sol";
 import {UtilsLib as MorphoUtilsLib} from "../../../../lib/morpho-blue/src/libraries/UtilsLib.sol";
 
+/// @dev Library to compute borrowRateView and expectedMarketBalances with only the market id.
+/// @dev Must be used only for markets with an AdaptiveCurveIrm as irm.
 library AdaptiveCurveIrmLib {
     using MathLib for int256;
     using UtilsLib for int256;
@@ -20,6 +22,9 @@ library AdaptiveCurveIrmLib {
     using SharesMathLib for uint256;
     using MorphoUtilsLib for uint256;
 
+    /// @dev Same as the MorphoBalancesLib.expectedMarketBalances function, but takes the market id as input.
+    /// @dev Works only for markets with an AdaptiveCurveIrm as irm.
+    /// @dev Returns the expected totalSupplyAssets, totalBorrowAssets, totalSupplyShares, totalBorrowShares.
     function expectedMarketBalances(address morpho, bytes32 id, address adaptiveCurveIrm)
         internal
         view
@@ -50,6 +55,8 @@ library AdaptiveCurveIrmLib {
     }
 
     /// @dev Same as the AdaptiveCurveIrm.borrowRateView function, but takes the market id as input.
+    /// @dev Works only for markets with an AdaptiveCurveIrm as irm.
+    /// @dev Returns avgRate.
     function borrowRateView(bytes32 id, Market memory market, address adaptiveCurveIrm)
         internal
         view
