@@ -18,6 +18,7 @@ jobs:
         conf:
           - BorrowRateView
           - ExpectedMarketBalances
+          - IrmLiveness
 
     steps:
       - uses: actions/checkout@v3
