@@ -11,7 +11,6 @@ evm_version = "paris"
 
 [fuzz]
 runs = 4096
-max_test_rejects = 1000000
 
 [invariant]
 runs = 32
@@ -22,6 +21,10 @@ fail_on_revert = true
 wrap_comments = true
 
 [lint]
-exclude_lints = ["unsafe-typecast", "mixed-case-function", "unaliased-plain-import"]
+exclude_lints = [
+    "unsafe-typecast",
+    "mixed-case-function",
+    "unaliased-plain-import",
+]
 
 # See more config options https://github.com/foundry-rs/foundry/blob/master/crates/config/README.md#all-options

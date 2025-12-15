@@ -31,10 +31,9 @@ contract AdaptiveCurveIrmLibTest is Test {
         vm.warp(1000 days);
         rateAtTarget = bound(rateAtTarget, 0, uint256(ConstantsLib.MAX_RATE_AT_TARGET));
         initTotalSupplyAssets = uint128(bound(initTotalSupplyAssets, 0, 1e35));
-        initTotalBorrowAssets = uint128(bound(initTotalBorrowAssets, 0, 1e35));
+        initTotalBorrowAssets = uint128(bound(initTotalBorrowAssets, 0, initTotalSupplyAssets));
         initTotalSupplyShares = uint128(bound(initTotalSupplyShares, 0, 1e35));
         initTotalBorrowShares = uint128(bound(initTotalBorrowShares, 0, 1e35));
-        vm.assume(initTotalSupplyAssets >= initTotalBorrowAssets);
         lastUpdate = uint128(bound(lastUpdate, 0, 1000 days));
         fee = uint128(bound(fee, 0, 0.25e18));
 
@@ -80,11 +79,11 @@ contract AdaptiveCurveIrmLibTest is Test {
     function testBorrowRateView(uint256 rateAtTarget, Market memory market) public {
         vm.warp(1000 days);
 
-        vm.assume(rateAtTarget <= uint256(ConstantsLib.MAX_RATE_AT_TARGET));
+        rateAtTarget = bound(rateAtTarget, 0, uint256(ConstantsLib.MAX_RATE_AT_TARGET));
         // borrow rate doesn't revert on utilization > 1, and the test passes. Still, we require that.
-        vm.assume(market.totalBorrowAssets <= market.totalSupplyAssets);
-        vm.assume(market.lastUpdate <= 1000 days);
-        vm.assume(market.fee < 0.25e18);
+        market.totalBorrowAssets = uint128(bound(market.totalBorrowAssets, 0, market.totalSupplyAssets));
+        market.lastUpdate = uint128(bound(market.lastUpdate, 0, 1000 days));
+        market.fee = uint128(bound(market.fee, 0, 0.25e18));
 
         MarketParams memory marketParams;
         marketParams.irm = adaptiveCurveIrm;
