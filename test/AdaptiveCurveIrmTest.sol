@@ -328,8 +328,8 @@ contract AdaptiveCurveIrmTest is Test {
 
         Market memory market;
         market.lastUpdate = uint128(block.timestamp);
-        market.totalBorrowAssets = uint128(totalSupplyAssets);
-        market.totalSupplyAssets = uint128(totalBorrowAssets);
+        market.totalSupplyAssets = uint128(totalSupplyAssets);
+        market.totalBorrowAssets = uint128(totalBorrowAssets);
 
         vm.warp(block.timestamp + elapsed);
         irm.borrowRate(marketParams, market);
