@@ -8,6 +8,7 @@ optimizer = true
 optimizer_runs = 999999
 bytecode_hash = "none"
 evm_version = "paris"
+gas_limit = 4294967295 # forge >=1.8 isolate-mode gas accounting overran the default 2^30 limit
 
 [fuzz]
 runs = 4096
