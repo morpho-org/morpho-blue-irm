@@ -8,6 +8,7 @@ optimizer = true
 optimizer_runs = 999999
 bytecode_hash = "none"
 evm_version = "paris"
+gas_limit = 4294967295
 
 [fuzz]
 runs = 4096
