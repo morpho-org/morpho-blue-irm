@@ -28,6 +28,9 @@ jobs:
       - name: Build contracts and check sizes
         run: forge build --force --sizes
 
+      - name: Check foundry.lock matches submodule pins
+        run: forge build --locked
+
   test:
     name: Tests
     runs-on: ubuntu-latest
