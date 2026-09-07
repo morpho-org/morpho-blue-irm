@@ -21,9 +21,18 @@ jobs:
           - NeverRevertsInvariant
           - NeverRevertsBorrowRateView
           - NeverRevertsBorrowRate
+          - NeverRevertsViewZeroSupply
+          - NeverRevertsViewZeroElapsed
+          - NeverRevertsViewFirstInteraction
+          - NeverRevertsViewAdaptingPosErr
+          - NeverRevertsViewAdaptingNegErr
+          - NeverRevertsRateZeroSupply
+          - NeverRevertsRateZeroElapsed
+          - NeverRevertsRateFirstInteraction
+          - NeverRevertsRateAdaptingPosErr
+          - NeverRevertsRateAdaptingNegErr
           - ExpWExpTotal
           - ExpWExpBounded
-          - ExpWExpBoundedNoBv
           - ExpBoundInRange
           - ExpWDivDownBounded
           - ExpNewRateAtTargetInRange
