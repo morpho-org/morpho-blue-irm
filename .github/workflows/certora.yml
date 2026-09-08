@@ -18,6 +18,25 @@ jobs:
         conf:
           - BorrowRateView
           - ExpectedMarketBalances
+          - NeverRevertsInvariant
+          - NeverRevertsBorrowRateView
+          - NeverRevertsBorrowRate
+          - NeverRevertsViewZeroSupply
+          - NeverRevertsViewZeroElapsed
+          - NeverRevertsViewFirstInteraction
+          - NeverRevertsViewAdaptingPosErr
+          - NeverRevertsViewAdaptingNegErr
+          - NeverRevertsRateZeroSupply
+          - NeverRevertsRateZeroElapsed
+          - NeverRevertsRateFirstInteraction
+          - NeverRevertsRateAdaptingPosErr
+          - NeverRevertsRateAdaptingNegErr
+          - ExpWExpTotal
+          - ExpWExpBounded
+          - ExpBoundInRange
+          - ExpWDivDownBounded
+          - ExpNewRateAtTargetInRange
+          - ExpCurveTotal
 
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
