@@ -33,17 +33,6 @@ function summaryWDivDown(uint256 x, uint256 y) returns uint256 {
     return result;
 }
 
-function fairMarket(env e, AdaptiveCurveIrmHarness.Market market) {
-    // borrowRate and borrowRateView are not payable.
-    require e.msg.value == 0;
-    // morpho-blue proves rule noTimeTravel (lib/morpho-blue/certora/specs/ConsistentState.spec).
-    require market.lastUpdate <= e.block.timestamp;
-    // morpho-blue proves invariant borrowLessThanSupply (lib/morpho-blue/certora/specs/ConsistentState.spec).
-    require market.totalBorrowAssets <= market.totalSupplyAssets;
-    // Morpho truncates timestamps to uint128 on write (lib/morpho-blue/src/Morpho.sol).
-    require e.block.timestamp < 2^128;
-}
-
 invariant rateAtTargetInRange(AdaptiveCurveIrmHarness.Id id)
     rateAtTarget(id) == 0 ||
     (rateAtTarget(id) >= minRateAtTarget() && rateAtTarget(id) <= maxRateAtTarget());
@@ -54,7 +43,14 @@ rule borrowRateViewNeverReverts(
     AdaptiveCurveIrmHarness.Market market
 ) {
     requireInvariant rateAtTargetInRange(toId(marketParams));
-    fairMarket(e, market);
+    // borrowRate and borrowRateView are not payable.
+    require e.msg.value == 0;
+    // morpho-blue proves rule noTimeTravel (lib/morpho-blue/certora/specs/ConsistentState.spec).
+    require market.lastUpdate <= e.block.timestamp;
+    // morpho-blue proves invariant borrowLessThanSupply (lib/morpho-blue/certora/specs/ConsistentState.spec).
+    require market.totalBorrowAssets <= market.totalSupplyAssets;
+    // Morpho truncates timestamps to uint128 on write (lib/morpho-blue/src/Morpho.sol).
+    require e.block.timestamp < 2^128;
 
     borrowRateView@withrevert(e, marketParams, market);
 
@@ -67,7 +63,14 @@ rule borrowRateNeverReverts(
     AdaptiveCurveIrmHarness.Market market
 ) {
     requireInvariant rateAtTargetInRange(toId(marketParams));
-    fairMarket(e, market);
+    // borrowRate and borrowRateView are not payable.
+    require e.msg.value == 0;
+    // morpho-blue proves rule noTimeTravel (lib/morpho-blue/certora/specs/ConsistentState.spec).
+    require market.lastUpdate <= e.block.timestamp;
+    // morpho-blue proves invariant borrowLessThanSupply (lib/morpho-blue/certora/specs/ConsistentState.spec).
+    require market.totalBorrowAssets <= market.totalSupplyAssets;
+    // Morpho truncates timestamps to uint128 on write (lib/morpho-blue/src/Morpho.sol).
+    require e.block.timestamp < 2^128;
     // AdaptiveCurveIrm.sol:60 rejects every caller other than MORPHO.
     require e.msg.sender == currentContract.MORPHO;
 
