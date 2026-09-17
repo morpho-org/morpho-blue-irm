@@ -12,7 +12,7 @@ rule wExpBounded(int256 x) {
     bool reverted = lastReverted;
 
     assert !reverted;
-    assert reverted || (result >= 0 && result <= wexpUpperValue());
+    assert result >= 0 && result <= wexpUpperValue();
 }
 
 rule boundInRange(int256 x, int256 low, int256 high) {
@@ -23,7 +23,7 @@ rule boundInRange(int256 x, int256 low, int256 high) {
     bool reverted = lastReverted;
 
     assert !reverted;
-    assert reverted || (result >= low && result <= high);
+    assert result >= low && result <= high;
 }
 
 rule wDivDownBounded(uint256 x, uint256 y) {
@@ -38,5 +38,5 @@ rule wDivDownBounded(uint256 x, uint256 y) {
     bool reverted = lastReverted;
 
     assert !reverted;
-    assert reverted || result <= 10^18;
+    assert result <= 10^18;
 }
