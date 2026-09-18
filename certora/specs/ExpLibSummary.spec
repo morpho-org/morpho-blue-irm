@@ -16,7 +16,7 @@ rule wExpBounded(int256 x) {
 }
 
 rule boundInRange(int256 x, int256 low, int256 high) {
-    // AdaptiveCurveIrm.sol:148 passes MIN_RATE_AT_TARGET, MAX_RATE_AT_TARGET, and MIN < MAX.
+    // AdaptiveCurveIrm passes low=MIN_RATE_AT_TARGET, high=MAX_RATE_AT_TARGET, and MIN < MAX.
     require low <= high;
 
     int256 result = boundExt@withrevert(x, low, high);
@@ -27,11 +27,11 @@ rule boundInRange(int256 x, int256 low, int256 high) {
 }
 
 rule wDivDownBounded(uint256 x, uint256 y) {
-    // Market.totalBorrowAssets and Market.totalSupplyAssets are uint128 (lib/morpho-blue/src/interfaces/IMorpho.sol).
+    // Market.totalBorrowAssets and Market.totalSupplyAssets are uint128.
     require x <= max_uint128 && y <= max_uint128;
-    // AdaptiveCurveIrm.sol:79 only evaluates wDivDown when totalSupplyAssets > 0.
+    // AdaptiveCurveIrm only evaluates wDivDown when totalSupplyAssets > 0.
     require y > 0;
-    // morpho-blue proves invariant borrowLessThanSupply (lib/morpho-blue/certora/specs/ConsistentState.spec).
+    // morpho-blue proves invariant borrowLessThanSupply in ConsistentState.
     require x <= y;
 
     uint256 result = wDivDownExt@withrevert(x, y);
