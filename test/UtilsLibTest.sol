@@ -5,7 +5,7 @@ import "../src/adaptive-curve-irm/libraries/UtilsLib.sol";
 
 import "../lib/forge-std/src/Test.sol";
 
-contract UtilsTest is Test {
+contract UtilsLibTest is Test {
     using UtilsLib for int256;
 
     function testBoundExpected(int256 x, int256 low, int256 high) public {
