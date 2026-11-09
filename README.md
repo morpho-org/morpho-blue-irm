@@ -1,5 +1,9 @@
 # Morpho Blue IRMs
 
+> [!WARNING]
+> This repository is no longer maintained: AdaptiveCurveIRM now lives in Morpho Blue, under [`src/periphery/adaptive-curve-irm`](https://github.com/morpho-org/morpho-blue/tree/main/src/periphery/adaptive-curve-irm).
+> The compiled code is unchanged.
+
 Some interest rate models for Morpho Blue:
 
 - [AdaptiveCurveIRM](src/adaptive-curve-irm/AdaptiveCurveIrm.sol)
